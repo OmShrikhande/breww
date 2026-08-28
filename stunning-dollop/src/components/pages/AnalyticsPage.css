@@ -1,0 +1,411 @@
+.analytics-page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ==============================
+   KPIs
+   ============================== */
+.analytics-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 14px;
+}
+
+.analytics-kpi {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  border-left: 3px solid var(--c, var(--gold));
+  transition: var(--transition);
+}
+
+.analytics-kpi:hover { transform: translateY(-2px); box-shadow: var(--shadow-sm); }
+
+.akpi-icon { font-size: 1.3rem; line-height: 1; margin-bottom: 4px; }
+.akpi-val  { font-family: var(--font-display); font-size: 1.25rem; font-weight: 800; color: var(--text-primary); }
+.akpi-lbl  { font-size: 0.72rem; color: var(--text-muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; }
+
+/* ==============================
+   Main Chart Card
+   ============================== */
+.analytics-main-chart-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+}
+
+.chart-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.chart-controls {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.metric-picker, .period-picker {
+  display: flex;
+  gap: 4px;
+  background: var(--bg-card-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 4px;
+}
+
+.metric-btn, .period-btn {
+  padding: 5px 14px;
+  border-radius: var(--radius-xs);
+  background: none;
+  border: 1px solid transparent;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: var(--transition);
+  font-family: var(--font-sans);
+  white-space: nowrap;
+}
+
+.metric-btn:hover, .period-btn:hover { color: var(--text-primary); }
+.metric-btn--active, .period-btn--active {
+  background: var(--gold-dim);
+  font-weight: 700;
+}
+
+.period-btn--active {
+  background: var(--gold-dim);
+  color: var(--gold);
+  border-color: var(--border-strong);
+}
+
+/* ==============================
+   Mini Bar Chart
+   ============================== */
+.mini-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  padding-bottom: 24px;
+  position: relative;
+}
+
+.mini-bar-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  position: relative;
+}
+
+.mini-bar {
+  width: 100%;
+  border-radius: var(--radius-xs) var(--radius-xs) 0 0;
+  transition: height 0.5s ease, background 0.3s;
+  cursor: pointer;
+  min-height: 4px;
+  position: relative;
+}
+
+.mini-bar:hover { filter: brightness(1.2); }
+
+.mini-bar-lbl {
+  position: absolute;
+  bottom: -20px;
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+/* ==============================
+   Mid Grid
+   ============================== */
+.analytics-mid-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+@media (max-width: 768px) {
+  .analytics-mid-grid { grid-template-columns: 1fr; }
+}
+
+.analytics-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  transition: var(--transition);
+}
+
+.analytics-card:hover { border-color: var(--border-strong); }
+
+/* ==============================
+   Game Share
+   ============================== */
+.game-share-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.game-share-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.gs-rank-num {
+  width: 20px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.gs-icon { font-size: 1rem; flex-shrink: 0; line-height: 1; }
+
+.gs-info { flex: 1; min-width: 0; }
+
+.gs-name-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.gs-name {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gs-pct {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.gs-bar-track {
+  height: 5px;
+  background: var(--bg-card-alt);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.gs-bar-fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  transition: width 0.8s ease;
+  opacity: 0.8;
+}
+
+.gs-rev-val {
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--gold);
+  flex-shrink: 0;
+  min-width: 50px;
+  text-align: right;
+}
+
+/* ==============================
+   Peak Hours
+   ============================== */
+.peak-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  height: 180px;
+  padding-bottom: 24px;
+}
+
+.peak-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  position: relative;
+}
+
+.peak-bar {
+  width: 100%;
+  border-radius: var(--radius-xs) var(--radius-xs) 0 0;
+  transition: height 0.5s ease;
+  min-height: 4px;
+  opacity: 0.85;
+  cursor: pointer;
+}
+
+.peak-bar:hover { opacity: 1; filter: brightness(1.15); }
+
+.peak-label {
+  position: absolute;
+  bottom: -20px;
+  font-size: 0.62rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+/* ==============================
+   Heatmap
+   ============================== */
+.heatmap-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.heatmap-hours {
+  display: grid;
+  grid-template-columns: 40px repeat(12, 1fr);
+  gap: 4px;
+  padding-left: 40px;
+}
+
+.heatmap-hours span {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.heatmap-row {
+  display: grid;
+  grid-template-columns: 40px repeat(12, 1fr);
+  gap: 4px;
+  align-items: center;
+}
+
+.heatmap-lbl {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  text-align: right;
+  padding-right: 8px;
+}
+
+.heatmap-cell {
+  aspect-ratio: 1.2;
+  border-radius: var(--radius-xs);
+  cursor: default;
+  transition: var(--transition);
+}
+
+.heatmap-cell:hover { transform: scale(1.2); z-index: 5; }
+
+.heatmap-legend {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: flex-end;
+  padding-top: 8px;
+}
+
+.heatmap-legend span {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.heatmap-gradient {
+  width: 100px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  background: linear-gradient(to right, rgba(255,215,0,0.15), var(--gold));
+}
+
+/* ==============================
+   Bottom Grid
+   ============================== */
+.analytics-bottom-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+@media (max-width: 768px) {
+  .analytics-bottom-grid { grid-template-columns: 1fr; }
+}
+
+/* ==============================
+   Win/Loss
+   ============================== */
+.winloss-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.winloss-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.wl-icon { font-size: 1rem; flex-shrink: 0; line-height: 1; }
+.wl-name { font-size: 0.8rem; color: var(--text-secondary); font-weight: 500; min-width: 110px; flex-shrink: 0; }
+
+.wl-bar-wrap {
+  flex: 1;
+  height: 8px;
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  display: flex;
+}
+
+.wl-bar-win  { height: 100%; background: var(--green); transition: width 0.6s ease; }
+.wl-bar-loss { height: 100%; background: var(--red);   transition: width 0.6s ease; }
+
+.wl-rate { font-size: 0.72rem; font-weight: 600; flex-shrink: 0; min-width: 80px; text-align: right; }
+.wl-win  { color: var(--green); }
+.wl-loss { color: var(--red);   }
+
+/* ==============================
+   Quick Metrics
+   ============================== */
+.quick-metrics-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.qm-card {
+  background: var(--bg-card-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-start;
+  transition: var(--transition);
+}
+
+.qm-card:hover { border-color: var(--border-strong); transform: translateY(-1px); }
+
+.qm-icon { font-size: 1.1rem; line-height: 1; }
+.qm-val  { font-family: var(--font-display); font-size: 1rem; font-weight: 800; color: var(--text-primary); }
+.qm-lbl  { font-size: 0.68rem; color: var(--text-muted); font-weight: 500; line-height: 1.3; }

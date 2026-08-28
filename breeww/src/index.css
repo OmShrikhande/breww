@@ -1,0 +1,109 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  .animate-spin-slow {
+    animation: spin 8s linear infinite;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.auth-input {
+  height: 3.75rem;
+  border-radius: 1rem;
+  border: 1px solid rgba(122, 177, 255, 0.08);
+  background: #353d86;
+  padding: 0 1rem;
+  color: white;
+  font-size: 1rem;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.auth-input::placeholder {
+  color: rgba(197, 212, 255, 0.45);
+}
+
+.auth-input:focus {
+  border-color: rgba(92, 174, 255, 0.75);
+  box-shadow: 0 0 0 4px rgba(52, 126, 255, 0.16);
+  background: #394290;
+}
+
+.auth-primary-button {
+  height: 3.75rem;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, #36a5ea 0%, #3b82f6 100%);
+  color: white;
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+  box-shadow: 0 16px 34px rgba(49, 121, 255, 0.3);
+}
+
+.auth-primary-button:hover {
+  filter: brightness(1.06);
+  transform: translateY(-1px);
+}
+
+.auth-checkbox {
+  height: 1.4rem;
+  width: 1.4rem;
+  appearance: none;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  background: transparent;
+  display: inline-block;
+  position: relative;
+}
+
+.auth-checkbox:checked {
+  border-color: #5caeff;
+  background: #5caeff;
+}
+
+.auth-checkbox:checked::after {
+  content: '';
+  position: absolute;
+  inset: 0.28rem;
+  border-radius: 9999px;
+  background: white;
+}

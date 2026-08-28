@@ -1,0 +1,44 @@
+/* ==============================
+   Admin Layout Shell
+   ============================== */
+.admin-layout {
+  display: flex;
+  min-height: 100vh;
+  background: var(--bg-base);
+}
+
+.admin-main {
+  flex: 1;
+  margin-left: var(--sidebar-width);
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-width: 0;
+  transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: var(--bg-base);
+}
+
+.admin-layout--collapsed .admin-main {
+  margin-left: var(--sidebar-mini);
+}
+
+@media (max-width: 768px) {
+  .admin-main {
+    margin-left: 0 !important;
+  }
+}
+
+/* ==============================
+   Page Content
+   ============================== */
+.admin-page-content {
+  flex: 1;
+  padding: 24px;
+  overflow-x: hidden;
+}
+
+@media (max-width: 640px) {
+  .admin-page-content {
+    padding: 16px;
+  }
+}

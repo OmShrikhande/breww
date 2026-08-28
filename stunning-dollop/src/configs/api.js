@@ -1,0 +1,55 @@
+const API_ENDPOINTS = {
+  ADMIN_LOGIN: '/api/auth/admin/login',
+  AUTH_LOGOUT: '/api/auth/logout',
+  AUTH_ME: '/api/auth/me',
+  AUTH_REFRESH: '/api/auth/refresh',
+
+  DASHBOARD_STATS: '/api/dashboard/stats',
+  DASHBOARD_WEEKLY: '/api/dashboard/weekly-revenue',
+  DASHBOARD_TOP_GAMES: '/api/dashboard/top-games',
+  DASHBOARD_ACTIVITY: '/api/dashboard/live-activity',
+  DASHBOARD_GAME_STATUS: '/api/dashboard/game-status',
+
+  GAMES: '/api/games',
+  GAME: (id) => `/api/games/${id}`,
+  GAME_SETTINGS: (id) => `/api/games/${id}/settings`,
+  GAME_STATUS: (id) => `/api/games/${id}/status`,
+  GAMES_BULK_STATUS: '/api/games/bulk-status',
+  ROUND_CURRENT: (id) => `/api/games/${id}/round/current`,
+  ROUND_BETS: (id) => `/api/games/${id}/round/bet-distribution`,
+  ROUND_DECLARE: (id) => `/api/games/${id}/round/declare`,
+  ROUND_HISTORY: (id) => `/api/games/${id}/round/history`,
+  ROUND_NEW: (id) => `/api/games/${id}/round/new`,
+
+  USERS: '/api/users',
+  USERS_STATS: '/api/users/stats',
+  USER: (id) => `/api/users/${id}`,
+  USER_STATUS: (id) => `/api/users/${id}/status`,
+  USER_BALANCE: (id) => `/api/users/${id}/balance`,
+
+  ANALYTICS_REVENUE: '/api/analytics/revenue',
+  ANALYTICS_BETS: '/api/analytics/bets',
+  ANALYTICS_SESSIONS: '/api/analytics/sessions',
+  ANALYTICS_GAME_SHARE: '/api/analytics/game-share',
+  ANALYTICS_PEAK_HOURS: '/api/analytics/peak-hours',
+  ANALYTICS_HEATMAP: '/api/analytics/heatmap',
+  ANALYTICS_WIN_LOSS: '/api/analytics/win-loss',
+  ANALYTICS_QUICK: '/api/analytics/quick-metrics',
+
+  SETTINGS: '/api/settings',
+  SETTINGS_GENERAL: '/api/settings/general',
+  SETTINGS_SECURITY: '/api/settings/security',
+  SETTINGS_PAYMENTS: '/api/settings/payments',
+  SETTINGS_NOTIFICATIONS: '/api/settings/notifications',
+  SETTINGS_API: '/api/settings/api',
+  SETTINGS_API_KEY: '/api/settings/api-key',
+  SETTINGS_API_KEY_ROTATE: '/api/settings/api-key/rotate',
+  SETTINGS_WEBHOOK_TEST: '/api/settings/webhook/test',
+
+  NOTIFICATIONS: '/api/notifications',
+  NOTIFICATIONS_UNREAD: '/api/notifications/unread-count',
+  NOTIFICATIONS_READ: (id) => `/api/notifications/${id}/read`,
+  NOTIFICATIONS_READ_ALL: '/api/notifications/read-all',
+};
+
+export default API_ENDPOINTS;

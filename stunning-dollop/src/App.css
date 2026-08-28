@@ -1,0 +1,42 @@
+@import './components/Login.css';
+@import './components/AdminDashboard.css';
+@import './components/layout/Sidebar.css';
+@import './components/layout/Header.css';
+@import './components/games/GameCard.css';
+@import './components/games/GameControlModal.css';
+@import './components/pages/DashboardPage.css';
+@import './components/pages/GamesPage.css';
+@import './components/pages/UsersPage.css';
+@import './components/pages/AnalyticsPage.css';
+@import './components/pages/SettingsPage.css';
+
+.App {
+  min-height: 100vh;
+}
+
+.loading-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-base);
+  color: var(--gold);
+  font-size: 1.1rem;
+  font-weight: 600;
+  font-family: var(--font-display);
+  gap: 12px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+button, input[type="submit"], input[type="button"] {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  user-select: none;
+}

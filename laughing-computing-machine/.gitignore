@@ -1,0 +1,13 @@
+node_modules/
+.*.zenflow
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+.Zencoder
+*.csv
+*.*env
+*.log
+.DS_Store
+Thumbs.db
