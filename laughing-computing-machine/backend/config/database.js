@@ -1,8 +1,19 @@
 const { Pool } = require('pg');
 const { getEnv } = require('./env');
 
+function isLocalDatabaseUrl(url) {
+  try {
+    const host = new URL(url).hostname;
+    return host === 'localhost' || host === '127.0.0.1' || host === '::1';
+  } catch {
+    return false;
+  }
+}
+
 let connectionString = getEnv('DATABASE_URL', '');
-if (connectionString && !/[?&]sslmode=/.test(connectionString)) {
+const localDb = connectionString ? isLocalDatabaseUrl(connectionString) : true;
+
+if (connectionString && !localDb && !/[?&]sslmode=/.test(connectionString)) {
   connectionString += connectionString.includes('?')
     ? '&uselibpqcompat=true&sslmode=require'
     : '?uselibpqcompat=true&sslmode=require';
@@ -11,7 +22,7 @@ if (connectionString && !/[?&]sslmode=/.test(connectionString)) {
 const poolConfig = connectionString
   ? {
       connectionString,
-      ssl: { rejectUnauthorized: false },
+      ...(localDb ? {} : { ssl: { rejectUnauthorized: false } }),
       max: 20,
       idleTimeoutMillis: 30000,
       connectionTimeoutMillis: 15000,

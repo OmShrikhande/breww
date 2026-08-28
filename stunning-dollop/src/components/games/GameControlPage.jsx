@@ -88,6 +88,8 @@ const GameControlPage = ({ game, onBack }) => {
   const [roundStatus,   setRoundStatus]   = useState('betting');
   const [selectedResult, setSelectedResult] = useState(null);
   const [crashPoint,    setCrashPoint]    = useState(2.0);
+  const [upcomingResult, setUpcomingResult] = useState(null);
+  const [manualMode, setManualMode] = useState(Boolean(game.settings?.manualResultMode));
   const [declaredResult, setDeclaredResult] = useState(null);
   const [history,       setHistory]       = useState([]);
   const [confirmMode,   setConfirmMode]   = useState(false);
@@ -107,16 +109,22 @@ const GameControlPage = ({ game, onBack }) => {
   const loadRoundData = useCallback(async () => {
     if (isMines) return;
     try {
-      const [currentRes, betsRes, historyRes] = await Promise.all([
+      const [currentRes, betsRes, historyRes, upcomingRes] = await Promise.all([
         apiService.get(API_ENDPOINTS.ROUND_CURRENT(game.id)),
         apiService.get(API_ENDPOINTS.ROUND_BETS(game.id)),
         apiService.get(`${API_ENDPOINTS.ROUND_HISTORY(game.id)}?limit=12`),
+        apiService.get(API_ENDPOINTS.ROUND_UPCOMING(game.id)).catch(() => ({ data: null })),
       ]);
 
       const current = currentRes.data || {};
       if (current.roundId != null) setRoundId(current.roundId);
       if (current.timerLeft != null) setRoundTimer(Number(current.timerLeft) || 0);
       if (current.playersCount != null) setLiveCount(Number(current.playersCount) || 0);
+      if (current.manualResultMode != null) setManualMode(Boolean(current.manualResultMode));
+
+      const upcoming = upcomingRes.data || {};
+      setUpcomingResult(upcoming.upcomingResult || null);
+
       if (current.status) {
         const mapped =
           current.status === 'open' ? 'betting'
@@ -154,7 +162,7 @@ const GameControlPage = ({ game, onBack }) => {
 
   useEffect(() => {
     loadRoundData();
-    const t = setInterval(loadRoundData, 5000);
+    const t = setInterval(loadRoundData, 1000);
     return () => clearInterval(t);
   }, [loadRoundData]);
 
@@ -299,6 +307,13 @@ const GameControlPage = ({ game, onBack }) => {
           </span>
         </div>
       </div>
+
+      {!manualMode && upcomingResult && (
+        <div className="gcp-upcoming-banner">
+          <strong>Auto outcome (10s preview):</strong> {upcomingResult}
+          <span> — least-bet option wins</span>
+        </div>
+      )}
 
       <div className="gcp-body">
         {isMines ? (

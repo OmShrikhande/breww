@@ -1,65 +1,78 @@
 import React, { useState } from 'react';
+import { Zap } from 'lucide-react';
 import { useWallet } from '../../context/WalletContext';
+import { formatINR } from '../../utils/formatCurrency';
 
-const BetPanel = ({ onPlaceBet, disabled }) => {
+const BetPanel = ({ onPlaceBet, disabled, accent = '#4F8EF7' }) => {
   const { balance } = useWallet();
-  const [amount, setAmount] = useState(10);
-  const quickBets = [10, 50, 100, 500];
+  const [amount, setAmount] = useState(50);
+  const quickBets = [10, 50, 100, 500, 1000];
 
-  const handleBet = () => {
-    if (amount > 0 && amount <= balance) {
-      onPlaceBet(amount);
-    }
-  };
+  const canBet = !disabled && amount > 0 && amount <= balance;
 
   return (
-    <div className="bg-casino-card p-4 rounded-t-2xl border-t border-gray-800 shadow-2xl">
-      <div className="flex items-center gap-4 mb-4">
-        <div className="flex-1 bg-gray-900 rounded-xl p-3 border border-gray-700 flex items-center justify-between">
-          <button 
+    <div className="p-4 pt-3">
+      <div className="flex items-center justify-between mb-3 px-1">
+        <span className="text-[10px] font-bold uppercase tracking-widest text-white/35">Stake amount</span>
+        <span className="text-[10px] font-bold text-white/50">Max {formatINR(balance)}</span>
+      </div>
+
+      <div className="flex items-center gap-3 mb-3">
+        <div className="flex-1 flex items-center rounded-xl bg-black/40 border border-white/10 overflow-hidden">
+          <button
+            type="button"
             onClick={() => setAmount(Math.max(10, amount - 10))}
-            className="text-gray-400 font-bold px-2"
+            className="px-4 py-3.5 text-white/50 hover:text-white hover:bg-white/5 font-bold text-lg"
           >
-            -
+            −
           </button>
-          <input 
-            type="number" 
-            value={amount}
-            onChange={(e) => setAmount(Number(e.target.value))}
-            className="bg-transparent text-center font-mono font-bold text-lg w-20 focus:outline-none"
-          />
-          <button 
+          <div className="flex-1 text-center">
+            <span className="text-[10px] text-white/30 block">₹</span>
+            <input
+              type="number"
+              value={amount}
+              onChange={(e) => setAmount(Number(e.target.value) || 0)}
+              className="w-full bg-transparent text-center font-black text-xl text-white focus:outline-none tabular-nums"
+            />
+          </div>
+          <button
+            type="button"
             onClick={() => setAmount(amount + 10)}
-            className="text-gray-400 font-bold px-2"
+            className="px-4 py-3.5 text-white/50 hover:text-white hover:bg-white/5 font-bold text-lg"
           >
             +
           </button>
         </div>
-        <button 
-          onClick={handleBet}
-          disabled={disabled || amount > balance || amount <= 0}
-          className={`flex-[1.5] py-4 rounded-xl font-black text-lg uppercase transition-all active:scale-95 ${
-            disabled || amount > balance || amount <= 0
-              ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
-              : 'bg-green-600 hover:bg-green-500 text-white shadow-[0_4px_0_rgb(22,101,52)]'
-          }`}
+
+        <button
+          type="button"
+          onClick={() => onPlaceBet?.(amount)}
+          disabled={!canBet}
+          className="flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-black text-sm uppercase tracking-wider transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed min-w-[130px]"
+          style={{
+            background: canBet ? `linear-gradient(135deg, ${accent}, #2563eb)` : undefined,
+            boxShadow: canBet ? `0 4px 20px ${accent}55` : undefined,
+          }}
         >
-          Place Bet
+          <Zap size={16} fill="currentColor" />
+          Bet
         </button>
       </div>
 
-      <div className="flex justify-between gap-2">
+      <div className="flex gap-2">
         {quickBets.map((val) => (
           <button
             key={val}
+            type="button"
             onClick={() => setAmount(val)}
-            className={`flex-1 py-2 rounded-lg text-xs font-bold border transition-all ${
-              amount === val 
-                ? 'bg-casino-accent/20 border-casino-accent text-casino-accent' 
-                : 'bg-gray-800/50 border-gray-700 text-gray-400'
+            disabled={val > balance}
+            className={`flex-1 py-2 rounded-lg text-[11px] font-black border transition-all ${
+              amount === val
+                ? 'border-casino-gold/60 bg-casino-gold/15 text-casino-gold'
+                : 'border-white/10 bg-white/5 text-white/50 hover:border-white/20 disabled:opacity-30'
             }`}
           >
-            ₹{val}
+            {val >= 1000 ? `${val / 1000}K` : val}
           </button>
         ))}
       </div>

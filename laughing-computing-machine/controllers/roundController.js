@@ -22,11 +22,26 @@ const getBetDistribution = async (req, res) => {
   }
 };
 
+const getUpcoming = async (req, res) => {
+  try {
+    const data = await Round.getUpcoming(req.params.id);
+    if (!data) return res.status(404).json({ success: false, message: 'No active round found' });
+    res.json({ success: true, data });
+  } catch (error) {
+    console.error('Get upcoming round error:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+};
+
 const declare = async (req, res) => {
   try {
     const { result, roundId } = req.body;
     if (!result) return res.status(400).json({ success: false, message: 'Result is required' });
-    const data = await Round.declare(req.params.id, result, roundId);
+    const gameId = req.params.id;
+    const data = await Round.declare(gameId, result, roundId, true);
+    if (gameId !== 'aviator' || !data?.flying) {
+      await Round.startNew(gameId);
+    }
     res.json({ success: true, data });
   } catch (error) {
     console.error('Declare round error:', error);
@@ -66,4 +81,4 @@ const startNew = async (req, res) => {
   }
 };
 
-module.exports = { getCurrent, getBetDistribution, declare, getHistory, getRoundDetail, startNew };
+module.exports = { getCurrent, getBetDistribution, getUpcoming, declare, getHistory, getRoundDetail, startNew };

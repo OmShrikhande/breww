@@ -1,28 +1,34 @@
 import React from 'react';
-import { getColorClass } from '../../utils/gameHelpers';
 
-const ColorBoard = ({ selectedBet, onSelectBet, disabled }) => {
-  const colors = ['Green', 'Violet', 'Red'];
+const COLORS = [
+  { value: 'Green', bg: 'from-emerald-600 to-emerald-800', ring: 'ring-emerald-400' },
+  { value: 'Violet', bg: 'from-violet-600 to-purple-800', ring: 'ring-violet-400' },
+  { value: 'Red', bg: 'from-rose-600 to-red-800', ring: 'ring-rose-400' },
+];
 
-  return (
+const ColorBoard = ({ selectedBet, onSelectBet, disabled }) => (
+  <div>
+    <p className="game-section-title">Pick a colour</p>
     <div className="grid grid-cols-3 gap-3">
-      {colors.map(color => (
-        <button
-          key={color}
-          disabled={disabled}
-          onClick={() => onSelectBet({ type: 'color', value: color })}
-          className={`relative py-4 rounded-xl font-black text-sm uppercase tracking-wider transition-all transform active:scale-95 ${
-            getColorClass(color)
-          } ${selectedBet?.type === 'color' && selectedBet?.value === color ? 'ring-4 ring-white scale-105 shadow-2xl' : 'opacity-80'}`}
-        >
-          {color}
-          {selectedBet?.type === 'color' && selectedBet?.value === color && (
-            <div className="absolute -top-1 -right-1 w-3 h-3 bg-white rounded-full shadow-lg"></div>
-          )}
-        </button>
-      ))}
+      {COLORS.map(({ value, bg, ring }) => {
+        const selected = selectedBet?.type === 'color' && selectedBet?.value === value;
+        return (
+          <button
+            key={value}
+            type="button"
+            disabled={disabled}
+            onClick={() => onSelectBet({ type: 'color', value })}
+            className={`bet-chip py-5 rounded-2xl text-sm font-black uppercase tracking-wider text-white bg-gradient-to-br ${bg} border border-white/10 shadow-lg ${
+              selected ? `ring-2 ${ring} scale-[1.03]` : 'opacity-90 hover:opacity-100'
+            } ${disabled ? 'bet-chip--disabled' : ''}`}
+          >
+            {value}
+            <span className="block text-[10px] font-bold opacity-70 mt-1">2×</span>
+          </button>
+        );
+      })}
     </div>
-  );
-};
+  </div>
+);
 
 export default ColorBoard;

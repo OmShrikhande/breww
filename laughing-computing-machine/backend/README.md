@@ -11,12 +11,13 @@ Player-facing REST API for **Breeww**.
 
 When the repo is deployed once with `npm start`, this API is included — **no second service / redeploy**.
 
-Env is loaded from **this folder’s `.env`** without overwriting the admin process env. You can also set `PLAYER_DATABASE_URL`, `PLAYER_JWT_SECRET`, etc. on the host.
+Env is loaded from **`laughing-computing-machine/.env`** (parent folder). Do not create `backend/.env`. Optional `PLAYER_*` keys on the parent file override individual player settings.
 
 ## Setup (standalone)
 
 ```bash
-cp .env.example .env
+# Edit parent env first: laughing-computing-machine/.env
+cd laughing-computing-machine/backend
 npm install
 npm run dev
 ```

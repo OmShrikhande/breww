@@ -6,10 +6,18 @@ const LOCKOUT_MINUTES = parseInt(process.env.LOCKOUT_MINUTES) || 15;
 
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 300,
+  max: parseInt(process.env.GLOBAL_RATE_LIMIT, 10) || 3000,
   standardHeaders: true,
   legacyHeaders: false,
-  message: { success: false, message: 'Too many requests, please try again later' }
+  skip: (req) => {
+    const path = req.originalUrl || req.url || '';
+    return (
+      path.includes('/health')
+      || path.includes('/aviator/state')
+      || (path.includes('/games/') && path.includes('/round'))
+    );
+  },
+  message: { success: false, message: 'Too many requests, please try again later' },
 });
 
 const loginLimiter = rateLimit({

@@ -217,7 +217,18 @@ const initDb = async () => {
     `CREATE INDEX IF NOT EXISTS idx_game_stats_game_date ON game_stats_daily(game_id, date)`,
     `CREATE INDEX IF NOT EXISTS idx_activity_log_created ON activity_log(created_at DESC)`,
     `CREATE INDEX IF NOT EXISTS idx_admin_sessions_token ON admin_sessions(token_hash)`,
-    `CREATE INDEX IF NOT EXISTS idx_admin_sessions_admin ON admin_sessions(admin_id)`
+    `CREATE INDEX IF NOT EXISTS idx_admin_sessions_admin ON admin_sessions(admin_id)`,
+
+    `ALTER TABLE game_rounds ADD COLUMN IF NOT EXISTS scheduled_result VARCHAR(50)`,
+    `ALTER TABLE game_rounds ADD COLUMN IF NOT EXISTS preview_at TIMESTAMP`,
+    `ALTER TABLE game_rounds ADD COLUMN IF NOT EXISTS closes_at TIMESTAMP`,
+    `ALTER TABLE game_rounds ADD COLUMN IF NOT EXISTS flying_started_at TIMESTAMP`,
+
+    `UPDATE game_settings SET manual_result_mode = FALSE WHERE manual_result_mode IS DISTINCT FROM FALSE`,
+    `UPDATE game_settings SET auto_result_interval = 10 WHERE game_id = 'aviator'`,
+    `UPDATE game_rounds SET scheduled_result = NULL
+     WHERE game_id = 'aviator' AND status IN ('open','closed')
+       AND (scheduled_result IS NULL OR scheduled_result !~ '^[0-9]+(\\.[0-9]+)?$' OR (scheduled_result::numeric) < 1.5 OR (scheduled_result::numeric) > 13)`,
   ];
 
   for (const query of queries) {
@@ -250,8 +261,15 @@ const seedDefaultData = async () => {
     { id: 'colour', name: 'Colour Prediction', category: 'Prediction', icon: '🎨', tagline: 'Predict the winning colour', accent_color: '#e74c3c', gradient: 'linear-gradient(135deg,#e74c3c,#c0392b)' },
     { id: 'aviator', name: 'Aviator', category: 'Crash', icon: '✈️', tagline: 'Cash out before it crashes', accent_color: '#e67e22', gradient: 'linear-gradient(135deg,#e67e22,#d35400)' },
     { id: 'dice', name: 'Dice Roll', category: 'Dice', icon: '🎲', tagline: 'Roll the dice and win big', accent_color: '#3498db', gradient: 'linear-gradient(135deg,#3498db,#2980b9)' },
-    { id: 'dragon', name: 'Dragon Tiger', category: 'Card', icon: '🐉', tagline: 'Dragon vs Tiger battle', accent_color: '#9b59b6', gradient: 'linear-gradient(135deg,#9b59b6,#8e44ad)' },
-    { id: 'parity', name: 'Parity', category: 'Prediction', icon: '🔢', tagline: 'Even or Odd prediction', accent_color: '#1abc9c', gradient: 'linear-gradient(135deg,#1abc9c,#16a085)' }
+    { id: 'dragon-tiger', name: 'Dragon Tiger', category: 'Card', icon: '🐉', tagline: 'Dragon vs Tiger battle', accent_color: '#9b59b6', gradient: 'linear-gradient(135deg,#9b59b6,#8e44ad)' },
+    { id: 'wheel', name: 'Spin Wheel', category: 'Wheel', icon: '🎡', tagline: 'Spin to win', accent_color: '#f59e0b', gradient: 'linear-gradient(135deg,#f59e0b,#d97706)' },
+    { id: 'mines', name: 'Mines', category: 'Originals', icon: '💣', tagline: 'Avoid the mines', accent_color: '#64748b', gradient: 'linear-gradient(135deg,#64748b,#475569)' },
+    { id: 'plinko', name: 'Plinko', category: 'Originals', icon: '🎯', tagline: 'Drop and win', accent_color: '#06b6d4', gradient: 'linear-gradient(135deg,#06b6d4,#0891b2)' },
+    { id: 'andar-bahar', name: 'Andar Bahar', category: 'Card', icon: '🃏', tagline: 'Classic Indian card game', accent_color: '#8b5cf6', gradient: 'linear-gradient(135deg,#8b5cf6,#7c3aed)' },
+    { id: 'roulette', name: 'Roulette', category: 'Table', icon: '🎰', tagline: 'European roulette', accent_color: '#22c55e', gradient: 'linear-gradient(135deg,#22c55e,#16a34a)' },
+    { id: 'poker', name: 'Poker', category: 'Table', icon: '♠️', tagline: 'Texas holdem', accent_color: '#ef4444', gradient: 'linear-gradient(135deg,#ef4444,#dc2626)' },
+    { id: 'chamber-risk', name: 'Chamber Risk', category: 'Originals', icon: '🔫', tagline: 'Risk and reward', accent_color: '#a855f7', gradient: 'linear-gradient(135deg,#a855f7,#9333ea)' },
+    { id: 'parity', name: 'Parity', category: 'Prediction', icon: '🔢', tagline: 'Even or Odd prediction', accent_color: '#1abc9c', gradient: 'linear-gradient(135deg,#1abc9c,#16a085)' },
   ];
 
   for (const g of defaultGames) {
@@ -262,7 +280,7 @@ const seedDefaultData = async () => {
         [g.id, g.name, g.category, g.icon, g.tagline, g.accent_color, g.gradient]
       );
       await pool.query(
-        `INSERT INTO game_settings (game_id) VALUES ($1)`,
+        `INSERT INTO game_settings (game_id, manual_result_mode) VALUES ($1, FALSE)`,
         [g.id]
       );
     }

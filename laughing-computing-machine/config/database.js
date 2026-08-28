@@ -1,15 +1,22 @@
 const { Pool } = require('pg');
 require('dotenv').config();
 
+function isLocalDatabaseUrl(url) {
+  try {
+    const host = new URL(url).hostname;
+    return host === 'localhost' || host === '127.0.0.1' || host === '::1';
+  } catch {
+    return false;
+  }
+}
+
 let poolConfig;
 
 if (process.env.DATABASE_URL) {
-  // Production / Render DB
+  const local = isLocalDatabaseUrl(process.env.DATABASE_URL);
   poolConfig = {
     connectionString: process.env.DATABASE_URL,
-    ssl: {
-      rejectUnauthorized: false, // required for Render PostgreSQL
-    },
+    ...(local ? {} : { ssl: { rejectUnauthorized: false } }),
     max: 20,
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 5000,

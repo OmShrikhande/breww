@@ -62,6 +62,33 @@ const STATEMENTS = [
   `CREATE INDEX IF NOT EXISTS idx_player_sessions_user ON player_sessions(user_id)`,
   `CREATE INDEX IF NOT EXISTS idx_game_bets_user ON game_bets(user_id, created_at DESC)`,
   `CREATE INDEX IF NOT EXISTS idx_ledger_user ON user_balance_ledger(user_id, created_at DESC)`,
+  `CREATE TABLE IF NOT EXISTS mines_sessions (
+    id BIGSERIAL PRIMARY KEY,
+    user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    bet_amount DECIMAL(12,2) NOT NULL,
+    mine_count INT NOT NULL,
+    mine_positions JSONB NOT NULL,
+    revealed_tiles JSONB NOT NULL DEFAULT '[]',
+    max_safe_reveals INT NOT NULL DEFAULT 0,
+    status VARCHAR(20) DEFAULT 'playing' CHECK (status IN ('playing','won','lost')),
+    payout DECIMAL(12,2) DEFAULT 0,
+    created_at TIMESTAMP DEFAULT NOW(),
+    ended_at TIMESTAMP NULL
+  )`,
+  `ALTER TABLE mines_sessions ADD COLUMN IF NOT EXISTS max_safe_reveals INT NOT NULL DEFAULT 0`,
+  `CREATE INDEX IF NOT EXISTS idx_mines_sessions_user ON mines_sessions(user_id, status)`,
+  `CREATE TABLE IF NOT EXISTS aviator_bets (
+    id BIGSERIAL PRIMARY KEY,
+    user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    round_id BIGINT NOT NULL,
+    amount DECIMAL(12,2) NOT NULL,
+    cashout_multiplier DECIMAL(8,2),
+    payout DECIMAL(12,2) DEFAULT 0,
+    status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active','cashed_out','lost')),
+    created_at TIMESTAMP DEFAULT NOW()
+  )`,
+  `CREATE INDEX IF NOT EXISTS idx_aviator_bets_round ON aviator_bets(round_id, status)`,
+  `CREATE INDEX IF NOT EXISTS idx_aviator_bets_user ON aviator_bets(user_id, created_at DESC)`,
 ];
 
 async function initDb() {

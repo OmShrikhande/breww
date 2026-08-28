@@ -1,7 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '.env') });
 
 if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
   console.error('FATAL: JWT_SECRET must be set and at least 32 characters long');
@@ -10,6 +11,8 @@ if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
 
 const initDb = require('./models/initDb');
 const pool = require('./config/database');
+const { ensureDatabase, getDbConfigFromEnv } = require('./config/ensureDatabase');
+const { startRoundEngine } = require('./services/roundEngine');
 const getSystemIP = require('./utils/getSystemIP');
 const { globalLimiter, apiLimiter, sanitizeBody, sanitizeQuery, securityHeaders } = require('./middleware/security');
 const { createPlayerApp, initDb: initPlayerDb } = require('./backend/server');
@@ -66,6 +69,11 @@ app.use(express.urlencoded({ extended: true, limit: '100kb' }));
 app.use(securityHeaders);
 app.use(sanitizeBody);
 app.use(sanitizeQuery);
+
+// Player API — game polling should not hit admin rate limits
+const playerApp = createPlayerApp({ skipBodyParser: true });
+app.use('/player', playerApp);
+
 app.use(globalLimiter);
 app.use('/api', apiLimiter);
 
@@ -94,9 +102,7 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Player API mounted under /player — same deploy, same public PORT
-const playerApp = createPlayerApp();
-app.use('/player', playerApp);
+// Player API mounted under /player — same deploy, same public PORT (mounted above rate limiters)
 
 app.use((req, res) => {
   res.status(404).json({ success: false, message: 'Route not found' });
@@ -121,20 +127,29 @@ const cleanExpiredSessions = async () => {
 
 const startServer = async () => {
   try {
+    const dbConfig = getDbConfigFromEnv();
+    await ensureDatabase(dbConfig);
+    console.log(`PostgreSQL ready: ${dbConfig.user}@${dbConfig.host}:${dbConfig.port}/${dbConfig.database}`);
+  } catch (dbBootstrapError) {
+    console.error('PostgreSQL setup failed:', dbBootstrapError.message);
+    console.error('Check DB_HOST, DB_PORT, DB_USER, DB_PASSWORD in laughing-computing-machine/.env');
+  }
+
+  try {
     await initDb();
     await cleanExpiredSessions();
     setInterval(cleanExpiredSessions, 60 * 60 * 1000);
   } catch (dbError) {
-    console.error('Admin DB initialization failed:', dbError.message);
-    console.error('Admin API will start; some features may not work.');
+    console.error('Admin DB initialization failed:', dbError.message || dbError);
   }
 
   try {
     await initPlayerDb();
   } catch (playerDbError) {
-    console.error('Player DB initialization failed:', playerDbError.message);
-    console.error('Player routes are mounted; fix backend/.env DATABASE_URL if needed.');
+    console.error('Player DB initialization failed:', playerDbError.message || playerDbError);
   }
+
+  startRoundEngine();
 
   const HOST = getSystemIP();
   app.listen(PORT, '0.0.0.0', () => {
@@ -147,4 +162,12 @@ const startServer = async () => {
 startServer().catch((error) => {
   console.error('Failed to start server:', error);
   process.exit(1);
+});
+
+process.on('unhandledRejection', (reason) => {
+  console.error('Unhandled rejection (server kept alive):', reason);
+});
+
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught exception (server kept alive):', error);
 });

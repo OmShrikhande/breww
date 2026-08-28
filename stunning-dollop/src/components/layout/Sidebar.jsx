@@ -7,6 +7,7 @@ const NAV_ITEMS = [
   { id: 'games',     label: 'Games',     icon: '🎮' },
   { id: 'users',     label: 'Users',     icon: '👥' },
   { id: 'analytics', label: 'Analytics', icon: '📈' },
+  { id: 'transactions', label: 'Payments', icon: '💳' },
   { id: 'settings',  label: 'Settings',  icon: '⚙️' },
 ];
 

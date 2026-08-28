@@ -1,0 +1,21 @@
+.transactions-page { padding: 0 4px 24px; }
+.tx-header h1 { margin: 0; font-size: 1.5rem; }
+.tx-header p { color: var(--text-muted, #94a3b8); margin: 6px 0 20px; }
+.tx-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
+.tx-stats div { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 14px; }
+.tx-stats span { display: block; font-size: 12px; color: #94a3b8; }
+.tx-stats strong { font-size: 1.1rem; }
+.tx-tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+.tx-tabs button { border: 1px solid rgba(255,255,255,0.1); background: transparent; color: #cbd5e1; padding: 8px 16px; border-radius: 8px; cursor: pointer; }
+.tx-tabs button.active { background: #3b82f6; border-color: #3b82f6; color: white; }
+.tx-list { display: flex; flex-direction: column; gap: 10px; }
+.tx-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 14px; }
+.tx-type { margin-left: 8px; font-size: 11px; text-transform: uppercase; padding: 2px 6px; border-radius: 4px; }
+.tx-type--deposit { background: rgba(34,197,94,0.2); color: #4ade80; }
+.tx-type--withdrawal { background: rgba(249,115,22,0.2); color: #fb923c; }
+.tx-amount { font-size: 1.25rem; font-weight: 700; margin: 8px 0 4px; }
+.tx-meta { font-size: 12px; color: #94a3b8; text-transform: capitalize; }
+.tx-actions { display: flex; gap: 8px; margin-top: 12px; }
+.tx-actions button { flex: 1; padding: 8px; border-radius: 8px; border: none; cursor: pointer; background: #22c55e; color: white; font-weight: 600; }
+.tx-actions button.danger { background: #ef4444; }
+.tx-message, .tx-loading, .tx-empty { color: #94a3b8; text-align: center; padding: 12px; }

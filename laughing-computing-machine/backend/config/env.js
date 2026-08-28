@@ -2,9 +2,9 @@ const fs = require('fs');
 const path = require('path');
 const dotenv = require('dotenv');
 
-/** Parse backend/.env without overwriting the parent (admin) process.env. */
+/** Parent laughing-computing-machine/.env — single source of truth for admin + player. */
 function loadFileEnv() {
-  const envPath = path.join(__dirname, '..', '.env');
+  const envPath = path.join(__dirname, '..', '..', '.env');
   if (!fs.existsSync(envPath)) return {};
   try {
     return dotenv.parse(fs.readFileSync(envPath));
@@ -16,8 +16,10 @@ function loadFileEnv() {
 const fileEnv = loadFileEnv();
 
 /**
- * Prefer PLAYER_* from process (root deploy), then backend/.env values,
- * then generic process.env (standalone `npm run dev` in backend/).
+ * Player API env resolution order:
+ * 1. PLAYER_* overrides on process.env (optional per-field overrides from parent deploy)
+ * 2. Parent .env file (laughing-computing-machine/.env)
+ * 3. process.env (after dotenv loaded parent .env in index.js or server.js)
  */
 function getEnv(key, fallback = '') {
   const playerKey = `PLAYER_${key}`;

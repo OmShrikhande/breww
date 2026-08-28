@@ -19,7 +19,14 @@ const API_ENDPOINTS = {
   ROUND_BETS: (id) => `/api/games/${id}/round/bet-distribution`,
   ROUND_DECLARE: (id) => `/api/games/${id}/round/declare`,
   ROUND_HISTORY: (id) => `/api/games/${id}/round/history`,
+  ROUND_UPCOMING: (id) => `/api/games/${id}/round/upcoming`,
   ROUND_NEW: (id) => `/api/games/${id}/round/new`,
+
+  TRANSACTIONS: '/api/transactions',
+  TRANSACTIONS_STATS: '/api/transactions/stats',
+  TRANSACTIONS_PENDING: '/api/transactions/pending',
+  TRANSACTION_APPROVE: (id) => `/api/transactions/${id}/approve`,
+  TRANSACTION_REJECT: (id) => `/api/transactions/${id}/reject`,
 
   USERS: '/api/users',
   USERS_STATS: '/api/users/stats',

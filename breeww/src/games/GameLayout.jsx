@@ -1,49 +1,70 @@
 import React from 'react';
-import { ChevronLeft, Info } from 'lucide-react';
+import { ChevronLeft, Coins } from 'lucide-react';
 import { useWallet } from '../hooks/useWallet';
 import { formatINR } from '../utils/formatCurrency';
 import BetPanel from '../components/betting/BetPanel';
 import { navigateTo } from '../lib/navigation';
 
-const GameLayout = ({ title, children, onPlaceBet, betDisabled, isWide = false, hideBetPanel = false, hideHeader = false }) => {
+const GameLayout = ({
+  title,
+  subtitle,
+  accent = '#4F8EF7',
+  children,
+  onPlaceBet,
+  betDisabled,
+  isWide = false,
+  hideBetPanel = false,
+  hideHeader = false,
+  selectedLabel,
+}) => {
   const { balance } = useWallet();
 
   return (
-    <div className="fixed inset-0 z-[60] bg-[#8c919e] flex justify-center overflow-hidden">
-      <div className={`w-full ${isWide ? 'lg:max-w-none' : 'max-w-md'} bg-[#1B233D] flex flex-col h-full relative shadow-2xl border-x border-white/5`}>
-        {/* Game Header */}
+    <div className="fixed inset-0 z-[60] bg-[#5a6270] flex justify-center overflow-hidden">
+      <div className={`w-full ${isWide ? 'lg:max-w-none' : 'max-w-md'} game-shell-bg flex flex-col h-full relative shadow-2xl border-x border-white/5`}>
         {!hideHeader && (
-          <header className="h-14 bg-[#242E4D] border-b border-white/5 flex items-center justify-between px-4 shrink-0 shadow-lg relative z-20">
-            <div className="flex items-center gap-3">
-              <button 
-                onClick={() => navigateTo('/')} 
-                className="p-1 hover:bg-white/10 rounded-lg transition-colors text-white"
+          <header className="h-14 shrink-0 border-b border-white/10 flex items-center justify-between px-4 bg-black/30 backdrop-blur-md z-20">
+            <div className="flex items-center gap-2 min-w-0">
+              <button
+                type="button"
+                onClick={() => navigateTo('/')}
+                className="p-2 -ml-1 rounded-xl hover:bg-white/10 transition-colors text-white/80"
               >
-                <ChevronLeft size={24} />
+                <ChevronLeft size={22} />
               </button>
-              <span className="font-bold tracking-tight text-white uppercase text-sm">{title}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="bg-[#1B233D] px-3 py-1.5 rounded-full font-bold text-[#FFD700] text-xs border border-white/5 shadow-inner">
-                {formatINR(balance)}
+              <div className="min-w-0">
+                <p className="font-black text-white text-sm uppercase tracking-wide truncate">{title}</p>
+                {subtitle && <p className="text-[10px] text-white/40 truncate">{subtitle}</p>}
               </div>
             </div>
+            <button
+              type="button"
+              onClick={() => navigateTo('/wallet')}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-casino-gold/10 border border-casino-gold/30"
+            >
+              <Coins size={14} className="text-casino-gold" />
+              <span className="font-black text-casino-gold text-xs tabular-nums">{formatINR(balance)}</span>
+            </button>
           </header>
         )}
 
-        {/* Main Game Content Area */}
-        <main className={`flex-1 relative overflow-y-auto overflow-x-hidden ${isWide ? '' : 'px-4 pt-4 pb-12'} custom-scrollbar scroll-smooth`}>
-          <div className={`flex flex-col ${isWide ? 'w-full h-full' : 'gap-4'}`}>
-            {children}
-          </div>
+        <main className={`flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar ${isWide ? '' : 'px-4 pt-4 pb-4'}`}>
+          <div
+            className="h-0.5 w-full rounded-full mb-4 opacity-60"
+            style={{ background: `linear-gradient(90deg, transparent, ${accent}, transparent)` }}
+          />
+          {children}
         </main>
 
-        {/* Reusable Bet Panel */}
         {!hideBetPanel && (
-          <footer className="shrink-0 bg-[#242E4D] border-t border-white/5 shadow-[0_-4px_20px_rgba(0,0,0,0.5)] z-20">
-            <div className={`${isWide ? 'w-full' : ''}`}>
-              <BetPanel onPlaceBet={onPlaceBet} disabled={betDisabled} />
-            </div>
+          <footer className="shrink-0 border-t border-white/10 bg-casino-elevated/95 backdrop-blur-lg z-20 pb-safe">
+            {selectedLabel && (
+              <div className="px-4 pt-2 text-center">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-white/40">Selected: </span>
+                <span className="text-xs font-black text-casino-gold">{selectedLabel}</span>
+              </div>
+            )}
+            <BetPanel onPlaceBet={onPlaceBet} disabled={betDisabled} accent={accent} />
           </footer>
         )}
       </div>

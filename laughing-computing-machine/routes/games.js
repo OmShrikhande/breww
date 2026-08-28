@@ -1,6 +1,6 @@
 const express = require('express');
 const { getGames, getGameById, updateSettings, updateStatus, bulkStatus } = require('../controllers/gamesController');
-const { getCurrent, getBetDistribution, declare, getHistory, getRoundDetail, startNew } = require('../controllers/roundController');
+const { getCurrent, getBetDistribution, getUpcoming, declare, getHistory, getRoundDetail, startNew } = require('../controllers/roundController');
 const { authenticateAdmin } = require('../middleware/auth');
 const { requireAdminOrAbove, validateId } = require('../middleware/validate');
 
@@ -15,6 +15,7 @@ router.patch('/:id/status', validateId(), requireAdminOrAbove, updateStatus);
 router.post('/bulk-status', requireAdminOrAbove, bulkStatus);
 
 router.get('/:id/round/current', validateId(), getCurrent);
+router.get('/:id/round/upcoming', validateId(), getUpcoming);
 router.get('/:id/round/bet-distribution', validateId(), getBetDistribution);
 router.post('/:id/round/declare', validateId(), requireAdminOrAbove, declare);
 router.get('/:id/round/history', validateId(), getHistory);

@@ -45,6 +45,43 @@
   padding-bottom: env(safe-area-inset-bottom);
 }
 
+/* ─── Game UI system ─── */
+.game-shell-bg {
+  background: radial-gradient(ellipse 120% 80% at 50% -20%, rgba(79, 142, 247, 0.12), transparent),
+    linear-gradient(180deg, #0a1020 0%, #0f1629 50%, #0a0e18 100%);
+}
+
+.game-glass {
+  background: rgba(20, 30, 56, 0.75);
+  backdrop-filter: blur(12px);
+}
+
+.bet-chip {
+  @apply rounded-xl font-black uppercase tracking-wide transition-all duration-200 active:scale-95;
+}
+
+.bet-chip--selected {
+  @apply ring-2 ring-casino-gold shadow-glow-gold scale-[1.02];
+}
+
+.bet-chip--disabled {
+  @apply opacity-40 pointer-events-none;
+}
+
+.game-section-title {
+  @apply text-[11px] font-black uppercase tracking-[0.2em] text-white/45 mb-3;
+}
+
+@keyframes result-pop {
+  0% { transform: scale(0.8); opacity: 0; }
+  60% { transform: scale(1.05); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.result-pop {
+  animation: result-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
 .auth-input {
   height: 3.75rem;
   border-radius: 1rem;

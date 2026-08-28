@@ -6,6 +6,7 @@ import GamesPage from './pages/GamesPage';
 import UsersPage from './pages/UsersPage';
 import AnalyticsPage from './pages/AnalyticsPage';
 import SettingsPage from './pages/SettingsPage';
+import TransactionsPage from './pages/TransactionsPage';
 import GameControlPage from './games/GameControlPage';
 import './AdminDashboard.css';
 
@@ -34,6 +35,7 @@ const AdminDashboard = () => {
       case 'games':     return <GamesPage onControlGame={setControlGame} />;
       case 'users':     return <UsersPage />;
       case 'analytics': return <AnalyticsPage />;
+      case 'transactions': return <TransactionsPage />;
       case 'settings':  return <SettingsPage />;
       default:          return <DashboardPage />;
     }

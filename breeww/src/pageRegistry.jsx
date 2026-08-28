@@ -4,6 +4,7 @@ import Home from './pages/Home';
 import Activity from './pages/Activity';
 import Bonuses from './pages/Bonuses';
 import Account from './pages/Account';
+import WalletPage from './pages/Wallet';
 import InviteWheel from './pages/InviteWheel';
 import Notifications from './pages/Notifications';
 import Login from './pages/Login';
@@ -46,7 +47,7 @@ const pageRegistry = {
   '/': withLayout(Home),
   '/activity': withLayout(Activity),
   '/promotion': withLayout(Bonuses),
-  '/wallet': withLayout(Account),
+  '/wallet': withLayout(WalletPage),
   '/account': withLayout(Account),
   '/invite-wheel': <InviteWheel />,
   '/notifications': <Notifications />,
