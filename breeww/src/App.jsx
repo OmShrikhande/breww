@@ -51,7 +51,6 @@ function App() {
         <Route path="/game/poker" element={<Poker />} />
         <Route path="/game/chamber-risk" element={<ChamberRisk />} />
         <Route path="/game/roulette" element={<Roulette />} />
-        <Route path="/game/Roulette" element={<Roulette />} />
       </Routes>
     </BrowserRouter>
   );

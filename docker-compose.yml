@@ -1,4 +1,5 @@
-# Local PostgreSQL for game-development (port 5433 avoids conflict with system Postgres on 5432)
+# Local PostgreSQL for game-development
+# NOTE: Stop native PostgreSQL service before starting Docker to avoid port 5432 conflict
 services:
   postgres:
     image: postgres:16-alpine
@@ -9,7 +10,7 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: games_db
     ports:
-      - "5433:5432"
+      - "5432:5432"
     volumes:
       - games_pg_data:/var/lib/postgresql/data
     healthcheck:

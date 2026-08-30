@@ -40,6 +40,14 @@ export default defineConfig({
         plinko: resolve(rootDir, 'game/plinko/index.html'),
         poker: resolve(rootDir, 'game/poker/index.html'),
         chamberRisk: resolve(rootDir, 'game/chamber-risk/index.html'),
+        roulette: resolve(rootDir, 'game/roulette/index.html'),
+      },
+      output: {
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          'vendor-motion': ['framer-motion'],
+          'vendor-physics': ['matter-js'],
+        },
       },
     },
   },

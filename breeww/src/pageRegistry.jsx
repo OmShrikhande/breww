@@ -63,7 +63,6 @@ const pageRegistry = {
   '/game/poker': <Poker />,
   '/game/chamber-risk': <ChamberRisk />,
   '/game/roulette': <Roulette />,
-  '/game/Roulette': <Roulette />,
 };
 
 const PageRoot = () => {
