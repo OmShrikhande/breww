@@ -12,9 +12,9 @@ const PlatformRecommendation = ({ games, loading, error, onRetry }) => {
       </div>
 
       {loading && (
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 gap-3.5">
           {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div key={i} className="aspect-[3/4] rounded-2xl bg-white/5 animate-pulse border border-white/5" />
+            <div key={i} className="h-48 rounded-2xl bg-white/5 animate-pulse border border-white/5" />
           ))}
         </div>
       )}
@@ -35,7 +35,7 @@ const PlatformRecommendation = ({ games, loading, error, onRetry }) => {
       )}
 
       {!loading && games.length > 0 && (
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 gap-3.5">
           {games.map((game) => (
             <GameCard key={game.id} game={game} />
           ))}
