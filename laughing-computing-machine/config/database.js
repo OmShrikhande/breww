@@ -17,9 +17,9 @@ if (process.env.DATABASE_URL) {
   poolConfig = {
     connectionString: process.env.DATABASE_URL,
     ...(local ? {} : { ssl: { rejectUnauthorized: false } }),
-    max: 20,
-    idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 5000,
+    max: Number(process.env.DB_POOL_MAX || 5),
+    idleTimeoutMillis: 10000,
+    connectionTimeoutMillis: 10000,
   };
 } else {
   // Local fallback (only if you install PostgreSQL locally)
