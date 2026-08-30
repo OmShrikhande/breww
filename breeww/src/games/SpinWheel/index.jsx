@@ -2,6 +2,8 @@ import React, { useState, useCallback, useMemo } from 'react';
 import { motion as Motion, AnimatePresence } from 'framer-motion';
 import { Wallet, History, Info, RotateCw } from 'lucide-react';
 import GameLayout from '../GameLayout';
+import { useAuth } from '../../context/AuthContext';
+import { navigateTo } from '../../lib/navigation';
 import { useWallet } from '../../hooks/useWallet';
 import { useBets } from '../../hooks/useBets';
 import { formatINR } from '../../utils/formatCurrency';
@@ -9,6 +11,7 @@ import WheelCanvas from './WheelCanvas';
 import WheelControls from './WheelControls';
 
 const SpinWheel = () => {
+  const { isAuthenticated } = useAuth();
   const { balance } = useWallet();
   const { addBet, clearBets } = useBets();
 
@@ -58,6 +61,10 @@ const SpinWheel = () => {
   }, [segments.length]);
 
   const handleSpin = useCallback(async (amount) => {
+    if (!isAuthenticated) {
+      navigateTo('/login');
+      return;
+    }
     if (amount <= 0 || isSpinning) return;
 
     setIsSpinning(true);

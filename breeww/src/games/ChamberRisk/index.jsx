@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion as Motion } from 'framer-motion';
 import { AlertTriangle, ShieldCheck, Sparkles, Volume2, VolumeX, Wallet, Zap } from 'lucide-react';
 import GameLayout from '../GameLayout';
+import { useAuth } from '../../context/AuthContext';
+import { navigateTo } from '../../lib/navigation';
 import { useWallet } from '../../hooks/useWallet';
 import { formatINR } from '../../utils/formatCurrency';
 import ChamberBoard from './ChamberBoard';
@@ -28,6 +30,7 @@ const cashoutParticles = Array.from({ length: 18 }, (_, index) => ({
 }));
 
 const ChamberRisk = () => {
+  const { isAuthenticated } = useAuth();
   const { balance } = useWallet();
   const [betAmount, setBetAmount] = useState(100);
   const [round, setRound] = useState(0);
@@ -86,6 +89,10 @@ const ChamberRisk = () => {
   };
 
   const handleStartGame = () => {
+    if (!isAuthenticated) {
+      navigateTo('/login');
+      return;
+    }
     if (!canStart) {
       setStatusLabel(
         betAmount > balance

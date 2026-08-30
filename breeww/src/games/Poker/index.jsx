@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { ChevronLeft, Menu, Sparkles, Users } from 'lucide-react';
 import GameLayout from '../GameLayout';
+import { useAuth } from '../../context/AuthContext';
 import { useWallet } from '../../hooks/useWallet';
 import { formatINR } from '../../utils/formatCurrency';
 import PokerTable from './PokerTable';
@@ -139,6 +140,7 @@ const actionMap = {
 };
 
 const Poker = () => {
+  const { isAuthenticated } = useAuth();
   const { balance } = useWallet();
   const [betAmount, setBetAmount] = useState(500);
   const [pot, setPot] = useState(1200);
@@ -167,6 +169,10 @@ const Poker = () => {
   };
 
   const handleAction = (actionId) => {
+    if (!isAuthenticated) {
+      navigateTo('/login');
+      return;
+    }
     const actionMeta = actionMap[actionId];
     const actionAmount = actionId === 'check' || actionId === 'fold' ? null : actionId === 'all-in' ? players[0].stack : betAmount;
 

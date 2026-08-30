@@ -2,6 +2,8 @@ import React, { useState, useCallback, useMemo, useRef } from 'react';
 import { motion as Motion, AnimatePresence } from 'framer-motion';
 import { Wallet, History, CheckCircle2, Info } from 'lucide-react';
 import GameLayout from '../GameLayout';
+import { useAuth } from '../../context/AuthContext';
+import { navigateTo } from '../../lib/navigation';
 import { useWallet } from '../../hooks/useWallet';
 import { useBets } from '../../hooks/useBets';
 import { formatINR } from '../../utils/formatCurrency';
@@ -9,6 +11,7 @@ import PlinkoBoard from './PlinkoBoard';
 import PlinkoControls from './PlinkoControls';
 
 const Plinko = () => {
+  const { isAuthenticated } = useAuth();
   const { balance } = useWallet();
   const { addBet, clearBets } = useBets();
   const boardRef = useRef(null);
@@ -49,6 +52,10 @@ const Plinko = () => {
   }, [rows, risk]);
 
   const handleDropBall = useCallback((amount) => {
+    if (!isAuthenticated) {
+      navigateTo('/login');
+      return;
+    }
     if (amount <= 0) return;
 
     boardRef.current.dropBall();
