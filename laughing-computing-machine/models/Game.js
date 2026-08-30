@@ -16,7 +16,7 @@ class Game {
         COALESCE(sd.win_rate,0) AS "winRate"
       FROM platform_games g
       LEFT JOIN game_settings gs ON gs.game_id = g.id
-      LEFT JOIN game_stats_daily sd ON sd.game_id = g.id AND sd.date = CURRENT_DATE
+      LEFT JOIN game_stats_daily sd ON sd.game_id = g.id AND sd."date" = CURRENT_DATE
       ORDER BY g.name
     `);
     return rows.map(r => ({
@@ -47,7 +47,7 @@ class Game {
         COALESCE(sd.win_rate,0) AS "winRate"
       FROM platform_games g
       LEFT JOIN game_settings gs ON gs.game_id = g.id
-      LEFT JOIN game_stats_daily sd ON sd.game_id = g.id AND sd.date = CURRENT_DATE
+      LEFT JOIN game_stats_daily sd ON sd.game_id = g.id AND sd."date" = CURRENT_DATE
       WHERE g.id = $1
     `, [id]);
     if (!rows[0]) return null;
@@ -121,7 +121,7 @@ class Game {
              COALESCE(sd.players_online,0) AS "playersOnline",
              COALESCE(sd.revenue,0) AS "revenueToday"
       FROM platform_games g
-      LEFT JOIN game_stats_daily sd ON sd.game_id = g.id AND sd.date = CURRENT_DATE
+      LEFT JOIN game_stats_daily sd ON sd.game_id = g.id AND sd."date" = CURRENT_DATE
       ORDER BY sd.revenue DESC NULLS LAST
     `);
     return rows;

@@ -30,9 +30,10 @@ const Header = ({ activePage, onToggleMobileSidebar }) => {
   const loadNotifications = useCallback(async () => {
     try {
       const [listRes, unreadRes] = await Promise.all([
-        apiService.get(`${API_ENDPOINTS.NOTIFICATIONS}?limit=10`),
-        apiService.get(API_ENDPOINTS.NOTIFICATIONS_UNREAD),
+        apiService.get(`${API_ENDPOINTS.NOTIFICATIONS}?limit=10`, {}, { silent: true }),
+        apiService.get(API_ENDPOINTS.NOTIFICATIONS_UNREAD, {}, { silent: true }),
       ]);
+      if (!listRes || !unreadRes) return;
       const rows = listRes.data?.notifications || listRes.data || [];
       setNotifications(
         (Array.isArray(rows) ? rows : []).map((n) => ({
@@ -50,7 +51,7 @@ const Header = ({ activePage, onToggleMobileSidebar }) => {
 
   useEffect(() => {
     loadNotifications();
-    const t = setInterval(loadNotifications, 30000);
+    const t = setInterval(loadNotifications, 60000);
     return () => clearInterval(t);
   }, [loadNotifications]);
 

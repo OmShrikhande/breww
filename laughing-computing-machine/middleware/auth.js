@@ -36,6 +36,9 @@ const authenticateAdmin = async (req, res, next) => {
     if (error.name === 'JsonWebTokenError') {
       return res.status(401).json({ success: false, message: 'Invalid token' });
     }
+    if (error.code === 'ECONNREFUSED' || error.code === '57P01' || error.message?.includes('connect')) {
+      return res.status(503).json({ success: false, message: 'Database temporarily unavailable' });
+    }
     console.error('Auth error:', error);
     return res.status(500).json({ success: false, message: 'Internal server error' });
   }

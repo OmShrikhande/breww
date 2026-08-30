@@ -31,10 +31,20 @@ const loginLimiter = rateLimit({
 
 const apiLimiter = rateLimit({
   windowMs: 60 * 1000,
-  max: parseInt(process.env.API_RATE_LIMIT) || 60,
+  max: parseInt(process.env.API_RATE_LIMIT, 10) || 300,
   standardHeaders: true,
   legacyHeaders: false,
-  message: { success: false, message: 'Rate limit exceeded' }
+  skip: (req) => {
+    if (req.method !== 'GET') return false;
+    const path = req.originalUrl || req.url || '';
+    return (
+      path.includes('/api/dashboard/')
+      || path.includes('/api/notifications')
+      || path.includes('/api/auth/me')
+      || path.includes('/api/games')
+    );
+  },
+  message: { success: false, message: 'Rate limit exceeded' },
 });
 
 const checkBruteForce = async (req, res, next) => {
