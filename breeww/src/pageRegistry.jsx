@@ -19,6 +19,7 @@ import Plinko from './games/Plinko';
 import Poker from './games/Poker';
 import ChamberRisk from './games/ChamberRisk';
 import Roulette from './games/Roulette';
+import AndarBahar from './games/AndarBahar';
 import { normalizePath } from './lib/navigation';
 
 const withLayout = (PageComponent) => (
@@ -63,6 +64,7 @@ const pageRegistry = {
   '/game/poker': <Poker />,
   '/game/chamber-risk': <ChamberRisk />,
   '/game/roulette': <Roulette />,
+  '/game/andar-bahar': <AndarBahar />,
 };
 
 const PageRoot = () => {

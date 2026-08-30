@@ -23,9 +23,9 @@ const poolConfig = connectionString
   ? {
       connectionString,
       ...(localDb ? {} : { ssl: { rejectUnauthorized: false } }),
-      max: Number(getEnv('DB_POOL_MAX', '5')),
-      idleTimeoutMillis: 10000,
-      connectionTimeoutMillis: 10000,
+      max: Number(getEnv('DB_POOL_MAX', '10')),
+      idleTimeoutMillis: 15000,
+      connectionTimeoutMillis: 15000,
     }
   : {
       host: getEnv('DB_HOST', 'localhost'),

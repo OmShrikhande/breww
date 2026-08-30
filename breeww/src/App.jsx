@@ -5,6 +5,7 @@ import Home from './pages/Home';
 import Activity from './pages/Activity';
 import Bonuses from './pages/Bonuses';
 import Account from './pages/Account';
+import Wallet from './pages/Wallet';
 import InviteWheel from './pages/InviteWheel';
 import Notifications from './pages/Notifications';
 import Login from './pages/Login';
@@ -17,6 +18,7 @@ import Mines from './games/Mines';
 import SpinWheel from './games/SpinWheel';
 import Dice from './games/Dice';
 import DragonTiger from './games/DragonTiger';
+import AndarBahar from './games/AndarBahar';
 import Plinko from './games/Plinko';
 import Poker from './games/Poker';
 import ChamberRisk from './games/ChamberRisk';
@@ -30,7 +32,7 @@ function App() {
           <Route index element={<Home />} />
           <Route path="activity" element={<Activity />} />
           <Route path="promotion" element={<Bonuses />} />
-          <Route path="wallet" element={<Account />} />
+          <Route path="wallet" element={<Wallet />} />
           <Route path="account" element={<Account />} />
         </Route>
         
@@ -39,6 +41,10 @@ function App() {
         <Route path="/notifications" element={<Notifications />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/wallet" element={<Wallet />} />
+        <Route path="/account" element={<Account />} />
+        <Route path="/activity" element={<Activity />} />
+        <Route path="/promotion" element={<Bonuses />} />
         
         {/* Game Routes - Rendered without Layout for full-screen feel */}
         <Route path="/game/aviator" element={<Aviator />} />
@@ -47,6 +53,7 @@ function App() {
         <Route path="/game/spin-wheel" element={<SpinWheel />} />
         <Route path="/game/dice" element={<Dice />} />
         <Route path="/game/dragon-tiger" element={<DragonTiger />} />
+        <Route path="/game/andar-bahar" element={<AndarBahar />} />
         <Route path="/game/plinko" element={<Plinko />} />
         <Route path="/game/poker" element={<Poker />} />
         <Route path="/game/chamber-risk" element={<ChamberRisk />} />

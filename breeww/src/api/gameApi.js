@@ -16,7 +16,7 @@ export const submitBet = async (betData) => {
 
 export const submitRouletteBet = async (bets, { signal } = {}) => {
   const token = localStorage.getItem('player_token');
-  const url = `${apiBaseUrl}/roulette/bet`;
+  const url = `${apiBaseUrl}/games/roulette/bet`;
   const response = await fetch(url, {
     method: 'POST',
     credentials: 'include',

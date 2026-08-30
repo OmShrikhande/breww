@@ -13,6 +13,7 @@ import BetHistory from './BetHistory';
 
 const chipValues = [10, 50, 100, 500];
 const chipStackOrder = [500, 100, 50, 10];
+const rouletteEndpoint = '/games/roulette/bet';
 
 const createTimestampLabel = (date = new Date()) =>
   date.toLocaleTimeString('en-IN', {
@@ -214,8 +215,7 @@ const Roulette = () => {
     }));
 
     try {
-      const response = await submitRouletteBets({
-        bets: payloadBets,
+      const response = await submitRouletteBet(payloadBets, {
         signal: abortControllerRef.current.signal,
       });
       const result = normalizeResult(response);

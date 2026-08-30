@@ -117,7 +117,7 @@ router.post('/abandon', authenticatePlayer, async (req, res) => {
 router.post('/start', authenticatePlayer, async (req, res) => {
   const client = await pool.connect();
   try {
-    const amount = Number(req.body?.amount);
+    const amount = Number(req.body?.amount ?? req.body?.betAmount);
     const mineCount = Number(req.body?.mineCount ?? 3);
     if (!Number.isFinite(amount) || amount < 10) return err(res, 'Minimum bet is ₹10');
     if (!Number.isInteger(mineCount) || mineCount < 1 || mineCount > 24) {
@@ -260,28 +260,33 @@ router.post('/cashout', authenticatePlayer, async (req, res) => {
       return err(res, 'Reveal at least one safe tile first', 400);
     }
 
-    const outcome = resolveCashout(session);
+    const betAmount = Number(session.bet_amount);
+    const mineCount = session.mine_count;
+    const multiplier = calcMultiplier(mineCount, revealed.length);
+    const payout = Math.floor(betAmount * multiplier * 100) / 100;
+
+    const newBalance = await walletDelta(client, req.user.id, payout, 'win', 'mines cashout', 'mines');
+    const minePositions = session.mine_positions || [];
 
     await client.query(
-      `UPDATE mines_sessions SET mine_positions = $1, status = 'lost', payout = 0, ended_at = NOW() WHERE id = $2`,
-      [JSON.stringify(outcome.newMineLayout), sessionId]
+      `UPDATE mines_sessions SET status = 'won', payout = $1, ended_at = NOW() WHERE id = $2`,
+      [payout, sessionId]
     );
     await client.query(
-      `UPDATE game_bets SET status = 'settled', payout = 0, result = '{}'
-       WHERE user_id = $1 AND game_id = 'mines' AND status = 'pending'
-       AND (bet_payload->>'sessionId')::int = $2`,
-      [req.user.id, sessionId]
+      `UPDATE game_bets SET status = 'settled', payout = $1, result = $2
+       WHERE user_id = $3 AND game_id = 'mines' AND status = 'pending'
+       AND (bet_payload->>'sessionId')::int = $4`,
+      [payout, JSON.stringify({ payout, multiplier, revealedTiles: revealed }), req.user.id, sessionId]
     );
-    const bal = await client.query('SELECT balance FROM users WHERE id = $1', [req.user.id]);
     await client.query('COMMIT');
 
     return ok(res, {
-      status: 'lost',
-      forcedLoss: true,
-      hitMine: true,
-      minePositions: outcome.minePositions,
-      revealedTiles: outcome.revealedTiles,
-      balance: Number(bal.rows[0].balance),
+      status: 'won',
+      payout,
+      multiplier,
+      revealedTiles: revealed,
+      minePositions,
+      balance: newBalance,
     });
   } catch (e) {
     await client.query('ROLLBACK');
