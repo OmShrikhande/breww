@@ -144,7 +144,12 @@ export const AuthProvider = ({ children }) => {
       setLoginAttempts((prev) => prev + 1);
       if (error.message.includes('fetch') || error.message.includes('Failed to fetch')) {
         throw new Error(
-          'Unable to connect to server. Ensure laughing-computing-machine is running on http://localhost:3000.'
+          'Unable to connect to the admin API. Ensure the Render backend is running (https://breww-ysqj.onrender.com).'
+        );
+      }
+      if (error.message.includes('DEPLOYMENT_NOT_FOUND')) {
+        throw new Error(
+          'Wrong API URL — remove VITE_API_BASE_URL from Vercel if it points to a vercel.app URL. Redeploy after fixing env vars.'
         );
       }
       throw error;

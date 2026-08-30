@@ -1,4 +1,4 @@
-const BASE_URL = '';
+import API_BASE_URL from './apiBase';
 
 const authHeaders = () => {
   const token = localStorage.getItem('admin_token');
@@ -7,7 +7,7 @@ const authHeaders = () => {
 
 async function request(method, endpoint, { body, headers = {}, auth = true } = {}) {
   const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
-  const url = `${BASE_URL}${cleanEndpoint}`;
+  const url = `${API_BASE_URL}${cleanEndpoint}`;
 
   const response = await fetch(url, {
     method,
