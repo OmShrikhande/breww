@@ -11,7 +11,7 @@ class Analytics {
     const { rows } = await pool.query(`
       SELECT TO_CHAR(d::date,'Mon DD') AS label, COALESCE(SUM(s.revenue),0) AS revenue
       FROM generate_series(NOW()-($1 || ' days')::INTERVAL, NOW(), '1 day') d
-      LEFT JOIN game_stats_daily s ON s.date = d::date
+      LEFT JOIN game_stats_daily s ON s."date" = d::date
       GROUP BY d ORDER BY d
     `, [days]);
     return rows;
@@ -22,7 +22,7 @@ class Analytics {
     const { rows } = await pool.query(`
       SELECT TO_CHAR(d::date,'Mon DD') AS label, COALESCE(SUM(s.bets_count),0) AS bets
       FROM generate_series(NOW()-($1 || ' days')::INTERVAL, NOW(), '1 day') d
-      LEFT JOIN game_stats_daily s ON s.date = d::date
+      LEFT JOIN game_stats_daily s ON s."date" = d::date
       GROUP BY d ORDER BY d
     `, [days]);
     return rows;

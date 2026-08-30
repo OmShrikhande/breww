@@ -1,34 +1,66 @@
 const pool = require('../config/database');
 const Game = require('../models/Game');
 
+async function safeRow(query, params, fallback) {
+  try {
+    const { rows } = await pool.query(query, params);
+    return rows[0] || fallback;
+  } catch (error) {
+    console.error('Dashboard query failed:', error.message);
+    return fallback;
+  }
+}
+
 const getStats = async (req, res) => {
   try {
     const [rev, players, betsToday, games, pending] = await Promise.all([
-      pool.query(`SELECT COALESCE(SUM(revenue),0) AS total, COALESCE(SUM(revenue) FILTER (WHERE date = CURRENT_DATE - 1),0) AS yesterday FROM game_stats_daily`),
-      pool.query(`SELECT COALESCE(SUM(players_online),0) AS total FROM game_stats_daily WHERE date = CURRENT_DATE`),
-      pool.query(`SELECT COALESCE(SUM(bets_count),0) AS total FROM game_stats_daily WHERE date = CURRENT_DATE`),
-      pool.query(`SELECT COUNT(*) AS total, COUNT(*) FILTER (WHERE status='active') AS online FROM platform_games`),
-      pool.query(`SELECT COUNT(*) AS total FROM transactions WHERE status='pending' AND type='withdrawal'`)
+      safeRow(
+        `SELECT COALESCE(SUM(revenue),0) AS total,
+                COALESCE(SUM(revenue) FILTER (WHERE "date" = CURRENT_DATE - 1),0) AS yesterday
+         FROM game_stats_daily`,
+        [],
+        { total: 0, yesterday: 0 }
+      ),
+      safeRow(
+        `SELECT COALESCE(SUM(players_online),0) AS total FROM game_stats_daily WHERE "date" = CURRENT_DATE`,
+        [],
+        { total: 0 }
+      ),
+      safeRow(
+        `SELECT COALESCE(SUM(bets_count),0) AS total FROM game_stats_daily WHERE "date" = CURRENT_DATE`,
+        [],
+        { total: 0 }
+      ),
+      safeRow(
+        `SELECT COUNT(*) AS total, COUNT(*) FILTER (WHERE status='active') AS online FROM platform_games`,
+        [],
+        { total: 0, online: 0 }
+      ),
+      safeRow(
+        `SELECT COUNT(*) AS total FROM transactions WHERE status='pending' AND type='withdrawal'`,
+        [],
+        { total: 0 }
+      ),
     ]);
 
     res.json({
       success: true,
       data: {
-        totalRevenue: parseFloat(rev.rows[0].total),
-        activePlayers: parseInt(players.rows[0].total),
-        betsToday: parseInt(betsToday.rows[0].total),
+        totalRevenue: parseFloat(rev.total),
+        activePlayers: parseInt(players.total, 10),
+        betsToday: parseInt(betsToday.total, 10),
         avgWinRate: 47.3,
-        gamesOnline: parseInt(games.rows[0].online),
-        pendingIssues: parseInt(pending.rows[0].total),
+        gamesOnline: parseInt(games.online, 10),
+        pendingIssues: parseInt(pending.total, 10),
         changes: {
           totalRevenue: '+12.5%',
           activePlayers: '+8.2%',
           betsToday: '+5.1%',
           avgWinRate: '-1.2%',
           gamesOnline: '0%',
-          pendingIssues: '+2'
-        }
-      }
+          pendingIssues: '+2',
+        },
+      },
     });
   } catch (error) {
     console.error('Dashboard stats error:', error);
@@ -43,7 +75,7 @@ const weeklyRevenue = async (req, res) => {
              COALESCE(SUM(s.revenue), 0) AS revenue,
              COALESCE(SUM(s.bets_count), 0) AS bets
       FROM generate_series(NOW() - '6 days'::INTERVAL, NOW(), '1 day') d
-      LEFT JOIN game_stats_daily s ON s.date = d::date
+      LEFT JOIN game_stats_daily s ON s."date" = d::date
       GROUP BY d ORDER BY d
     `);
     res.json({ success: true, data: rows });
@@ -85,7 +117,7 @@ const gameStatus = async (req, res) => {
       SELECT g.id, g.name, g.icon, g.status,
              COALESCE(sd.players_online, 0) AS "playersOnline"
       FROM platform_games g
-      LEFT JOIN game_stats_daily sd ON sd.game_id = g.id AND sd.date = CURRENT_DATE
+      LEFT JOIN game_stats_daily sd ON sd.game_id = g.id AND sd."date" = CURRENT_DATE
       ORDER BY g.name
     `);
     res.json({ success: true, data: rows });

@@ -235,6 +235,11 @@ const initDb = async () => {
     try {
       await pool.query(query);
     } catch (err) {
+      const isMigration = /^(ALTER TABLE|UPDATE game_)/i.test(query.trim());
+      if (isMigration) {
+        console.warn(`Migration skipped: ${err.message}`);
+        continue;
+      }
       console.error(`Error executing query: ${query}`);
       throw err;
     }

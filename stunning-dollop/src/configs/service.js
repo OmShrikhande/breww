@@ -1,13 +1,13 @@
-import API_BASE_URL from './apiBase';
+import { getApiBaseUrl } from './apiBase';
 
 const authHeaders = () => {
   const token = localStorage.getItem('admin_token');
   return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
-async function request(method, endpoint, { body, headers = {}, auth = true } = {}) {
+async function request(method, endpoint, { body, headers = {}, auth = true, silent = false } = {}) {
   const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
-  const url = `${API_BASE_URL}${cleanEndpoint}`;
+  const url = `${getApiBaseUrl()}${cleanEndpoint}`;
 
   const response = await fetch(url, {
     method,
@@ -35,14 +35,19 @@ async function request(method, endpoint, { body, headers = {}, auth = true } = {
   }
 
   if (!response.ok) {
-    throw new Error(result.message || `Request failed (${response.status})`);
+    if (silent) return null;
+    const base = getApiBaseUrl() || window.location.origin;
+    const hint = response.status === 404
+      ? ` (404 — check API URL: ${base})`
+      : '';
+    throw new Error((result.message || `Request failed (${response.status})`) + hint);
   }
 
   return result;
 }
 
 const apiService = {
-  get: (endpoint, headers = {}) => request('GET', endpoint, { headers }),
+  get: (endpoint, headers = {}, options = {}) => request('GET', endpoint, { headers, ...options }),
   post: (endpoint, data, headers = {}, { auth = true } = {}) =>
     request('POST', endpoint, { body: data, headers, auth }),
   patch: (endpoint, data, headers = {}) => request('PATCH', endpoint, { body: data, headers }),

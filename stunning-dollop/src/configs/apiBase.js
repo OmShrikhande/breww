@@ -1,11 +1,21 @@
-/**
- * Admin API origin (no trailing slash).
- * - Local dev: empty string → Vite proxies /api to localhost:3000
- * - Production: Render backend (override with VITE_API_BASE_URL in Vercel if needed)
- */
-export const API_BASE_URL = (
-  import.meta.env.VITE_API_BASE_URL
-  || (import.meta.env.DEV ? '' : 'https://breww-ysqj.onrender.com')
-).replace(/\/$/, '');
+const PRODUCTION_API = 'https://breww-ysqj.onrender.com';
 
-export default API_BASE_URL;
+/**
+ * Resolve admin API origin at runtime (no trailing slash).
+ * - localhost → '' (Vite dev proxy handles /api)
+ * - vercel.app / production → Render backend
+ * - override with VITE_API_BASE_URL if needed
+ */
+export function getApiBaseUrl() {
+  const fromEnv = (import.meta.env.VITE_API_BASE_URL || '').trim();
+  if (fromEnv) return fromEnv.replace(/\/$/, '');
+
+  if (typeof window !== 'undefined') {
+    const host = window.location.hostname;
+    if (host === 'localhost' || host === '127.0.0.1') return '';
+  }
+
+  return PRODUCTION_API;
+}
+
+export default getApiBaseUrl;
