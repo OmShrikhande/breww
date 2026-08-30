@@ -174,7 +174,7 @@ const Mines = () => {
     try {
       const data = await cashoutMines(sessionId);
       setGameStatus('ended');
-      setLastWin(null);
+      setLastWin(data.payout);
       if (data.minePositions) {
         setTiles(buildTiles(data.revealedTiles || [], data.minePositions, true));
       }

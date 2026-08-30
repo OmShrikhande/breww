@@ -37,6 +37,7 @@ export default defineConfig({
         spinWheel: resolve(rootDir, 'game/spin-wheel/index.html'),
         dice: resolve(rootDir, 'game/dice/index.html'),
         dragonTiger: resolve(rootDir, 'game/dragon-tiger/index.html'),
+        andarBahar: resolve(rootDir, 'game/andar-bahar/index.html'),
         plinko: resolve(rootDir, 'game/plinko/index.html'),
         poker: resolve(rootDir, 'game/poker/index.html'),
         chamberRisk: resolve(rootDir, 'game/chamber-risk/index.html'),
