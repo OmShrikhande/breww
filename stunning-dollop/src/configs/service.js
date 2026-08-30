@@ -1,4 +1,5 @@
-const BASE_URL = '';
+/** Admin API base — empty in dev (Vite proxy + Vercel /api rewrite). Set VITE_API_BASE_URL to call backend directly. */
+const BASE_URL = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
 
 const authHeaders = () => {
   const token = localStorage.getItem('admin_token');

@@ -144,7 +144,7 @@ export const AuthProvider = ({ children }) => {
       setLoginAttempts((prev) => prev + 1);
       if (error.message.includes('fetch') || error.message.includes('Failed to fetch')) {
         throw new Error(
-          'Unable to connect to server. Ensure laughing-computing-machine is running on http://localhost:3000.'
+          'Unable to connect to the admin API. Check that the backend is running and VITE_API_BASE_URL (or Vercel /api rewrite) is configured.'
         );
       }
       throw error;
