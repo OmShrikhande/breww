@@ -39,51 +39,43 @@ Login: **`admin@gmail.com` / `admin123`**
 
 ## Deploy on Vercel
 
-This app is a static Vite SPA. API calls use relative `/api/*` paths, proxied to the Render backend via `vercel.json`.
+The admin UI calls the **Render backend directly** (`https://breww-ysqj.onrender.com/api/...`).  
+Do **not** use Vercel `/api` rewrites — they cause `DEPLOYMENT_NOT_FOUND` on login.
 
 ### 1. Import the repo
 
 1. Go to [vercel.com/new](https://vercel.com/new)
 2. Import the `game-development` repository
 3. Set **Root Directory** to `stunning-dollop`
-4. Framework Preset: **Vite** (auto-detected from `vercel.json`)
+4. Framework Preset: **Vite**
 
-### 2. Build settings (defaults)
+### 2. Environment variables
 
-| Setting | Value |
-|---------|--------|
-| Build Command | `npm run build` |
-| Output Directory | `dist` |
-| Install Command | `npm install` |
+**Leave `VITE_API_BASE_URL` unset** unless you use a different backend.
 
-### 3. Environment variables (optional)
+| Variable | Value |
+|----------|--------|
+| *(none required)* | Production build defaults to `https://breww-ysqj.onrender.com` |
 
-Usually **not required** — `vercel.json` rewrites `/api` to the Render backend.
+If you previously set `VITE_API_BASE_URL` to a `*.vercel.app` URL, **delete it** and redeploy.
 
-Set only if you use a different backend URL **without** editing `vercel.json`:
+### 3. Redeploy
 
-| Variable | Example |
-|----------|---------|
-| `VITE_API_BASE_URL` | `https://your-backend.onrender.com` |
-
-Do **not** include `/api` in the value (endpoints already start with `/api`).
+After changing env vars: **Deployments → ⋯ → Redeploy** (must rebuild for Vite env to apply).
 
 ### 4. Backend CORS
 
-`laughing-computing-machine` allows all `*.vercel.app` origins automatically. No extra CORS config needed for Vercel previews/production.
+`laughing-computing-machine` on Render allows all `*.vercel.app` origins automatically.
 
 ### 5. Custom backend URL
 
-Update the rewrite destination in `vercel.json`:
+Set in Vercel → Settings → Environment Variables:
 
-```json
-{
-  "source": "/api/:path*",
-  "destination": "https://YOUR-BACKEND.onrender.com/api/:path*"
-}
+```
+VITE_API_BASE_URL=https://YOUR-BACKEND.onrender.com
 ```
 
-Or set `VITE_API_BASE_URL` in Vercel and remove/ignore the rewrite.
+No trailing slash, no `/api` suffix.
 
 ### 6. Deploy via CLI
 
