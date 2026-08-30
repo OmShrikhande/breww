@@ -6,7 +6,7 @@ import { navigateTo } from '../lib/navigation';
 
 const methodOptions = [
   { id: 'phone', label: 'Phone number', icon: Smartphone, prefix: '+91' },
-  { id: 'email', label: 'Email address', icon: Mail, prefix: '@' },
+  { id: 'email', label: 'Email address', icon: Mail, prefix: null },
 ];
 
 const AuthField = ({
@@ -20,13 +20,13 @@ const AuthField = ({
   rightSlot,
 }) => (
   <label className="block">
-    <div className="mb-3 flex items-center gap-2 font-medium text-white">
+    <div className="mb-2 flex items-center gap-2 font-medium text-white">
       <Icon size={18} className="text-[#58acff]" />
-      <span className="text-lg">{label}</span>
+      <span className="text-base">{label}</span>
     </div>
-    <div className="flex gap-3">
+    <div className="flex gap-2">
       {prefix ? (
-        <div className="flex h-[3.75rem] min-w-[6.2rem] items-center justify-center rounded-2xl bg-[#353d86] px-4 text-xl text-blue-100/90">
+        <div className="flex h-[3.5rem] min-w-[4.8rem] items-center justify-center rounded-2xl bg-[#353d86] px-3 text-lg font-bold text-blue-100">
           {prefix}
         </div>
       ) : null}
@@ -37,6 +37,7 @@ const AuthField = ({
           onChange={onChange}
           placeholder={placeholder}
           className="auth-input w-full pr-12"
+          autoComplete={type === 'password' ? 'current-password' : 'username'}
         />
         {rightSlot ? (
           <div className="absolute inset-y-0 right-4 flex items-center text-white/60">{rightSlot}</div>
@@ -56,14 +57,34 @@ const Login = () => {
   const [busy, setBusy] = useState(false);
   const selectedMethod = methodOptions.find((option) => option.id === method);
 
-  const onSubmit = async () => {
+  const onSubmit = async (e) => {
+    if (e) e.preventDefault();
     setError('');
+
+    const raw = identifier.trim();
+    if (!raw) {
+      setError(method === 'phone' ? 'Please enter your 10-digit mobile number' : 'Please enter your email address');
+      return;
+    }
+    if (method === 'phone' && raw.replace(/\D/g, '').length < 10) {
+      setError('Please enter a valid 10-digit mobile number');
+      return;
+    }
+    if (method === 'email' && !raw.includes('@')) {
+      setError('Please enter a valid email address');
+      return;
+    }
+    if (!password) {
+      setError('Please enter your password');
+      return;
+    }
+
     setBusy(true);
     try {
-      await login({ method, identifier, password });
+      await login({ method, identifier: raw, password });
       navigateTo('/');
     } catch (err) {
-      setError(err.message || 'Login failed');
+      setError(err.message || 'Login failed. Please check your credentials.');
     } finally {
       setBusy(false);
     }
@@ -74,17 +95,20 @@ const Login = () => {
       title="Login"
       subtitle="Sign in with your phone number or email"
       icon={LogIn}
-      sectionTitle={`Login with your ${method}`}
+      sectionTitle={`Login with your ${method === 'phone' ? 'Phone Number' : 'Email'}`}
       altPrompt="No account yet"
       altLinkLabel="Register"
       altLinkTo="/register"
     >
-      <div className="grid grid-cols-2 gap-3 rounded-[1.4rem] bg-[#2b3270] p-1.5">
+      <div className="grid grid-cols-2 gap-3 rounded-[1.4rem] bg-[#2b3270] p-1.5 mb-2">
         {methodOptions.map((option) => (
           <button
             key={option.id}
             type="button"
-            onClick={() => setMethod(option.id)}
+            onClick={() => {
+              setMethod(option.id);
+              setError('');
+            }}
             className={`rounded-[1rem] px-4 py-3 text-sm font-semibold transition ${
               method === option.id
                 ? 'bg-[#4aa4ff] text-white shadow-[0_10px_24px_rgba(53,134,255,0.35)]'
@@ -96,39 +120,49 @@ const Login = () => {
         ))}
       </div>
 
-      <AuthField
-        label={selectedMethod.label}
-        icon={selectedMethod.icon}
-        placeholder={`Please enter the ${method === 'phone' ? 'phone number' : 'email address'}`}
-        prefix={selectedMethod.prefix}
-        value={identifier}
-        onChange={(event) => setIdentifier(event.target.value)}
-      />
+      <form onSubmit={onSubmit} className="flex flex-col gap-4">
+        <AuthField
+          label={selectedMethod.label}
+          icon={selectedMethod.icon}
+          placeholder={method === 'phone' ? 'Enter 10-digit mobile number' : 'Enter email (e.g. name@domain.com)'}
+          prefix={selectedMethod.prefix}
+          value={identifier}
+          onChange={(event) => setIdentifier(event.target.value)}
+        />
 
-      <AuthField
-        label="Password"
-        icon={LockKeyhole}
-        type={showPassword ? 'text' : 'password'}
-        placeholder="Enter password"
-        value={password}
-        onChange={(event) => setPassword(event.target.value)}
-        rightSlot={
-          <button type="button" onClick={() => setShowPassword((value) => !value)} aria-label="Toggle password visibility">
-            {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-          </button>
-        }
-      />
+        <AuthField
+          label="Password"
+          icon={LockKeyhole}
+          type={showPassword ? 'text' : 'password'}
+          placeholder="Enter password"
+          value={password}
+          onChange={(event) => setPassword(event.target.value)}
+          rightSlot={
+            <button
+              type="button"
+              onClick={() => setShowPassword((value) => !value)}
+              aria-label="Toggle password visibility"
+              className="hover:text-white transition-colors"
+            >
+              {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+            </button>
+          }
+        />
 
-      {error ? <p className="text-sm text-red-300">{error}</p> : null}
+        {error ? (
+          <div className="rounded-xl bg-red-500/15 border border-red-500/30 px-3 py-2 text-xs font-semibold text-red-200">
+            {error}
+          </div>
+        ) : null}
 
-      <button
-        type="button"
-        className="auth-primary-button mt-4 w-full"
-        disabled={busy}
-        onClick={onSubmit}
-      >
-        {busy ? 'Signing in…' : 'Login'}
-      </button>
+        <button
+          type="submit"
+          className="auth-primary-button mt-2 w-full"
+          disabled={busy}
+        >
+          {busy ? 'Signing in…' : 'Login'}
+        </button>
+      </form>
     </AuthShell>
   );
 };

@@ -3,6 +3,8 @@ import { AnimatePresence, motion as Motion } from 'framer-motion';
 import { AlertCircle, BarChart3, CheckCircle2, LoaderCircle, Volume2, VolumeX } from 'lucide-react';
 import GameLayout from '../GameLayout';
 import { submitRouletteBet } from '../../api/gameApi';
+import { useAuth } from '../../context/AuthContext';
+import { navigateTo } from '../../lib/navigation';
 import { useWallet } from '../../hooks/useWallet';
 import { formatINR } from '../../utils/formatCurrency';
 import RouletteBoard from './RouletteBoard';
@@ -69,6 +71,7 @@ const buildChipStack = (amount) => {
 const submitRouletteBets = async ({ bets, signal }) => submitRouletteBet(bets, { signal });
 
 const Roulette = () => {
+  const { isAuthenticated } = useAuth();
   const { balance, refreshBalance, setBalance } = useWallet();
   const [selectedChip, setSelectedChip] = useState(chipValues[0]);
   const [bets, setBets] = useState([]);
@@ -194,6 +197,11 @@ const Roulette = () => {
   );
 
   const handleSpin = useCallback(async () => {
+    if (!isAuthenticated) {
+      navigateTo('/login');
+      return;
+    }
+
     if (!canSpin || isSpinning) {
       if (totalBet > balance) {
         setErrorMessage('Total bet exceeds wallet balance.');

@@ -11,9 +11,9 @@ const { getEnv } = require('../config/env');
 const router = express.Router();
 
 const loginLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000,
-  max: 30,
-  message: { success: false, message: 'Too many login attempts' },
+  windowMs: 15 * 60 * 1000,
+  max: 60,
+  message: { success: false, message: 'Too many requests. Please try again in a few minutes.' },
 });
 
 const signToken = (userId) =>
@@ -41,43 +41,74 @@ const createSession = async (userId, token, req) => {
   return expiresAt;
 };
 
+function parseAuthIdentifier(method, rawIdentifier) {
+  const raw = String(rawIdentifier || '').trim();
+  if (!raw) return { error: 'Phone number or email is required' };
+
+  // Explicit email or contains '@'
+  if (raw.includes('@') || method === 'email') {
+    const email = raw.toLowerCase();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return { error: 'Please enter a valid email address (e.g. name@example.com)' };
+    }
+    return { type: 'email', email, phone: null };
+  }
+
+  // Phone number (10 digits, handling +91 prefix, leading 0, spaces)
+  const digits = raw.replace(/\D/g, '');
+  if (digits.length >= 10) {
+    const phone = digits.slice(-10);
+    return { type: 'phone', phone, email: null };
+  }
+
+  if (method === 'phone') {
+    return { error: 'Please enter a valid 10-digit mobile number' };
+  }
+
+  return { error: 'Please enter a valid mobile number or email address' };
+}
+
 router.post('/register', loginLimiter, async (req, res) => {
   try {
     const { method = 'email', identifier, password, inviteCode } = req.body || {};
-    if (!identifier || !password) return err(res, 'Identifier and password are required');
-    if (String(password).length < 6) return err(res, 'Password must be at least 6 characters');
+    if (!identifier || !password) return err(res, 'Identifier and password are required', 400);
+    if (String(password).length < 6) return err(res, 'Password must be at least 6 characters', 400);
 
-    const isPhone = method === 'phone' || /^\d{8,15}$/.test(String(identifier).replace(/\D/g, ''));
-    const email = isPhone ? null : String(identifier).trim().toLowerCase();
-    const phone = isPhone ? String(identifier).replace(/\D/g, '').slice(-10) : null;
-    const username = email
-      ? email.split('@')[0].slice(0, 40)
-      : `user_${phone}`;
+    const parsed = parseAuthIdentifier(method, identifier);
+    if (parsed.error) return err(res, parsed.error, 400);
+
+    const { email, phone } = parsed;
 
     if (email) {
-      const exists = await pool.query('SELECT id FROM users WHERE email = $1', [email]);
-      if (exists.rows.length) return err(res, 'Email already registered', 409);
+      const exists = await pool.query('SELECT id FROM users WHERE LOWER(email) = $1', [email]);
+      if (exists.rows.length) return err(res, 'This email is already registered. Please log in.', 409);
     }
     if (phone) {
       const exists = await pool.query('SELECT id FROM users WHERE phone = $1', [phone]);
-      if (exists.rows.length) return err(res, 'Phone already registered', 409);
+      if (exists.rows.length) return err(res, 'This phone number is already registered. Please log in.', 409);
     }
 
     const hash = await bcrypt.hash(password, 10);
     const seedBalance = Number(getEnv('SEED_BALANCE', '10000')) || 10000;
-    const baseUser = username;
-    let finalUsername = baseUser;
-    for (let i = 0; i < 5; i += 1) {
+    
+    // Generate clean username
+    const baseUsername = email
+      ? email.split('@')[0].replace(/[^a-zA-Z0-9_]/g, '').slice(0, 15)
+      : `user_${phone.slice(-4)}`;
+
+    let finalUsername = baseUsername || `player_${Date.now().toString().slice(-4)}`;
+    for (let i = 0; i < 10; i++) {
       const check = await pool.query('SELECT id FROM users WHERE username = $1', [finalUsername]);
       if (!check.rows.length) break;
-      finalUsername = `${baseUser}${Math.floor(Math.random() * 9000 + 1000)}`;
+      finalUsername = `${baseUsername}_${Math.floor(Math.random() * 9000 + 1000)}`;
     }
 
     const inserted = await pool.query(
       `INSERT INTO users (username, email, phone, password_hash, balance, invite_code)
        VALUES ($1, $2, $3, $4, $5, $6)
        RETURNING id, username, email, phone, balance, vip_level, status`,
-      [finalUsername, email, phone, hash, seedBalance, inviteCode || null]
+      [finalUsername, email || null, phone || null, hash, seedBalance, inviteCode || null]
     );
 
     const user = inserted.rows[0];
@@ -87,31 +118,31 @@ router.post('/register', loginLimiter, async (req, res) => {
     return ok(res, { token, expiresAt, user: publicUser(user) }, 201);
   } catch (e) {
     console.error('Register error:', e.message);
-    return err(res, e.message || 'Registration failed', 500);
+    return err(res, e.message || 'Registration failed. Please try again.', 500);
   }
 });
 
 router.post('/login', loginLimiter, async (req, res) => {
   try {
     const { method = 'email', identifier, password } = req.body || {};
-    if (!identifier || !password) return err(res, 'Identifier and password are required');
+    if (!identifier || !password) return err(res, 'Identifier and password are required', 400);
 
-    const isPhone = method === 'phone' || /^\d{8,15}$/.test(String(identifier).replace(/\D/g, ''));
+    const parsed = parseAuthIdentifier(method, identifier);
+    if (parsed.error) return err(res, parsed.error, 400);
+
     let result;
-    if (isPhone) {
-      const phone = String(identifier).replace(/\D/g, '').slice(-10);
-      result = await pool.query('SELECT * FROM users WHERE phone = $1 LIMIT 1', [phone]);
+    if (parsed.phone) {
+      result = await pool.query('SELECT * FROM users WHERE phone = $1 OR username = $1 LIMIT 1', [parsed.phone]);
     } else {
-      const email = String(identifier).trim().toLowerCase();
-      result = await pool.query('SELECT * FROM users WHERE email = $1 LIMIT 1', [email]);
+      result = await pool.query('SELECT * FROM users WHERE LOWER(email) = $1 OR username = $1 LIMIT 1', [parsed.email]);
     }
 
-    if (!result.rows.length) return err(res, 'Invalid credentials', 401);
+    if (!result.rows.length) return err(res, 'Invalid mobile number/email or password', 401);
     const user = result.rows[0];
-    if (user.status !== 'active') return err(res, 'Account not active', 403);
+    if (user.status !== 'active') return err(res, 'Account suspended or inactive. Please contact support.', 403);
 
     const match = await bcrypt.compare(password, user.password_hash);
-    if (!match) return err(res, 'Invalid credentials', 401);
+    if (!match) return err(res, 'Invalid mobile number/email or password', 401);
 
     const token = signToken(user.id);
     const expiresAt = await createSession(user.id, token, req);
@@ -120,7 +151,7 @@ router.post('/login', loginLimiter, async (req, res) => {
     return ok(res, { token, expiresAt, user: publicUser(user) });
   } catch (e) {
     console.error('Login error:', e.message);
-    return err(res, 'Login failed', 500);
+    return err(res, 'Login failed. Please check your credentials.', 500);
   }
 });
 
@@ -148,7 +179,7 @@ router.get('/me', authenticatePlayer, async (req, res) => {
 router.post('/logout', authenticatePlayer, async (req, res) => {
   try {
     await pool.query('DELETE FROM player_sessions WHERE token_hash = $1', [hashToken(req.token)]);
-    return ok(res, { message: 'Logged out' });
+    return ok(res, { message: 'Logged out successfully' });
   } catch (e) {
     return err(res, 'Logout failed', 500);
   }
