@@ -1,16 +1,16 @@
 import React from 'react';
 
 const COLORS = [
-  { value: 'Green', bg: 'from-emerald-600 to-emerald-800', ring: 'ring-emerald-400' },
-  { value: 'Violet', bg: 'from-violet-600 to-purple-800', ring: 'ring-violet-400' },
-  { value: 'Red', bg: 'from-rose-600 to-red-800', ring: 'ring-rose-400' },
+  { value: 'Green', bg: 'from-emerald-600 to-emerald-800', ring: 'ring-emerald-400', mult: '2×' },
+  { value: 'Violet', bg: 'from-violet-600 to-purple-800', ring: 'ring-violet-400', mult: '4.5×' },
+  { value: 'Red', bg: 'from-rose-600 to-red-800', ring: 'ring-rose-400', mult: '2×' },
 ];
 
 const ColorBoard = ({ selectedBet, onSelectBet, disabled }) => (
   <div>
     <p className="game-section-title">Pick a colour</p>
     <div className="grid grid-cols-3 gap-3">
-      {COLORS.map(({ value, bg, ring }) => {
+      {COLORS.map(({ value, bg, ring, mult }) => {
         const selected = selectedBet?.type === 'color' && selectedBet?.value === value;
         return (
           <button
@@ -23,7 +23,7 @@ const ColorBoard = ({ selectedBet, onSelectBet, disabled }) => (
             } ${disabled ? 'bet-chip--disabled' : ''}`}
           >
             {value}
-            <span className="block text-[10px] font-bold opacity-70 mt-1">2×</span>
+            <span className="block text-[10px] font-bold opacity-70 mt-1">{mult}</span>
           </button>
         );
       })}

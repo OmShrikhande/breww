@@ -64,6 +64,11 @@ export function useRoundBetting(gameId) {
       setBetError('Please enter a valid bet amount.');
       return false;
     }
+    const totalStake = amount * bets.length;
+    if (totalStake > balance) {
+      setBetError(`Insufficient balance for ${bets.length} bets (₹${totalStake}).`);
+      return false;
+    }
     if (!bettingOpen) {
       setBetError('Betting window closed for this round. Next round starting shortly…');
       return false;
@@ -85,7 +90,7 @@ export function useRoundBetting(gameId) {
     } finally {
       setPlacing(false);
     }
-  }, [gameId, isAuthenticated, refreshBalance]);
+  }, [gameId, isAuthenticated, balance, refreshBalance]);
 
   return { placeBet, placeMultipleBets, betError, betSuccess, placing, clearError: () => setBetError('') };
 }
