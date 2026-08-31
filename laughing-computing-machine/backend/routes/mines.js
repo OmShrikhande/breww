@@ -12,6 +12,7 @@ const {
   resolveReveal,
   resolveCashout,
 } = require('../helpers/minesEngine');
+const { broadcastBalance } = require('../../services/websocketServer');
 
 const router = express.Router();
 
@@ -279,6 +280,8 @@ router.post('/cashout', authenticatePlayer, async (req, res) => {
       [payout, JSON.stringify({ payout, multiplier, revealedTiles: revealed }), req.user.id, sessionId]
     );
     await client.query('COMMIT');
+
+    broadcastBalance(req.user.id, newBalance);
 
     return ok(res, {
       status: 'won',

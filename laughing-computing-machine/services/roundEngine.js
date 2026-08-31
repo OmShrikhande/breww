@@ -2,6 +2,7 @@ const pool = require('../config/database');
 const Round = require('../models/Round');
 const { ROUND_DRIVEN_GAMES, pickAutoWinner } = require('../utils/gameCatalog');
 const { generateCrashPoint, multiplierAtElapsed, normalizeCrashPoint, elapsedForMultiplier, isValidCrash } = require('../backend/helpers/aviatorEngine');
+const { broadcastAviator, broadcastGame } = require('./websocketServer');
 
 const PREVIEW_SECONDS = 10;
 const AVIATOR_BET_SECONDS = 15;
@@ -158,6 +159,13 @@ async function tickAviator(game) {
       if (elapsed >= requiredElapsed || mult >= crash) {
         try {
           await Round.finalizeAviatorRound(flying.rows[0].id, String(crash), !manualMode);
+          broadcastAviator({
+            type: 'ROUND_PHASE',
+            phase: 'crashed',
+            roundId: Number(flying.rows[0].id),
+            crashPoint: crash,
+            declaredAt: Date.now(),
+          });
         } catch {
           // Ignore
         }
@@ -216,6 +224,23 @@ async function tickAviator(game) {
          WHERE id = $2 AND status = 'open'`,
         [String(crash), roundId]
       );
+
+      broadcastAviator({
+        type: 'ROUND_PHASE',
+        phase: 'flying',
+        roundId: Number(roundId),
+        crashPoint: crash,
+        flightElapsed: 0,
+        flyingStartedAt: Date.now(),
+      });
+    } else if (seconds_left != null && seconds_left > 0) {
+      broadcastAviator({
+        type: 'ROUND_PHASE',
+        phase: 'betting',
+        roundId: Number(roundId),
+        timerLeft: seconds_left,
+        betWindowSeconds: betSeconds,
+      });
     }
   } catch {
     // Graceful error handler
@@ -245,8 +270,15 @@ async function tickGame(game) {
     const { seconds_left, scheduled_result } = status.rows[0];
     const manualMode = Boolean(game.manual_result_mode);
 
-    if (!manualMode && seconds_left != null && seconds_left <= PREVIEW_SECONDS && !scheduled_result) {
-      await schedulePreviewIfNeeded(game.game_id, roundId, manualMode);
+    if (seconds_left != null && seconds_left > 0) {
+      broadcastGame(game.game_id, {
+        type: 'ROUND_TICK',
+        gameId: game.game_id,
+        roundId: Number(roundId),
+        timerLeft: seconds_left,
+        bettingOpen: seconds_left > 5,
+        timestamp: Date.now(),
+      });
     }
 
     if (seconds_left != null && seconds_left <= 0) {
@@ -268,8 +300,26 @@ async function tickGame(game) {
         result = pickAutoWinner(dist?.distribution || {}, game.game_id);
       }
       try {
-        await Round.declare(game.game_id, result, roundId);
-        await Round.startNew(game.game_id);
+        const declared = await Round.declare(game.game_id, result, roundId);
+        broadcastGame(game.game_id, {
+          type: 'ROUND_RESULT',
+          gameId: game.game_id,
+          roundId: Number(roundId),
+          result,
+          status: 'declared',
+          payoutTotal: declared?.payoutTotal || 0,
+        });
+
+        const newRound = await Round.startNew(game.game_id);
+        if (newRound) {
+          broadcastGame(game.game_id, {
+            type: 'ROUND_START',
+            gameId: game.game_id,
+            roundId: Number(newRound.roundId || newRound.id),
+            timerLeft: interval,
+            bettingOpen: true,
+          });
+        }
       } catch (e) {
         // Handled
       }

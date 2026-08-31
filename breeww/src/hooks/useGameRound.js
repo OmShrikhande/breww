@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { fetchRoundHistory, fetchRoundState } from '../api/gamesApi';
+import { useWebSocket } from '../context/WebSocketContext';
 
-export function useGameRound(gameId, { pollMs = 1000 } = {}) {
+export function useGameRound(gameId, { pollMs = 3000 } = {}) {
   const [round, setRound] = useState(null);
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const lastResultRef = useRef(null);
+  const { subscribeListener, send } = useWebSocket();
 
   const refresh = useCallback(async () => {
     try {
@@ -24,6 +26,47 @@ export function useGameRound(gameId, { pollMs = 1000 } = {}) {
       setLoading(false);
     }
   }, [gameId]);
+
+  // Real-time WebSocket game event listener
+  useEffect(() => {
+    send({ action: 'subscribe', gameId });
+
+    const unsubscribe = subscribeListener((msg) => {
+      if (msg.gameId && msg.gameId !== gameId) return;
+
+      if (msg.type === 'ROUND_TICK') {
+        setRound((prev) => ({
+          ...(prev || {}),
+          roundId: msg.roundId,
+          timerLeft: msg.timerLeft,
+          bettingOpen: msg.bettingOpen,
+          status: 'open',
+        }));
+      } else if (msg.type === 'ROUND_RESULT') {
+        setRound((prev) => ({
+          ...(prev || {}),
+          roundId: msg.roundId,
+          result: msg.result,
+          status: 'declared',
+          bettingOpen: false,
+          timerLeft: 0,
+        }));
+        // Refetch latest history instantly
+        fetchRoundHistory(gameId, 12).then((hist) => setHistory(hist)).catch(() => {});
+      } else if (msg.type === 'ROUND_START') {
+        setRound((prev) => ({
+          ...(prev || {}),
+          roundId: msg.roundId,
+          result: null,
+          status: 'open',
+          bettingOpen: true,
+          timerLeft: msg.timerLeft,
+        }));
+      }
+    });
+
+    return unsubscribe;
+  }, [gameId, subscribeListener, send]);
 
   useEffect(() => {
     refresh();
@@ -58,45 +101,28 @@ export function betToOptionId(bet) {
 export function parseDiceResult(result) {
   const r = String(result || '').toLowerCase();
   const makeDice = (sum) => {
-    let a = Math.min(6, Math.max(1, Math.floor(sum / 3)));
-    let b = Math.min(6, Math.max(1, Math.floor((sum - a) / 2)));
-    let c = Math.min(6, Math.max(1, sum - a - b));
-    while (a + b + c !== sum) {
-      c = Math.min(6, Math.max(1, sum - a - b));
-      if (a + b + c === sum) break;
-      a = Math.max(1, a - 1);
-    }
-    return [a, b, c];
+    const s = Math.min(18, Math.max(3, sum));
+    const d1 = Math.min(6, Math.max(1, Math.floor(s / 3)));
+    const d2 = Math.min(6, Math.max(1, Math.floor((s - d1) / 2)));
+    const d3 = Math.min(6, Math.max(1, s - d1 - d2));
+    return [d1, d2, d3];
   };
 
-  if (/^\d+$/.test(r)) {
-    const n = Number(r);
-    if (n >= 1 && n <= 6) {
-      return { dice: [n, n, n], sum: n * 3, size: n * 3 >= 11 ? 'Big' : 'Small', parity: (n * 3) % 2 === 0 ? 'Even' : 'Odd', label: r };
-    }
-    if (n >= 3 && n <= 18) {
-      const dice = makeDice(n);
-      const sum = dice.reduce((x, y) => x + y, 0);
-      return { dice, sum, size: sum >= 11 ? 'Big' : 'Small', parity: sum % 2 === 0 ? 'Even' : 'Odd', label: r };
-    }
+  const direct = parseInt(r, 10);
+  if (Number.isFinite(direct) && direct >= 3 && direct <= 18) {
+    const dice = makeDice(direct);
+    const sum = dice.reduce((a, b) => a + b, 0);
+    return {
+      dice,
+      sum,
+      size: sum >= 11 ? 'Big' : 'Small',
+      parity: sum % 2 === 0 ? 'Even' : 'Odd',
+      label: String(sum),
+    };
   }
-  if (r === 'big') {
-    const dice = makeDice(12);
-    return { dice, sum: 12, size: 'Big', parity: 'Even', label: 'big' };
-  }
-  if (r === 'small') {
-    const dice = makeDice(9);
-    return { dice, sum: 9, size: 'Small', parity: 'Odd', label: 'small' };
-  }
-  if (r === 'even') {
-    const dice = makeDice(10);
-    return { dice, sum: 10, size: 'Small', parity: 'Even', label: 'even' };
-  }
-  if (r === 'odd') {
-    const dice = makeDice(11);
-    return { dice, sum: 11, size: 'Big', parity: 'Odd', label: 'odd' };
-  }
-  const fallback = makeDice(10);
+
+  const hash = r.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
+  const fallback = [(hash % 6) + 1, ((hash * 2) % 6) + 1, ((hash * 3) % 6) + 1];
   return { dice: fallback, sum: 10, size: 'Small', parity: 'Even', label: r };
 }
 

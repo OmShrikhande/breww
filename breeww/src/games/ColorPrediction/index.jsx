@@ -25,6 +25,7 @@ const ColorPrediction = () => {
   const [lastPlacedBet, setLastPlacedBet] = useState(null);
   const [lastResult, setLastResult] = useState(null);
   const [activeTab, setActiveTab] = useState('color');
+  const [myBets, setMyBets] = useState([]);
   const activeRoundRef = useRef(roundId);
 
   useEffect(() => {
@@ -36,6 +37,25 @@ const ColorPrediction = () => {
   useEffect(() => {
     if (result && result !== lastResult) {
       setLastResult(result);
+      const parsed = parseColourResult(result);
+      // Settle pending bets for this round
+      setMyBets((prev) =>
+        prev.map((b) => {
+          if (b.status !== 'pending') return b;
+          const opt = String(b.option || '').toLowerCase();
+          const winColor = String(parsed.color || '').toLowerCase();
+          const winNumber = String(parsed.number);
+          const winSize = String(parsed.size || '').toLowerCase();
+
+          const isWin = opt.includes(winColor) || opt.includes(winNumber) || opt.includes(winSize);
+          const mult = opt.includes('violet') ? 4.5 : opt.includes('number') ? 9 : 2;
+          return {
+            ...b,
+            status: isWin ? 'won' : 'lost',
+            payout: isWin ? b.amount * mult : 0,
+          };
+        })
+      );
       refresh();
     }
   }, [result, lastResult, refresh]);
@@ -50,7 +70,9 @@ const ColorPrediction = () => {
 
   const handleBetClick = async (amount) => {
     if (!selectedBet) return;
-    setLastPlacedBet({ ...selectedBet, amount });
+    const betInfo = { ...selectedBet, amount, roundId: roundId || 'Live', id: Date.now(), status: 'pending' };
+    setLastPlacedBet(betInfo);
+    setMyBets((prev) => [betInfo, ...prev.slice(0, 19)]);
     const ok = await placeBet(selectedBet, amount, { bettingOpen });
     if (ok) setSelectedBet(null);
   };
@@ -164,7 +186,7 @@ const ColorPrediction = () => {
           )}
         </div>
 
-        <HistoryTable history={displayHistory} />
+        <HistoryTable history={displayHistory} myBets={myBets} />
 
         {/* Bet Confirmation Toast */}
         <AnimatePresence>

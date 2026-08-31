@@ -10,29 +10,34 @@ const AviatorControls = ({
   gameState,
   isBetPlaced,
   hasCashedOut,
-  multiplier,
+  multiplier = 1,
   loading,
   bettingOpen,
   canCashout,
+  activeBetAmount,
   balance = 0,
   isAuthenticated = true,
 }) => {
   const [activeTab, setActiveTab] = useState('bet');
   const quickBets = [10, 50, 100, 500, 1000];
 
+  const currentStake = Number(activeBetAmount || betAmount);
   const hasInsufficientBalance = isAuthenticated && balance < betAmount;
   const isCurrentlyActiveBet = Boolean(isBetPlaced && !hasCashedOut);
-  const canBet = (bettingOpen || !isAuthenticated) && !isCurrentlyActiveBet && !loading && !hasInsufficientBalance;
-  const canCashOutNow = (canCashout || gameState === 'running') && isCurrentlyActiveBet && !loading;
+
+  // Professional Flight Active Condition:
+  // If multiplier has started climbing (> 1.00x) OR gameState is running OR canCashout flag is set
+  const isFlightActive = (gameState === 'running' || multiplier > 1.00 || Boolean(canCashout)) && gameState !== 'crashed';
+  const canCashOutNow = isFlightActive && isCurrentlyActiveBet && !loading;
 
   return (
-    <div className="bg-[#1b233d] p-3 rounded-2xl border border-white/5 shadow-2xl flex flex-col items-center max-w-xl mx-auto w-full">
+    <div className="bg-[#1b233d] p-3 rounded-2xl border border-white/5 shadow-2xl flex flex-col items-center max-w-xl mx-auto w-full select-none">
       <div className="flex bg-[#0b1024] rounded-full p-1 mb-3 w-[140px]">
         <button
           type="button"
           onClick={() => setActiveTab('bet')}
-          className={`flex-1 py-1 rounded-full text-[9px] font-black uppercase transition-all ${
-            activeTab === 'bet' ? 'bg-[#2d3a5e] text-white shadow-lg' : 'text-gray-500'
+          className={`flex-1 py-1 rounded-full text-[9px] font-black uppercase transition-all cursor-pointer ${
+            activeTab === 'bet' ? 'bg-[#2d3a5e] text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'
           }`}
         >
           Bet
@@ -40,8 +45,8 @@ const AviatorControls = ({
         <button
           type="button"
           onClick={() => setActiveTab('auto')}
-          className={`flex-1 py-1 rounded-full text-[9px] font-black uppercase transition-all ${
-            activeTab === 'auto' ? 'bg-[#2d3a5e] text-white shadow-lg' : 'text-gray-500'
+          className={`flex-1 py-1 rounded-full text-[9px] font-black uppercase transition-all cursor-pointer ${
+            activeTab === 'auto' ? 'bg-[#2d3a5e] text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'
           }`}
         >
           Auto
@@ -56,7 +61,7 @@ const AviatorControls = ({
               type="button"
               onClick={() => setBetAmount(Math.max(10, betAmount - 10))}
               disabled={isCurrentlyActiveBet || loading}
-              className="w-6 h-6 rounded-full bg-white/10 hover:bg-white/20 border border-gray-600 flex items-center justify-center text-gray-200 disabled:opacity-30 transition-colors"
+              className="w-6 h-6 rounded-full bg-white/10 hover:bg-white/20 border border-gray-600 flex items-center justify-center text-gray-200 disabled:opacity-30 transition-colors cursor-pointer"
               aria-label="Decrease bet"
             >
               <Minus size={12} />
@@ -74,7 +79,7 @@ const AviatorControls = ({
               type="button"
               onClick={() => setBetAmount(Math.min(10000, betAmount + 10))}
               disabled={isCurrentlyActiveBet || loading}
-              className="w-6 h-6 rounded-full bg-white/10 hover:bg-white/20 border border-gray-600 flex items-center justify-center text-gray-200 disabled:opacity-30 transition-colors"
+              className="w-6 h-6 rounded-full bg-white/10 hover:bg-white/20 border border-gray-600 flex items-center justify-center text-gray-200 disabled:opacity-30 transition-colors cursor-pointer"
               aria-label="Increase bet"
             >
               <Plus size={12} />
@@ -88,7 +93,7 @@ const AviatorControls = ({
                 type="button"
                 onClick={() => setBetAmount(val)}
                 disabled={isCurrentlyActiveBet || loading}
-                className={`px-2 py-1 rounded-md text-[10px] font-black border transition-all ${
+                className={`px-2 py-1 rounded-md text-[10px] font-black border transition-all cursor-pointer ${
                   betAmount === val
                     ? 'bg-[#4aa4ff] text-white border-blue-400 shadow-[0_0_10px_rgba(74,164,255,0.4)]'
                     : 'bg-[#1b233d] text-gray-300 border-white/5 hover:bg-white/10'
@@ -103,25 +108,28 @@ const AviatorControls = ({
         {/* Right Side: Bet / Cashout Action Button */}
         <div className="flex-1 h-[84px]">
           {canCashOutNow ? (
+            /* 1. Live Flying Cashout Button (Always active immediately during flight) */
             <button
               type="button"
               onClick={onCashout}
-              className="w-full h-full bg-[#f4b400] hover:bg-[#ffc107] active:bg-[#e0a800] text-black rounded-2xl flex flex-col items-center justify-center transition-all shadow-[0_6px_20px_rgba(244,180,0,0.4)] active:scale-95 border-b-4 border-[#c79100]"
+              className="w-full h-full bg-[#f4b400] hover:bg-[#ffc107] active:bg-[#e0a800] text-black rounded-2xl flex flex-col items-center justify-center transition-all shadow-[0_6px_25px_rgba(244,180,0,0.5)] active:scale-95 border-b-4 border-[#c79100] cursor-pointer"
             >
               <span className="text-[11px] font-black uppercase tracking-widest text-black/80">CASH OUT</span>
               <span className="text-2xl font-black tabular-nums tracking-tight">{multiplier.toFixed(2)}x</span>
-              <span className="text-xs font-black">{formatINR(betAmount * multiplier)}</span>
+              <span className="text-xs font-black">{formatINR(currentStake * multiplier)}</span>
             </button>
           ) : isCurrentlyActiveBet ? (
-            <div className="w-full h-full rounded-2xl flex flex-col items-center justify-center bg-[#b91c1c]/90 border border-red-500/40 text-white shadow-lg select-none">
-              <span className="text-base font-black uppercase tracking-wider text-white">
-                BET LOCKED
+            /* 2. Bet Placed Awaiting Flight (Green waiting badge during countdown) */
+            <div className="w-full h-full rounded-2xl flex flex-col items-center justify-center bg-emerald-900/90 border border-emerald-500/40 text-white shadow-lg select-none">
+              <span className="text-sm font-black uppercase tracking-wider text-emerald-200">
+                BET PLACED · {formatINR(currentStake)}
               </span>
-              <span className="text-xs font-bold text-red-200 mt-0.5">
-                {formatINR(betAmount)} · In Play
+              <span className="text-[10px] font-bold text-white/70 mt-0.5 animate-pulse">
+                Taking Off In {bettingOpen ? 'a moment…' : '3, 2, 1…'}
               </span>
             </div>
           ) : hasInsufficientBalance ? (
+            /* 3. Low Balance state */
             <button
               type="button"
               onClick={() => onPlaceBet(betAmount)}
@@ -131,11 +139,12 @@ const AviatorControls = ({
               <span className="text-[11px] font-bold text-red-400 mt-0.5">Deposit to play ₹{betAmount}</span>
             </button>
           ) : (
+            /* 4. Normal Green Bet Button */
             <button
               type="button"
               onClick={() => onPlaceBet(betAmount)}
               disabled={loading || (!bettingOpen && isAuthenticated)}
-              className={`w-full h-full rounded-2xl flex flex-col items-center justify-center transition-all shadow-lg active:scale-95 ${
+              className={`w-full h-full rounded-2xl flex flex-col items-center justify-center transition-all shadow-lg active:scale-95 cursor-pointer ${
                 (bettingOpen || !isAuthenticated) && betAmount >= 10
                   ? 'bg-[#28a745] hover:bg-[#218838] active:bg-[#1e7e34] text-white border-b-4 border-[#1e7e34] shadow-[0_6px_20px_rgba(40,167,69,0.35)]'
                   : 'bg-[#242e4d] text-gray-400 border-b-4 border-[#1c1c1e] cursor-not-allowed opacity-85'

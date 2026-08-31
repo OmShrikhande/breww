@@ -1,4 +1,5 @@
 const express = require('express');
+const http = require('http');
 const cors = require('cors');
 const helmet = require('helmet');
 const path = require('path');
@@ -13,6 +14,7 @@ const initDb = require('./models/initDb');
 const pool = require('./config/database');
 const { ensureDatabase, getDbConfigFromEnv } = require('./config/ensureDatabase');
 const { startRoundEngine } = require('./services/roundEngine');
+const { initWebSocketServer } = require('./services/websocketServer');
 const getSystemIP = require('./utils/getSystemIP');
 const { globalLimiter, apiLimiter, sanitizeBody, sanitizeQuery, securityHeaders } = require('./middleware/security');
 const { createPlayerApp, initDb: initPlayerDb } = require('./backend/server');
@@ -166,9 +168,13 @@ const startServer = async () => {
 
   startRoundEngine();
 
+  const server = http.createServer(app);
+  initWebSocketServer(server);
+
   const HOST = getSystemIP();
-  app.listen(PORT, '0.0.0.0', () => {
+  server.listen(PORT, '0.0.0.0', () => {
     console.log(`Combined API on http://${HOST}:${PORT}`);
+    console.log(`WebSocket: ws://${HOST}:${PORT}/ws`);
     console.log(`Admin:  http://localhost:${PORT}/api`);
     console.log(`Player: http://localhost:${PORT}/player/api`);
   });

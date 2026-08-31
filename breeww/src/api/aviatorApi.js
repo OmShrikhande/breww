@@ -14,10 +14,10 @@ export const placeAviatorBet = async (amount) => {
   return res.data;
 };
 
-export const cashoutAviator = async (roundId) => {
+export const cashoutAviator = async (roundId, multiplier) => {
   const res = await apiClient('/aviator/cashout', {
     method: 'POST',
-    body: { roundId },
+    body: { roundId, multiplier },
   });
   return res.data;
 };

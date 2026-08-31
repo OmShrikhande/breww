@@ -9,6 +9,7 @@ const {
   isValidCrash,
   MIN_CRASH,
 } = require('../helpers/aviatorEngine');
+const { broadcastAviator, sendToUser } = require('../../services/websocketServer');
 
 const router = express.Router();
 const GAME_ID = 'aviator';
@@ -304,6 +305,28 @@ router.post('/bet', authenticatePlayer, async (req, res) => {
     );
 
     await client.query('COMMIT');
+
+    broadcastAviator({
+      type: 'NEW_BET',
+      roundId: Number(round.id),
+      bet: {
+        id: rows[0].id,
+        user: maskUsername(req.user.username),
+        amount,
+        hasCashedOut: false,
+        cashoutMult: 0,
+        payout: 0,
+        isMe: false,
+      },
+    });
+
+    sendToUser(req.user.id, {
+      type: 'MY_BET_CONFIRMED',
+      roundId: Number(round.id),
+      amount,
+      balance,
+    });
+
     return ok(res, { betId: rows[0].id, roundId: Number(round.id), amount, balance }, 201);
   } catch (e) {
     await client.query('ROLLBACK');
@@ -317,12 +340,15 @@ router.post('/cashout', authenticatePlayer, async (req, res) => {
   const client = await pool.connect();
   try {
     const roundId = Number(req.body?.roundId);
+    const clientMult = req.body?.multiplier ? Number(req.body.multiplier) : null;
     if (!roundId) return err(res, 'roundId required');
 
     await client.query('BEGIN');
 
     const roundRes = await client.query(
-      `SELECT id, status, scheduled_result, flying_started_at FROM game_rounds WHERE id = $1 AND game_id = $2 FOR UPDATE`,
+      `SELECT id, status, scheduled_result, flying_started_at,
+              EXTRACT(EPOCH FROM (NOW() - flying_started_at))::FLOAT AS "flightElapsed"
+       FROM game_rounds WHERE id = $1 AND game_id = $2 FOR UPDATE`,
       [roundId, GAME_ID]
     );
     if (!roundRes.rows[0] || roundRes.rows[0].status !== 'closed') {
@@ -332,9 +358,14 @@ router.post('/cashout', authenticatePlayer, async (req, res) => {
 
     const round = roundRes.rows[0];
     const crashPoint = normalizeCrashPoint(round.scheduled_result);
-    const requestedMult = currentFlyingMultiplier({
-      flyingStartedAt: round.flying_started_at,
-    });
+    const serverElapsed = Math.max(0, Number(round.flightElapsed || 0));
+    const serverLiveMult = multiplierAtElapsed(serverElapsed);
+
+    // If server elapsed flight has already reached or exceeded crashPoint, plane flew away
+    if (serverLiveMult >= crashPoint) {
+      await client.query('ROLLBACK');
+      return err(res, 'Plane flew away before cashout!', 400);
+    }
 
     const betRes = await client.query(
       `SELECT * FROM aviator_bets WHERE user_id = $1 AND round_id = $2 AND status = 'active' FOR UPDATE`,
@@ -347,7 +378,18 @@ router.post('/cashout', authenticatePlayer, async (req, res) => {
 
     const bet = betRes.rows[0];
     const amount = Number(bet.amount);
-    const mult = effectiveCashoutMultiplier(amount, requestedMult, crashPoint);
+
+    // Professional Spribe / Tiranga / BigMumbai Multiplier Resolution:
+    // Award the exact real-time multiplier when user clicked, validated against server flight time
+    let mult;
+    if (clientMult && Number.isFinite(clientMult) && clientMult >= 1.01 && clientMult < crashPoint) {
+      // Allow minor network latency (up to current server multiplier)
+      mult = Math.min(clientMult, Math.max(1.01, serverLiveMult));
+    } else {
+      mult = Math.min(serverLiveMult, Math.max(1.01, crashPoint - 0.01));
+    }
+    mult = Math.max(1.01, Math.floor(mult * 100) / 100);
+
     const payout = Math.round(amount * mult * 100) / 100;
 
     const balance = await walletDelta(client, req.user.id, payout, 'win', 'aviator cashout', String(roundId));
@@ -358,6 +400,28 @@ router.post('/cashout', authenticatePlayer, async (req, res) => {
     );
 
     await client.query('COMMIT');
+
+    broadcastAviator({
+      type: 'NEW_CASHOUT',
+      roundId,
+      bet: {
+        id: bet.id,
+        user: maskUsername(req.user.username),
+        amount,
+        hasCashedOut: true,
+        cashoutMult: mult,
+        payout,
+      },
+    });
+
+    sendToUser(req.user.id, {
+      type: 'MY_CASHOUT_CONFIRMED',
+      roundId,
+      multiplier: mult,
+      payout,
+      balance,
+    });
+
     return ok(res, {
       status: 'cashed_out',
       multiplier: mult,

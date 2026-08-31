@@ -58,6 +58,8 @@ router.get('/:gameId/round/history', async (req, res) => {
   }
 });
 
+const { broadcastGame, broadcastBalance } = require('../../services/websocketServer');
+
 router.post('/:gameId/round/bet', authenticatePlayer, async (req, res) => {
   try {
     const gameId = resolvePlatformGameId(req.params.gameId);
@@ -66,6 +68,17 @@ router.post('/:gameId/round/bet', authenticatePlayer, async (req, res) => {
     if (!optionId) return err(res, 'optionId is required');
     if (!Number.isFinite(amount) || amount <= 0) return err(res, 'Invalid amount');
     const data = await Round.placeBet(gameId, req.user.id, optionId, amount);
+
+    // Broadcast real-time balance and game events
+    broadcastBalance(req.user.id, data.balance);
+    broadcastGame(gameId, {
+      type: 'ROUND_NEW_BET',
+      gameId,
+      roundId: data.roundId,
+      optionId,
+      amount,
+    });
+
     return ok(res, data);
   } catch (e) {
     return err(res, e.message || 'Bet failed', e.status || 400);
