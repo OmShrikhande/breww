@@ -28,6 +28,8 @@ const AuthField = ({
   onChange,
   rightSlot,
   prefix,
+  maxLength,
+  inputMode,
 }) => (
   <label className="block">
     <div className="mb-2 flex items-center gap-2 font-medium text-white">
@@ -36,7 +38,7 @@ const AuthField = ({
     </div>
     <div className="flex gap-2">
       {prefix ? (
-        <div className="flex h-[3.5rem] min-w-[4.8rem] items-center justify-center rounded-2xl bg-[#353d86] px-3 text-lg font-bold text-blue-100">
+        <div className="flex h-[3.5rem] min-w-[4.8rem] items-center justify-center rounded-2xl bg-[#353d86] px-3 text-lg font-bold text-blue-100 select-none">
           {prefix}
         </div>
       ) : null}
@@ -46,6 +48,8 @@ const AuthField = ({
           value={value}
           onChange={onChange}
           placeholder={placeholder}
+          maxLength={maxLength}
+          inputMode={inputMode}
           className="auth-input w-full pr-12"
           autoComplete={type === 'password' ? 'new-password' : 'username'}
         />
@@ -71,6 +75,16 @@ const Register = () => {
   const [busy, setBusy] = useState(false);
   const selectedMethod = methodOptions.find((option) => option.id === method);
 
+  const handleIdentifierChange = (e) => {
+    setError('');
+    if (method === 'phone') {
+      const cleanDigits = e.target.value.replace(/\D/g, '').slice(0, 10);
+      setIdentifier(cleanDigits);
+    } else {
+      setIdentifier(e.target.value.slice(0, 100));
+    }
+  };
+
   const onSubmit = async (e) => {
     if (e) e.preventDefault();
     setError('');
@@ -80,16 +94,31 @@ const Register = () => {
       setError(method === 'phone' ? 'Please enter your 10-digit mobile number' : 'Please enter your email address');
       return;
     }
-    if (method === 'phone' && raw.replace(/\D/g, '').length < 10) {
-      setError('Please enter a valid 10-digit mobile number');
-      return;
+
+    if (method === 'phone') {
+      const digits = raw.replace(/\D/g, '');
+      if (digits.length !== 10) {
+        setError('Mobile number must be exactly 10 digits (e.g. 9876543210)');
+        return;
+      }
+      if (!/^[6-9]\d{9}$/.test(digits)) {
+        setError('Please enter a valid 10-digit mobile number starting with 6, 7, 8, or 9');
+        return;
+      }
+    } else {
+      const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+      if (!emailRegex.test(raw)) {
+        setError('Please enter a valid email address (e.g. name@domain.com)');
+        return;
+      }
     }
-    if (method === 'email' && !raw.includes('@')) {
-      setError('Please enter a valid email address (e.g. user@example.com)');
-      return;
-    }
+
     if (password.length < 6) {
       setError('Password must be at least 6 characters');
+      return;
+    }
+    if (password.length > 32) {
+      setError('Password cannot exceed 32 characters');
       return;
     }
     if (password !== confirmPassword) {
@@ -97,13 +126,13 @@ const Register = () => {
       return;
     }
     if (!agreed) {
-      setError('Please accept the privacy agreement');
+      setError('Please accept the privacy agreement to continue');
       return;
     }
 
     setBusy(true);
     try {
-      await register({ method, identifier: raw, password, inviteCode });
+      await register({ method, identifier: raw, password, inviteCode: inviteCode.trim() });
       navigateTo('/');
     } catch (err) {
       setError(err.message || 'Registration failed. Please check your details.');
@@ -129,6 +158,7 @@ const Register = () => {
             type="button"
             onClick={() => {
               setMethod(option.id);
+              setIdentifier('');
               setError('');
             }}
             className={`rounded-[1rem] px-4 py-3 text-sm font-semibold transition ${
@@ -146,10 +176,13 @@ const Register = () => {
         <AuthField
           label={selectedMethod.label}
           icon={selectedMethod.icon}
+          type={method === 'phone' ? 'tel' : 'email'}
+          inputMode={method === 'phone' ? 'numeric' : 'email'}
+          maxLength={method === 'phone' ? 10 : 100}
           placeholder={method === 'phone' ? 'Enter 10-digit mobile number' : 'Enter email (e.g. name@domain.com)'}
           prefix={selectedMethod.prefix}
           value={identifier}
-          onChange={(event) => setIdentifier(event.target.value)}
+          onChange={handleIdentifierChange}
         />
 
         <AuthField
@@ -157,8 +190,12 @@ const Register = () => {
           icon={LockKeyhole}
           type={showPassword ? 'text' : 'password'}
           placeholder="Set password (min 6 characters)"
+          maxLength={32}
           value={password}
-          onChange={(event) => setPassword(event.target.value)}
+          onChange={(event) => {
+            setPassword(event.target.value);
+            setError('');
+          }}
           rightSlot={
             <button
               type="button"
@@ -176,8 +213,12 @@ const Register = () => {
           icon={LockKeyhole}
           type={showConfirmPassword ? 'text' : 'password'}
           placeholder="Confirm password"
+          maxLength={32}
           value={confirmPassword}
-          onChange={(event) => setConfirmPassword(event.target.value)}
+          onChange={(event) => {
+            setConfirmPassword(event.target.value);
+            setError('');
+          }}
           rightSlot={
             <button
               type="button"
@@ -194,6 +235,7 @@ const Register = () => {
           label="Invite code (Optional)"
           icon={ReceiptText}
           placeholder="Enter invite code (if any)"
+          maxLength={30}
           value={inviteCode}
           onChange={(event) => setInviteCode(event.target.value)}
         />
@@ -203,7 +245,10 @@ const Register = () => {
             type="checkbox"
             className="auth-checkbox"
             checked={agreed}
-            onChange={(e) => setAgreed(e.target.checked)}
+            onChange={(e) => {
+              setAgreed(e.target.checked);
+              setError('');
+            }}
           />
           <span>{agreementLabel}</span>
           <a href={pageHref('/')} className="text-amber-400 transition hover:text-amber-300 ml-1">
@@ -212,7 +257,7 @@ const Register = () => {
         </label>
 
         {error ? (
-          <div className="rounded-xl bg-red-500/15 border border-red-500/30 px-3 py-2 text-xs font-semibold text-red-200">
+          <div className="rounded-xl bg-red-500/15 border border-red-500/30 px-3 py-2 text-xs font-semibold text-red-200 animate-fadeIn">
             {error}
           </div>
         ) : null}

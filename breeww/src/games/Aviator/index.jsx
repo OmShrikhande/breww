@@ -12,10 +12,12 @@ import AviatorControls from './AviatorControls';
 import AviatorHistory from './AviatorHistory';
 import AviatorSidebar from './AviatorSidebar';
 
+const MULTIPLIER_GROWTH_RATE = 0.048;
+
 const calcMult = (startedAt) => {
   if (!startedAt) return 1;
   const elapsed = (Date.now() - new Date(startedAt).getTime()) / 1000;
-  return Math.max(1, Math.floor(Math.pow(Math.E, 0.08 * elapsed) * 100) / 100);
+  return Math.max(1, Math.floor(Math.pow(Math.E, MULTIPLIER_GROWTH_RATE * Math.max(0, elapsed)) * 100) / 100);
 };
 
 const Aviator = () => {
@@ -26,10 +28,9 @@ const Aviator = () => {
   const [multiplier, setMultiplier] = useState(1);
   const [crashPoint, setCrashPoint] = useState(null);
   const [roundId, setRoundId] = useState(null);
-  const [timerLeft, setTimerLeft] = useState(15);
   const [displayTimer, setDisplayTimer] = useState(15);
-  const [betClosesAt, setBetClosesAt] = useState(null);
   const [betWindowSeconds, setBetWindowSeconds] = useState(15);
+  const [serverBettingOpen, setServerBettingOpen] = useState(true);
   const [history, setHistory] = useState([]);
   const [recentWinners, setRecentWinners] = useState([]);
   const [topWinners, setTopWinners] = useState([]);
@@ -44,10 +45,13 @@ const Aviator = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showBetSuccess, setShowBetSuccess] = useState(false);
-  const lastRoundRef = useRef(null);
+  
+  const timerSyncRef = useRef({ left: 15, receivedAt: Date.now() });
+  const activeRoundRef = useRef(null);
+  const isCashingOutRef = useRef(false);
 
   const isBetPlaced = Boolean(myBet);
-  const bettingOpen = phase === 'betting' && displayTimer > 0;
+  const bettingOpen = phase === 'betting' && (displayTimer > 0 || serverBettingOpen);
 
   const visualState =
     phase === 'flying' ? 'running'
@@ -72,18 +76,34 @@ const Aviator = () => {
       const data = await getAviatorState();
       setError('');
       setPhase(data.phase || 'betting');
-      setTimerLeft(data.timerLeft ?? 0);
-      setBetClosesAt(data.closesAt || null);
       setBetWindowSeconds(data.betWindowSeconds ?? 15);
-      setRoundId(data.roundId);
+      setServerBettingOpen(Boolean(data.bettingOpen));
+      
+      if (data.roundId) {
+        setRoundId(data.roundId);
+        activeRoundRef.current = data.roundId;
+      }
+      
       setCrashPoint(data.crashPoint);
       setFlyingStartedAt(data.flyingStartedAt);
-      setCanCashout(Boolean(data.canCashout));
+      setCanCashout(Boolean(data.canCashout || (data.phase === 'flying' && myBet?.status === 'active')));
       setRecentWinners(data.recentWinners || []);
       setTopWinners(data.topWinners || []);
       setRoundBets(data.roundBets || []);
       setHistory((data.history || []).map((h, i) => ({ id: h.id || i, multiplier: h.multiplier })));
-      setMyBet(data.myBet);
+
+      if (data.myBet) {
+        setMyBet(data.myBet);
+      }
+
+      // Synchronize timer reference
+      if (data.phase === 'betting') {
+        const sLeft = Number(data.timerLeft ?? 15);
+        timerSyncRef.current = { left: sLeft, receivedAt: Date.now() };
+        setDisplayTimer(sLeft);
+      } else {
+        setDisplayTimer(0);
+      }
 
       if (data.phase === 'flying' && data.flyingStartedAt) {
         setMultiplier(calcMult(data.flyingStartedAt));
@@ -99,19 +119,22 @@ const Aviator = () => {
         setCashoutPayout(Number(data.myBet.payout));
       }
 
-      if (data.phase === 'betting' && data.roundId !== lastRoundRef.current) {
-        lastRoundRef.current = data.roundId;
+      // Detect round transition
+      if (data.phase === 'betting' && data.roundId && data.roundId !== activeRoundRef.current) {
         setHasCashedOut(false);
         setCashoutMult(null);
         setCashoutPayout(null);
-        if (data.myBet?.status !== 'active') setMyBet(null);
+        isCashingOutRef.current = false;
+        if (data.myBet?.status !== 'active') {
+          setMyBet(null);
+        }
       }
     } catch (e) {
       if (e?.message?.includes('Too many requests')) {
         setError('Connection busy — retrying…');
       }
     }
-  }, []);
+  }, [myBet]);
 
   useEffect(() => {
     pollState();
@@ -119,6 +142,7 @@ const Aviator = () => {
     return () => clearInterval(t);
   }, [pollState]);
 
+  // Smooth local countdown timer
   useEffect(() => {
     if (phase !== 'betting') {
       setDisplayTimer(0);
@@ -126,19 +150,17 @@ const Aviator = () => {
     }
 
     const tick = () => {
-      if (betClosesAt) {
-        const left = Math.max(0, Math.ceil((new Date(betClosesAt).getTime() - Date.now()) / 1000));
-        setDisplayTimer(left);
-        return;
-      }
-      setDisplayTimer(timerLeft);
+      const elapsed = Math.floor((Date.now() - timerSyncRef.current.receivedAt) / 1000);
+      const remaining = Math.max(0, timerSyncRef.current.left - elapsed);
+      setDisplayTimer(remaining);
     };
 
     tick();
-    const id = setInterval(tick, 250);
+    const id = setInterval(tick, 200);
     return () => clearInterval(id);
-  }, [phase, betClosesAt, timerLeft, roundId]);
+  }, [phase, roundId]);
 
+  // Flight animation loop
   useEffect(() => {
     if (phase !== 'flying' || !flyingStartedAt) return undefined;
     let frame;
@@ -157,47 +179,78 @@ const Aviator = () => {
       navigateTo('/login');
       return;
     }
-    if (!bettingOpen || isBetPlaced || amount < 10) return;
+
+    if (!amount || amount < 10) {
+      setError('Minimum bet amount is ₹10');
+      return;
+    }
+
+    if (amount > balance) {
+      setError(`Insufficient balance. Your balance is ${formatINR(balance)}.`);
+      return;
+    }
+
+    if (!bettingOpen || isBetPlaced) {
+      setError('Betting window is closed for this round. Next round starting soon.');
+      return;
+    }
 
     setError('');
     setLoading(true);
     try {
       const data = await placeAviatorBet(amount);
-      setBalance(data.balance);
+      if (data.balance !== undefined) {
+        setBalance(data.balance);
+      }
+      if (data.roundId) {
+        setRoundId(data.roundId);
+        activeRoundRef.current = data.roundId;
+      }
       setMyBet({ amount, status: 'active' });
+      setHasCashedOut(false);
+      setCashoutMult(null);
+      setCashoutPayout(null);
+      isCashingOutRef.current = false;
       setShowBetSuccess(true);
-      setTimeout(() => setShowBetSuccess(false), 2000);
-      await pollState();
-    } catch (e) {
-      setError(e.message || 'Bet failed');
-    } finally {
-      setLoading(false);
-    }
-  }, [isAuthenticated, bettingOpen, isBetPlaced, setBalance, pollState]);
-
-  const handleCashout = useCallback(async () => {
-    if (!canCashout || !roundId || loading) return;
-
-    setLoading(true);
-    setError('');
-    try {
-      const data = await cashoutAviator(roundId);
-      setHasCashedOut(true);
-      setCashoutMult(data.multiplier);
-      setCashoutPayout(data.payout);
-      setBalance(data.balance);
+      setTimeout(() => setShowBetSuccess(false), 2200);
       await refreshBalance();
       await pollState();
     } catch (e) {
-      setError(e.message || 'Cashout failed');
+      setError(e.message || 'Bet failed. Please try again.');
     } finally {
       setLoading(false);
     }
-  }, [canCashout, roundId, loading, setBalance, refreshBalance, pollState]);
+  }, [isAuthenticated, balance, bettingOpen, isBetPlaced, setBalance, refreshBalance, pollState]);
+
+  const handleCashout = useCallback(async () => {
+    const targetRoundId = roundId || activeRoundRef.current;
+    if (!targetRoundId || loading || hasCashedOut || isCashingOutRef.current) return;
+
+    isCashingOutRef.current = true;
+    setLoading(true);
+    setError('');
+    try {
+      const data = await cashoutAviator(targetRoundId);
+      setHasCashedOut(true);
+      setCashoutMult(data.multiplier || multiplier);
+      setCashoutPayout(data.payout || (betAmount * (data.multiplier || multiplier)));
+      if (data.balance !== undefined) {
+        setBalance(data.balance);
+      }
+      await refreshBalance();
+      await pollState();
+    } catch (e) {
+      isCashingOutRef.current = false;
+      setError(e.message || 'Cashout failed. Plane may have crashed.');
+    } finally {
+      setLoading(false);
+    }
+  }, [roundId, loading, hasCashedOut, multiplier, betAmount, setBalance, refreshBalance, pollState]);
 
   return (
     <GameLayout title="AVIATOR" isWide hideBetPanel hideHeader>
       <div className="flex flex-col h-full bg-black w-full overflow-hidden">
+        {/* Top Bar */}
         <div className="flex items-center justify-between px-4 py-2 bg-[#1c1c1e] border-b border-white/5 shrink-0 z-30">
           <div className="flex items-center gap-3">
             <button
@@ -210,7 +263,7 @@ const Aviator = () => {
             </button>
             <span className="text-red-600 font-black text-2xl italic tracking-tighter uppercase">Aviator</span>
             <div className="hidden md:flex items-center rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.22em] text-emerald-200">
-              Live room · {betWindowSeconds}s rounds
+              Live Room · {betWindowSeconds}s Rounds
             </div>
           </div>
           <div className="flex items-center gap-4">
@@ -222,18 +275,21 @@ const Aviator = () => {
             {phase === 'flying' && (
               <span className="text-[10px] font-black text-red-400 uppercase animate-pulse">Flying</span>
             )}
-            <div className="flex items-center gap-2">
-              <span className="text-green-500 font-black text-base tabular-nums">{balance.toFixed(2)}</span>
-              <span className="text-gray-500 text-[10px] font-bold uppercase">INR</span>
+            <div className="flex items-center gap-2 bg-[#0b1024] px-3 py-1.5 rounded-xl border border-white/10">
+              <span className="text-green-400 font-black text-base tabular-nums">{balance.toFixed(2)}</span>
+              <span className="text-gray-400 text-[10px] font-bold uppercase">INR</span>
             </div>
           </div>
         </div>
 
         {error && (
-          <p className="text-center text-sm text-red-400 bg-red-500/10 py-2 shrink-0">{error}</p>
+          <div className="bg-red-500/15 border-b border-red-500/30 text-center py-2 px-4 text-xs font-bold text-red-200 shrink-0 animate-fadeIn">
+            {error}
+          </div>
         )}
 
         <div className="flex-1 flex flex-col lg:flex-row overflow-hidden min-h-0">
+          {/* Left Desktop Sidebar */}
           <div className="hidden lg:flex lg:w-[380px] xl:w-[420px] shrink-0 h-full overflow-hidden border-r border-white/5">
             <AviatorSidebar
               allBets={roundBets}
@@ -243,6 +299,7 @@ const Aviator = () => {
           </div>
 
           <div className="flex-1 flex flex-col min-w-0 h-full overflow-y-auto custom-scrollbar bg-[#000000]">
+            {/* Mobile Sidebar */}
             <div className="lg:hidden shrink-0 h-[220px] border-b border-white/5">
               <AviatorSidebar
                 allBets={roundBets}
@@ -253,6 +310,7 @@ const Aviator = () => {
 
             <AviatorHistory history={history} />
 
+            {/* Flight Graph */}
             <div className="flex-1 relative aspect-video lg:aspect-auto min-h-[260px] md:min-h-[360px] bg-[#000000] overflow-hidden">
               <AviatorGraph
                 multiplier={multiplier}
@@ -266,12 +324,13 @@ const Aviator = () => {
                     ? `Place your bet · ${displayTimer}s left`
                     : phase === 'crashed'
                       ? `Crashed at ${(crashPoint || multiplier).toFixed(2)}x`
-                      : 'Next round soon…'
+                      : 'Next round starting…'
                 }
               />
             </div>
 
-            <div className="w-full shrink-0 p-2 bg-[#0a0a0a] border-t border-white/5">
+            {/* Bottom Controls */}
+            <div className="w-full shrink-0 p-3 bg-[#0a0a0a] border-t border-white/5">
               <AviatorControls
                 betAmount={betAmount}
                 setBetAmount={setBetAmount}
@@ -284,12 +343,15 @@ const Aviator = () => {
                 loading={loading}
                 bettingOpen={bettingOpen}
                 canCashout={canCashout}
+                balance={balance}
+                isAuthenticated={isAuthenticated}
               />
             </div>
           </div>
         </div>
       </div>
 
+      {/* Bet Placed Success Popup */}
       <AnimatePresence>
         {showBetSuccess && (
           <Motion.div
@@ -298,25 +360,26 @@ const Aviator = () => {
             exit={{ scale: 0.5, opacity: 0 }}
             className="fixed inset-0 z-[100] flex items-center justify-center pointer-events-none"
           >
-            <div className="bg-[#28a745] px-10 py-5 rounded-2xl font-black text-white uppercase tracking-widest border border-green-400">
-              Bet locked · plane launches soon
+            <div className="bg-[#28a745] px-10 py-5 rounded-2xl font-black text-white uppercase tracking-widest border-2 border-green-300 shadow-[0_10px_30px_rgba(40,167,69,0.5)]">
+              Bet Locked In · Plane Launches Soon ✈️
             </div>
           </Motion.div>
         )}
       </AnimatePresence>
 
+      {/* Cashout Win Popup */}
       <AnimatePresence>
         {hasCashedOut && cashoutPayout != null && (
           <Motion.div
             initial={{ scale: 0.5, opacity: 0, y: 20 }}
-            animate={{ scale: 1, opacity: 1, y: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.5, opacity: 0, y: -20 }}
             className="fixed inset-0 pointer-events-none flex items-center justify-center z-[70]"
           >
-            <div className="bg-[#28a745] px-10 py-5 rounded-2xl border-2 border-green-400 text-center">
+            <div className="bg-[#28a745] px-10 py-6 rounded-3xl border-2 border-green-300 text-center shadow-[0_15px_40px_rgba(40,167,69,0.6)]">
               <div className="text-white text-xs font-black uppercase tracking-widest mb-1">Cashed out at</div>
-              <div className="text-4xl font-black text-white italic">{(cashoutMult || multiplier).toFixed(2)}x</div>
-              <div className="text-white font-black text-2xl">{formatINR(cashoutPayout)}</div>
+              <div className="text-5xl font-black text-white italic tracking-tight">{(cashoutMult || multiplier).toFixed(2)}x</div>
+              <div className="text-white font-black text-2xl mt-1">{formatINR(cashoutPayout)}</div>
             </div>
           </Motion.div>
         )}

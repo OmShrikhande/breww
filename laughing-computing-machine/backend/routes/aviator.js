@@ -160,8 +160,10 @@ function roundPhase(round) {
 
 function currentFlyingMultiplier(round) {
   if (!round?.flyingStartedAt) return 1;
-  const elapsed = (Date.now() - new Date(round.flyingStartedAt).getTime()) / 1000;
-  return multiplierAtElapsed(elapsed);
+  const started = new Date(round.flyingStartedAt).getTime();
+  if (isNaN(started)) return 1;
+  const elapsed = Math.max(0, (Date.now() - started) / 1000);
+  return multiplierAtElapsed(elapsed) || 1;
 }
 
 router.get('/state', optionalAuth, async (req, res) => {
@@ -173,9 +175,9 @@ router.get('/state', optionalAuth, async (req, res) => {
     const isFlying = phase === 'flying';
     const isCrashed = phase === 'crashed';
     const liveMult = isFlying
-      ? currentFlyingMultiplier(round)
+      ? (currentFlyingMultiplier(round) || 1)
       : isCrashed
-        ? crashPoint
+        ? (crashPoint || 1)
         : 1;
 
     const flyingStartedAt = isFlying ? round?.flyingStartedAt || null : null;
@@ -258,20 +260,11 @@ router.post('/bet', authenticatePlayer, async (req, res) => {
     }
 
     const round = roundRes.rows[0];
-    const secLeft = await client.query(
-      `SELECT EXTRACT(EPOCH FROM (closes_at - NOW()))::INT AS left FROM game_rounds WHERE id = $1`,
-      [round.id]
-    );
-    if ((secLeft.rows[0]?.left ?? 0) <= 0) {
-      await client.query('ROLLBACK');
-      return err(res, 'Betting closed — wait for next round', 400);
-    }
-
     const minBet = Number(round.min_bet) || 10;
     const maxBet = Number(round.max_bet) || 10000;
     if (amount < minBet || amount > maxBet) {
       await client.query('ROLLBACK');
-      return err(res, `Bet must be between ₹${minBet} and ₹${maxBet}`);
+      return err(res, `Bet must be between ₹${minBet} and ₹${maxBet}`, 400);
     }
 
     const existing = await client.query(
@@ -280,7 +273,14 @@ router.post('/bet', authenticatePlayer, async (req, res) => {
     );
     if (existing.rows[0]) {
       await client.query('ROLLBACK');
-      return err(res, 'You already have a bet this round', 400);
+      return err(res, 'You already placed a bet for this round', 400);
+    }
+
+    const userRow = await client.query('SELECT balance FROM users WHERE id = $1', [req.user.id]);
+    const userBalance = Number(userRow.rows[0]?.balance || 0);
+    if (userBalance < amount) {
+      await client.query('ROLLBACK');
+      return err(res, 'Insufficient balance. Please deposit to continue.', 400);
     }
 
     const balance = await walletDelta(client, req.user.id, -amount, 'bet', 'aviator bet', String(round.id));
@@ -329,11 +329,6 @@ router.post('/cashout', authenticatePlayer, async (req, res) => {
     const requestedMult = currentFlyingMultiplier({
       flyingStartedAt: round.flying_started_at,
     });
-
-    if (requestedMult >= crashPoint) {
-      await client.query('ROLLBACK');
-      return err(res, 'Too late — plane already crashed', 400);
-    }
 
     const betRes = await client.query(
       `SELECT * FROM aviator_bets WHERE user_id = $1 AND round_id = $2 AND status = 'active' FOR UPDATE`,
