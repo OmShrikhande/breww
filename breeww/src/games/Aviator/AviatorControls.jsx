@@ -21,8 +21,9 @@ const AviatorControls = ({
   const quickBets = [10, 50, 100, 500, 1000];
 
   const hasInsufficientBalance = isAuthenticated && balance < betAmount;
-  const canBet = (bettingOpen || !isAuthenticated) && !isBetPlaced && !loading && !hasInsufficientBalance;
-  const canCashOutNow = canCashout && isBetPlaced && !hasCashedOut && !loading;
+  const isCurrentlyActiveBet = Boolean(isBetPlaced && !hasCashedOut);
+  const canBet = (bettingOpen || !isAuthenticated) && !isCurrentlyActiveBet && !loading && !hasInsufficientBalance;
+  const canCashOutNow = (canCashout || gameState === 'running') && isCurrentlyActiveBet && !loading;
 
   return (
     <div className="bg-[#1b233d] p-3 rounded-2xl border border-white/5 shadow-2xl flex flex-col items-center max-w-xl mx-auto w-full">
@@ -54,7 +55,7 @@ const AviatorControls = ({
             <button
               type="button"
               onClick={() => setBetAmount(Math.max(10, betAmount - 10))}
-              disabled={isBetPlaced || loading}
+              disabled={isCurrentlyActiveBet || loading}
               className="w-6 h-6 rounded-full bg-white/10 hover:bg-white/20 border border-gray-600 flex items-center justify-center text-gray-200 disabled:opacity-30 transition-colors"
               aria-label="Decrease bet"
             >
@@ -64,7 +65,7 @@ const AviatorControls = ({
               type="number"
               value={betAmount || ''}
               onChange={(e) => setBetAmount(Math.max(0, Number(e.target.value)))}
-              disabled={isBetPlaced || loading}
+              disabled={isCurrentlyActiveBet || loading}
               className="bg-transparent text-center font-black text-sm text-white focus:outline-none w-[56px] tabular-nums"
               min={10}
               max={10000}
@@ -72,7 +73,7 @@ const AviatorControls = ({
             <button
               type="button"
               onClick={() => setBetAmount(Math.min(10000, betAmount + 10))}
-              disabled={isBetPlaced || loading}
+              disabled={isCurrentlyActiveBet || loading}
               className="w-6 h-6 rounded-full bg-white/10 hover:bg-white/20 border border-gray-600 flex items-center justify-center text-gray-200 disabled:opacity-30 transition-colors"
               aria-label="Increase bet"
             >
@@ -86,7 +87,7 @@ const AviatorControls = ({
                 key={val}
                 type="button"
                 onClick={() => setBetAmount(val)}
-                disabled={isBetPlaced || loading}
+                disabled={isCurrentlyActiveBet || loading}
                 className={`px-2 py-1 rounded-md text-[10px] font-black border transition-all ${
                   betAmount === val
                     ? 'bg-[#4aa4ff] text-white border-blue-400 shadow-[0_0_10px_rgba(74,164,255,0.4)]'
@@ -111,13 +112,13 @@ const AviatorControls = ({
               <span className="text-2xl font-black tabular-nums tracking-tight">{multiplier.toFixed(2)}x</span>
               <span className="text-xs font-black">{formatINR(betAmount * multiplier)}</span>
             </button>
-          ) : isBetPlaced ? (
+          ) : isCurrentlyActiveBet ? (
             <div className="w-full h-full rounded-2xl flex flex-col items-center justify-center bg-[#b91c1c]/90 border border-red-500/40 text-white shadow-lg select-none">
               <span className="text-base font-black uppercase tracking-wider text-white">
-                {hasCashedOut ? 'CASHED OUT' : 'BET LOCKED'}
+                BET LOCKED
               </span>
               <span className="text-xs font-bold text-red-200 mt-0.5">
-                {formatINR(betAmount)} · {hasCashedOut ? 'Round Finished' : 'In Play'}
+                {formatINR(betAmount)} · In Play
               </span>
             </div>
           ) : hasInsufficientBalance ? (

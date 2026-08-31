@@ -134,7 +134,9 @@ async function tickAviator(game) {
     }
 
     const flying = await pool.query(
-      `SELECT id, scheduled_result, flying_started_at FROM game_rounds
+      `SELECT id, scheduled_result,
+              EXTRACT(EPOCH FROM (NOW() - flying_started_at))::FLOAT AS elapsed_seconds
+       FROM game_rounds
        WHERE game_id = 'aviator' AND status = 'closed' ORDER BY closed_at DESC LIMIT 1`
     );
     if (flying.rows[0]) {
@@ -150,13 +152,10 @@ async function tickAviator(game) {
         avgBet: Number(row.avg),
       };
       const crash = normalizeCrashPoint(flying.rows[0].scheduled_result, betStats);
-      const started = flying.rows[0].flying_started_at
-        ? new Date(flying.rows[0].flying_started_at).getTime()
-        : Date.now();
-      const elapsed = (Date.now() - started) / 1000;
+      const elapsed = Math.max(0, Number(flying.rows[0].elapsed_seconds || 0));
       const mult = multiplierAtElapsed(elapsed);
-      const requiredElapsed = elapsedForMultiplier(crash) - 0.05;
-      if (elapsed >= requiredElapsed || mult >= crash - 0.01) {
+      const requiredElapsed = elapsedForMultiplier(crash);
+      if (elapsed >= requiredElapsed || mult >= crash) {
         try {
           await Round.finalizeAviatorRound(flying.rows[0].id, String(crash), !manualMode);
         } catch {

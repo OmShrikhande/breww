@@ -14,10 +14,9 @@ import AviatorSidebar from './AviatorSidebar';
 
 const MULTIPLIER_GROWTH_RATE = 0.048;
 
-const calcMult = (startedAt) => {
-  if (!startedAt) return 1;
-  const elapsed = (Date.now() - new Date(startedAt).getTime()) / 1000;
-  return Math.max(1, Math.floor(Math.pow(Math.E, MULTIPLIER_GROWTH_RATE * Math.max(0, elapsed)) * 100) / 100);
+const calcMultiplier = (elapsedSec) => {
+  if (!elapsedSec || elapsedSec <= 0) return 1.00;
+  return Math.max(1.00, Math.floor(Math.pow(Math.E, MULTIPLIER_GROWTH_RATE * Math.max(0, elapsedSec)) * 100) / 100);
 };
 
 const Aviator = () => {
@@ -25,7 +24,7 @@ const Aviator = () => {
   const { isAuthenticated } = useAuth();
 
   const [phase, setPhase] = useState('betting');
-  const [multiplier, setMultiplier] = useState(1);
+  const [multiplier, setMultiplier] = useState(1.00);
   const [crashPoint, setCrashPoint] = useState(null);
   const [roundId, setRoundId] = useState(null);
   const [displayTimer, setDisplayTimer] = useState(15);
@@ -40,17 +39,17 @@ const Aviator = () => {
   const [hasCashedOut, setHasCashedOut] = useState(false);
   const [cashoutMult, setCashoutMult] = useState(null);
   const [cashoutPayout, setCashoutPayout] = useState(null);
-  const [flyingStartedAt, setFlyingStartedAt] = useState(null);
   const [canCashout, setCanCashout] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showBetSuccess, setShowBetSuccess] = useState(false);
   
   const timerSyncRef = useRef({ left: 15, receivedAt: Date.now() });
+  const flightSyncRef = useRef({ elapsed: 0, receivedAt: Date.now() });
   const activeRoundRef = useRef(null);
   const isCashingOutRef = useRef(false);
 
-  const isBetPlaced = Boolean(myBet);
+  const isBetPlaced = Boolean(myBet && myBet.status === 'active');
   const bettingOpen = phase === 'betting' && (displayTimer > 0 || serverBettingOpen);
 
   const visualState =
@@ -78,22 +77,25 @@ const Aviator = () => {
       setPhase(data.phase || 'betting');
       setBetWindowSeconds(data.betWindowSeconds ?? 15);
       setServerBettingOpen(Boolean(data.bettingOpen));
-      
-      if (data.roundId) {
-        setRoundId(data.roundId);
-        activeRoundRef.current = data.roundId;
-      }
-      
-      setCrashPoint(data.crashPoint);
-      setFlyingStartedAt(data.flyingStartedAt);
+      setCrashPoint(data.crashPoint != null ? Number(data.crashPoint) : null);
       setCanCashout(Boolean(data.canCashout || (data.phase === 'flying' && myBet?.status === 'active')));
       setRecentWinners(data.recentWinners || []);
       setTopWinners(data.topWinners || []);
       setRoundBets(data.roundBets || []);
-      setHistory((data.history || []).map((h, i) => ({ id: h.id || i, multiplier: h.multiplier })));
+      setHistory((data.history || []).map((h, i) => ({ id: h.id || i, multiplier: Number(h.multiplier) || 1 })));
 
-      if (data.myBet) {
-        setMyBet(data.myBet);
+      // Detect round transition first
+      if (data.roundId && data.roundId !== activeRoundRef.current) {
+        activeRoundRef.current = data.roundId;
+        setRoundId(data.roundId);
+        setHasCashedOut(false);
+        setCashoutMult(null);
+        setCashoutPayout(null);
+        isCashingOutRef.current = false;
+        setMyBet(data.myBet || null);
+      } else {
+        if (data.roundId) setRoundId(data.roundId);
+        setMyBet(data.myBet || null);
       }
 
       // Synchronize timer reference
@@ -101,33 +103,26 @@ const Aviator = () => {
         const sLeft = Number(data.timerLeft ?? 15);
         timerSyncRef.current = { left: sLeft, receivedAt: Date.now() };
         setDisplayTimer(sLeft);
+        setMultiplier(1.00);
       } else {
         setDisplayTimer(0);
       }
 
-      if (data.phase === 'flying' && data.flyingStartedAt) {
-        setMultiplier(calcMult(data.flyingStartedAt));
+      // Synchronize flight multiplier reference
+      if (data.phase === 'flying') {
+        const serverElapsed = Number(data.flightElapsed || 0);
+        flightSyncRef.current = { elapsed: serverElapsed, receivedAt: Date.now() };
       } else if (data.phase === 'crashed') {
-        setMultiplier(data.crashPoint ?? data.multiplier ?? 1);
+        const finalCrash = Number(data.crashPoint || data.multiplier || 1.5);
+        setMultiplier(finalCrash);
       } else {
-        setMultiplier(1);
+        setMultiplier(1.00);
       }
 
       if (data.myBet?.status === 'cashed_out') {
         setHasCashedOut(true);
         setCashoutMult(Number(data.myBet.cashoutMultiplier));
         setCashoutPayout(Number(data.myBet.payout));
-      }
-
-      // Detect round transition
-      if (data.phase === 'betting' && data.roundId && data.roundId !== activeRoundRef.current) {
-        setHasCashedOut(false);
-        setCashoutMult(null);
-        setCashoutPayout(null);
-        isCashingOutRef.current = false;
-        if (data.myBet?.status !== 'active') {
-          setMyBet(null);
-        }
       }
     } catch (e) {
       if (e?.message?.includes('Too many requests')) {
@@ -142,7 +137,7 @@ const Aviator = () => {
     return () => clearInterval(t);
   }, [pollState]);
 
-  // Smooth local countdown timer
+  // Smooth local countdown timer (200ms tick)
   useEffect(() => {
     if (phase !== 'betting') {
       setDisplayTimer(0);
@@ -160,19 +155,26 @@ const Aviator = () => {
     return () => clearInterval(id);
   }, [phase, roundId]);
 
-  // Flight animation loop
+  // High performance 60FPS Flight animation loop
   useEffect(() => {
-    if (phase !== 'flying' || !flyingStartedAt) return undefined;
-    let frame;
-    const tick = () => {
-      let m = calcMult(flyingStartedAt);
-      if (crashPoint && m >= crashPoint) m = crashPoint;
-      setMultiplier(m);
-      frame = requestAnimationFrame(tick);
+    if (phase !== 'flying') return undefined;
+
+    let frameId;
+    const updateFlight = () => {
+      const deltaSec = (Date.now() - flightSyncRef.current.receivedAt) / 1000;
+      const currentElapsed = Math.max(0, flightSyncRef.current.elapsed + deltaSec);
+      let currentMult = calcMultiplier(currentElapsed);
+
+      if (crashPoint && currentMult >= crashPoint) {
+        currentMult = crashPoint;
+      }
+      setMultiplier(currentMult);
+      frameId = requestAnimationFrame(updateFlight);
     };
-    frame = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(frame);
-  }, [phase, flyingStartedAt, crashPoint]);
+
+    frameId = requestAnimationFrame(updateFlight);
+    return () => cancelAnimationFrame(frameId);
+  }, [phase, crashPoint]);
 
   const handlePlaceBet = useCallback(async (amount) => {
     if (!isAuthenticated) {

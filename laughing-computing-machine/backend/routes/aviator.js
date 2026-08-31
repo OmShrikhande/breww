@@ -124,6 +124,7 @@ async function getCurrentRound() {
   const flying = await pool.query(
     `SELECT r.id AS "roundId", r.status, r.result, r.scheduled_result AS "scheduledResult",
             r.flying_started_at AS "flyingStartedAt",
+            EXTRACT(EPOCH FROM (NOW() - r.flying_started_at))::FLOAT AS "flightElapsed",
             0 AS "timerLeft", gs.min_bet AS "minBet", gs.max_bet AS "maxBet"
      FROM game_rounds r
      JOIN game_settings gs ON gs.game_id = r.game_id
@@ -159,6 +160,9 @@ function roundPhase(round) {
 }
 
 function currentFlyingMultiplier(round) {
+  if (round?.flightElapsed != null) {
+    return multiplierAtElapsed(Math.max(0, Number(round.flightElapsed))) || 1;
+  }
   if (!round?.flyingStartedAt) return 1;
   const started = new Date(round.flyingStartedAt).getTime();
   if (isNaN(started)) return 1;
@@ -174,8 +178,9 @@ router.get('/state', optionalAuth, async (req, res) => {
     const crashPoint = isValidCrash(rawCrash) ? Number(rawCrash) : null;
     const isFlying = phase === 'flying';
     const isCrashed = phase === 'crashed';
+    const flightElapsed = isFlying ? Math.max(0, Number(round?.flightElapsed || 0)) : 0;
     const liveMult = isFlying
-      ? (currentFlyingMultiplier(round) || 1)
+      ? (multiplierAtElapsed(flightElapsed) || 1)
       : isCrashed
         ? (crashPoint || 1)
         : 1;
@@ -218,6 +223,7 @@ router.get('/state', optionalAuth, async (req, res) => {
       bettingOpen: phase === 'betting' && timerLeft > 0,
       crashPoint: isFlying || isCrashed ? crashPoint : null,
       multiplier: liveMult,
+      flightElapsed: isFlying ? flightElapsed : 0,
       flyingStartedAt,
       showPlane: isFlying,
       hasActiveBet,
