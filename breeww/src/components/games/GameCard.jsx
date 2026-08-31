@@ -19,27 +19,10 @@ const CATEGORY_MAP = {
   'chamber-risk': 'ORIGINALS',
 };
 
-const ONLINE_PLAYERS = {
-  aviator: 1247,
-  colour: 3429,
-  'color-prediction': 3429,
-  mines: 892,
-  wheel: 567,
-  'spin-wheel': 567,
-  'dragon-tiger': 445,
-  'andar-bahar': 612,
-  plinko: 321,
-  roulette: 284,
-  dice: 195,
-  poker: 142,
-  'chamber-risk': 118,
-};
-
 const GameCard = ({ game }) => {
   const normId = String(game.id).toLowerCase();
   const accent = game.accentColor || '#6366f1';
   const category = CATEGORY_MAP[normId] || game.category || 'LIVE';
-  const onlineCount = ONLINE_PLAYERS[normId] || 350;
 
   const defaultGradient = `linear-gradient(135deg, ${accent}22 0%, #0d1530 100%)`;
 
@@ -69,12 +52,6 @@ const GameCard = ({ game }) => {
           <span className="px-2 py-0.5 rounded-full bg-black/60 border border-white/15 text-white/90 text-[8px] font-black uppercase tracking-wider backdrop-blur-md">
             {category}
           </span>
-        </div>
-
-        {/* Bottom Online Players Count */}
-        <div className="absolute bottom-1.5 right-2 flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-black/70 border border-white/10 text-[8px] font-bold text-white/80 backdrop-blur-md pointer-events-none z-10">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block animate-pulse" />
-          <span>{onlineCount.toLocaleString()} online</span>
         </div>
       </div>
 

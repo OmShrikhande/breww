@@ -1,63 +1,75 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion as Motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle2, History } from 'lucide-react';
+import { CheckCircle2, History, Sparkles } from 'lucide-react';
 
 import GameLayout from '../GameLayout';
 import RoundStatusBar from '../../components/games/RoundStatusBar';
 import { useGameRound, parseDragonTigerResult } from '../../hooks/useGameRound';
 import { useRoundBetting } from '../../hooks/useRoundBetting';
 import { formatBetLabel } from '../../utils/gameHelpers';
+import { formatINR } from '../../utils/formatCurrency';
 
 const GAME_ID = 'dragon-tiger';
 const ACCENT = '#9B59B6';
 
 const BETS = [
-  { type: 'dragon', label: 'Dragon', mult: '1.95×', gradient: 'from-red-600 to-rose-900', emoji: '🐉' },
-  { type: 'tie', label: 'Tie', mult: '8×', gradient: 'from-emerald-600 to-green-900', emoji: '⚖️' },
-  { type: 'tiger', label: 'Tiger', mult: '1.95×', gradient: 'from-amber-500 to-orange-800', emoji: '🐅' },
+  { type: 'dragon', label: 'Dragon', mult: '1.95×', gradient: 'from-red-600 to-rose-900', emoji: '🐉', color: '#EF4444' },
+  { type: 'tie', label: 'Tie', mult: '8×', gradient: 'from-emerald-600 to-green-900', emoji: '⚖️', color: '#10B981' },
+  { type: 'tiger', label: 'Tiger', mult: '1.95×', gradient: 'from-amber-500 to-orange-800', emoji: '🐅', color: '#F59E0B' },
 ];
+
+const CARD_RANKS = { 1: 'A', 11: 'J', 12: 'Q', 13: 'K' };
 
 const DragonTiger = () => {
   const { timerLeft, bettingOpen, result, history, roundId, refresh } = useGameRound(GAME_ID);
   const { placeBet, betError, betSuccess, placing } = useRoundBetting(GAME_ID);
 
   const [selectedBet, setSelectedBet] = useState(null);
+  const [lastPlacedBet, setLastPlacedBet] = useState(null);
   const [displayResult, setDisplayResult] = useState(null);
   const [isDealing, setIsDealing] = useState(false);
   const [lastResult, setLastResult] = useState(null);
+  const activeRoundRef = useRef(roundId);
+
+  useEffect(() => {
+    if (roundId && roundId !== activeRoundRef.current) {
+      activeRoundRef.current = roundId;
+      setDisplayResult(null);
+      setIsDealing(false);
+    }
+  }, [roundId]);
 
   useEffect(() => {
     if (!result || result === lastResult) return;
     setLastResult(result);
     setIsDealing(true);
+
+    const parsed = parseDragonTigerResult(result, roundId);
+
     setTimeout(() => {
-      setDisplayResult(parseDragonTigerResult(result, roundId));
+      setDisplayResult(parsed);
       setIsDealing(false);
       refresh();
       setTimeout(() => setDisplayResult(null), 5000);
-    }, 1400);
+    }, 1200);
   }, [result, lastResult, roundId, refresh]);
 
   const gameHistory = history.map((h) => parseDragonTigerResult(h.result, h.roundId));
 
   const handleBetClick = async (amount) => {
-    const bet = { type: 'side', value: selectedBet?.type };
+    if (!selectedBet) return;
+    const bet = { type: 'side', value: selectedBet.type };
+    setLastPlacedBet({ ...selectedBet, amount });
     const ok = await placeBet(bet, amount, { bettingOpen });
     if (ok) setSelectedBet(null);
   };
 
-  const cardDisplay = (val) => {
-    if (val === 1) return 'A';
-    if (val === 11) return 'J';
-    if (val === 12) return 'Q';
-    if (val === 13) return 'K';
-    return val;
-  };
+  const cardRank = (val) => CARD_RANKS[val] || val || '?';
 
   return (
     <GameLayout
       title="Dragon Tiger"
-      subtitle="High card wins · 30s rounds"
+      subtitle="High card wins · 30s live rounds"
       accent={ACCENT}
       onPlaceBet={handleBetClick}
       betDisabled={!bettingOpen || !selectedBet || placing || isDealing}
@@ -66,112 +78,141 @@ const DragonTiger = () => {
       <div className="flex flex-col gap-4 pb-4">
         <RoundStatusBar roundId={roundId} timerLeft={timerLeft} bettingOpen={bettingOpen} accent={ACCENT} />
 
-        <div className="game-glass rounded-3xl p-6 border border-white/10 relative min-h-[320px] flex flex-col items-center justify-center overflow-hidden">
-          <div className="absolute inset-0 opacity-5 pointer-events-none flex justify-between px-4 items-center text-[120px]">
-            <span>🐉</span>
-            <span>🐅</span>
+        {/* Dragon vs Tiger Card Arena */}
+        <div className="game-glass rounded-3xl p-6 border border-white/10 relative min-h-[340px] flex flex-col items-center justify-between overflow-hidden shadow-2xl bg-[#0d1424]/90 backdrop-blur-md">
+          <div className="absolute inset-0 bg-gradient-to-b from-purple-500/5 via-transparent to-black/40 pointer-events-none" />
+
+          {/* Top Status */}
+          <div className="relative z-10 flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-casino-gold mb-2">
+            <Sparkles size={12} />
+            <span>High Card Arena</span>
           </div>
 
-          <div className="relative z-10 flex w-full items-center justify-between gap-2 px-2">
+          {/* Side by Side Arena */}
+          <div className="relative z-10 flex w-full items-center justify-around gap-2 px-2 my-auto">
             <ArenaSide
               label="Dragon"
               card={displayResult?.dragon}
-              isDealing={isDealing && !displayResult}
+              isDealing={isDealing}
               isWinner={displayResult?.winner === 'dragon'}
-              side="dragon"
-              cardDisplay={cardDisplay}
+              emoji="🐉"
+              color="#EF4444"
+              cardRank={cardRank}
             />
-            <div className="flex flex-col items-center px-2">
-              <Motion.span
-                animate={isDealing ? { rotate: 360 } : {}}
-                transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
-                className="text-2xl font-black text-white/20 italic"
+
+            <div className="flex flex-col items-center px-2 z-20">
+              <Motion.div
+                animate={isDealing ? { scale: [1, 1.25, 1], rotate: [0, 180, 360] } : {}}
+                transition={{ duration: 1.2, repeat: isDealing ? Infinity : 0 }}
+                className="w-12 h-12 rounded-full bg-black/60 border-2 border-white/20 flex items-center justify-center shadow-lg"
               >
-                VS
-              </Motion.span>
+                <span className="text-sm font-black text-casino-gold italic">VS</span>
+              </Motion.div>
             </div>
+
             <ArenaSide
               label="Tiger"
               card={displayResult?.tiger}
-              isDealing={isDealing && !displayResult}
+              isDealing={isDealing}
               isWinner={displayResult?.winner === 'tiger'}
-              side="tiger"
-              cardDisplay={cardDisplay}
+              emoji="🐅"
+              color="#F59E0B"
+              cardRank={cardRank}
             />
           </div>
 
+          {/* Winner Outcome Overlay Banner */}
           <AnimatePresence>
             {displayResult && (
               <Motion.div
-                initial={{ scale: 0.5, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className={`mt-6 px-8 py-2.5 rounded-full font-black uppercase tracking-widest text-sm border-2 result-pop ${
-                  displayResult.winner === 'dragon'
-                    ? 'bg-red-600/90 border-red-400 text-white'
-                    : displayResult.winner === 'tiger'
-                      ? 'bg-amber-500/90 border-amber-300 text-white'
-                      : 'bg-emerald-600/90 border-emerald-400 text-white'
-                }`}
+                initial={{ opacity: 0, scale: 0.8, y: 15 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                className="absolute inset-0 bg-black/85 backdrop-blur-md flex flex-col items-center justify-center z-30 pointer-events-none"
               >
-                {displayResult.winner === 'tie' ? 'Tie!' : `${displayResult.winner} wins`}
+                <div
+                  className={`px-8 py-4 rounded-3xl font-black text-2xl uppercase tracking-wider shadow-2xl text-white border-2 ${
+                    displayResult.winner === 'dragon'
+                      ? 'bg-gradient-to-r from-red-600 to-rose-700 border-red-400 shadow-[0_0_30px_rgba(239,68,68,0.6)]'
+                      : displayResult.winner === 'tiger'
+                        ? 'bg-gradient-to-r from-amber-500 to-orange-600 border-amber-300 shadow-[0_0_30px_rgba(245,158,11,0.6)]'
+                        : 'bg-gradient-to-r from-emerald-600 to-teal-700 border-emerald-400 shadow-[0_0_30px_rgba(16,185,129,0.6)]'
+                  }`}
+                >
+                  🎉 {displayResult.winner === 'tie' ? 'TIE GAME (8×)!' : `${displayResult.winner.toUpperCase()} WINS!`}
+                </div>
               </Motion.div>
             )}
           </AnimatePresence>
         </div>
 
-        {betError && <p className="text-center text-sm text-red-400 bg-red-500/10 rounded-xl py-2 px-3">{betError}</p>}
+        {betError && (
+          <p className="text-center text-sm text-red-400 bg-red-500/15 border border-red-500/30 rounded-2xl py-2.5 px-4 font-bold animate-fadeIn">
+            {betError}
+          </p>
+        )}
 
-        <div className={`grid grid-cols-3 gap-3 ${!bettingOpen ? 'opacity-50 pointer-events-none' : ''}`}>
+        {/* 3 Bet Options: Dragon (1.95x), Tie (8x), Tiger (1.95x) */}
+        <div className={`grid grid-cols-3 gap-2.5 sm:gap-3 ${!bettingOpen ? 'opacity-50 pointer-events-none' : ''}`}>
           {BETS.map((b) => {
-            const sel = selectedBet?.type === b.type;
+            const isSelected = selectedBet?.type === b.type;
             return (
               <button
                 key={b.type}
                 type="button"
-                onClick={() => setSelectedBet(b)}
-                className={`bet-chip relative overflow-hidden rounded-2xl py-5 border border-white/10 bg-gradient-to-br ${b.gradient} ${
-                  sel ? 'ring-2 ring-casino-gold scale-[1.03]' : ''
+                onClick={() => setSelectedBet(isSelected ? null : b)}
+                className={`group relative overflow-hidden rounded-2xl py-4 px-2 border transition-all duration-200 active:scale-95 cursor-pointer text-center bg-gradient-to-br ${b.gradient} ${
+                  isSelected
+                    ? 'ring-2 ring-casino-gold border-casino-gold shadow-glow-gold scale-[1.03]'
+                    : 'border-white/10 hover:border-white/30 hover:scale-[1.01]'
                 }`}
               >
-                <span className="text-2xl block mb-1">{b.emoji}</span>
-                <span className="text-xs font-black uppercase text-white tracking-wider">{b.label}</span>
-                <span className="text-[10px] text-white/70 block mt-0.5">{b.mult}</span>
+                <span className="text-2xl sm:text-3xl block mb-1 drop-shadow">{b.emoji}</span>
+                <span className="text-xs sm:text-sm font-black uppercase text-white tracking-wider block">{b.label}</span>
+                <span className="text-[10px] sm:text-xs font-mono font-bold text-white/80 block mt-0.5 bg-black/30 px-2 py-0.5 rounded-full mx-auto w-max">
+                  {b.mult}
+                </span>
               </button>
             );
           })}
         </div>
 
+        {/* Recent Outcomes History */}
         {gameHistory.length > 0 && (
-          <div className="game-glass rounded-2xl border border-white/10 overflow-hidden">
-            <div className="flex items-center gap-2 px-4 py-3 border-b border-white/10">
-              <History size={14} className="text-white/40" />
-              <span className="text-xs font-black uppercase tracking-widest text-white/40">Recent</span>
+          <div className="glass-panel rounded-3xl p-4 sm:p-5 border border-white/10 shadow-xl">
+            <div className="flex items-center gap-2 font-black text-xs text-white/60 mb-3">
+              <History size={14} />
+              <span>Recent Outcomes</span>
             </div>
-            <div className="flex gap-2 p-3 flex-wrap">
+            <div className="flex gap-2 overflow-x-auto custom-scrollbar pb-1">
               {gameHistory.slice(0, 15).map((h, i) => (
-                <span
+                <div
                   key={i}
-                  className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-black text-white ${
-                    h.winner === 'dragon' ? 'bg-red-600' : h.winner === 'tiger' ? 'bg-amber-500' : 'bg-emerald-600'
+                  className={`px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider shrink-0 border ${
+                    h.winner === 'dragon'
+                      ? 'bg-red-500/20 text-red-300 border-red-500/40'
+                      : h.winner === 'tiger'
+                        ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                        : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
                   }`}
                 >
-                  {h.winner[0].toUpperCase()}
-                </span>
+                  {h.winner === 'dragon' ? '🐉 Dragon' : h.winner === 'tiger' ? '🐅 Tiger' : '⚖️ Tie'}
+                </div>
               ))}
             </div>
           </div>
         )}
 
+        {/* Bet Confirmation Toast */}
         <AnimatePresence>
           {betSuccess && (
             <Motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              className="fixed bottom-28 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 rounded-full bg-emerald-500 px-5 py-2.5 text-sm font-black text-white shadow-glow"
+              initial={{ opacity: 0, scale: 0.9, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              className="fixed bottom-28 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 rounded-full bg-emerald-500 px-6 py-3 text-sm font-black text-white shadow-2xl"
             >
-              <CheckCircle2 size={18} /> Bet confirmed
+              <CheckCircle2 size={18} /> Bet Placed on {lastPlacedBet?.label || 'Dragon'} · {formatINR(lastPlacedBet?.amount || 50)}!
             </Motion.div>
           )}
         </AnimatePresence>
@@ -180,44 +221,57 @@ const DragonTiger = () => {
   );
 };
 
-const ArenaSide = ({ label, card, isDealing, isWinner, side, cardDisplay }) => {
-  const isRed = card?.suit === '♥' || card?.suit === '♦';
+const ArenaSide = ({ label, card, isDealing, isWinner, emoji, color, cardRank }) => {
+  const isRedSuit = card?.suit === '♥' || card?.suit === '♦';
+
   return (
-    <div className="flex flex-col items-center gap-3 flex-1">
-      <span className={`text-xs font-black uppercase tracking-[0.2em] ${isWinner ? 'text-casino-gold' : 'text-white/50'}`}>
-        {label}
+    <div className="flex flex-col items-center gap-2 flex-1">
+      <span className={`text-xs sm:text-sm font-black uppercase tracking-wider flex items-center gap-1 ${
+        isWinner ? 'text-casino-gold scale-105 animate-pulse' : 'text-white/70'
+      }`}>
+        <span>{emoji}</span> {label}
       </span>
-      <div className="relative w-24 h-36">
+
+      <div className="relative w-20 h-28 sm:w-24 sm:h-36">
         <Motion.div
-          animate={{ rotateY: card ? 180 : 0, scale: isWinner ? 1.05 : 1 }}
-          transition={{ duration: 0.6 }}
-          style={{ transformStyle: 'preserve-3d' }}
-          className="w-full h-full relative"
+          animate={isWinner ? { scale: [1, 1.08, 1], y: [0, -6, 0] } : {}}
+          transition={{ duration: 0.6, repeat: isWinner ? Infinity : 0 }}
+          className={`w-full h-full rounded-2xl flex flex-col justify-between p-2.5 font-black border-2 transition-all shadow-xl select-none ${
+            card
+              ? isWinner
+                ? 'bg-white border-casino-gold ring-4 ring-casino-gold/60 shadow-[0_0_25px_rgba(245,197,66,0.6)]'
+                : 'bg-white border-white/40'
+              : 'bg-gradient-to-br from-indigo-950 to-slate-900 border-white/15'
+          } ${isRedSuit ? 'text-red-600' : 'text-slate-900'}`}
         >
-          <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-indigo-950 to-slate-900 border-2 border-indigo-500/30 flex items-center justify-center backface-hidden">
-            <span className="text-3xl font-black italic text-indigo-400/50">B</span>
-          </div>
-          <div className="absolute inset-0 rounded-xl bg-white border border-gray-200 flex flex-col p-2 backface-hidden rotate-y-180 shadow-xl">
-            {card && (
-              <>
-                <span className={`text-lg font-black ${isRed ? 'text-red-500' : 'text-gray-900'}`}>
-                  {cardDisplay(card.value)}
-                </span>
-                <span className={`text-sm ${isRed ? 'text-red-500' : 'text-gray-900'}`}>{card.suit}</span>
-                <div className="flex-1 flex items-center justify-center text-4xl">{card.suit}</div>
-              </>
-            )}
-          </div>
+          {card ? (
+            <>
+              <div className="flex justify-between items-start leading-none">
+                <span className="text-base sm:text-lg">{cardRank(card.value)}</span>
+                <span className="text-base sm:text-lg">{card.suit}</span>
+              </div>
+              <div className="text-3xl sm:text-4xl text-center leading-none my-auto">{card.suit}</div>
+              <div className="flex justify-between items-end leading-none rotate-180">
+                <span className="text-base sm:text-lg">{cardRank(card.value)}</span>
+                <span className="text-base sm:text-lg">{card.suit}</span>
+              </div>
+            </>
+          ) : (
+            <div className="w-full h-full flex flex-col items-center justify-center text-white/30 text-2xl font-black">
+              {isDealing ? (
+                <Motion.div
+                  animate={{ scale: [1, 1.3, 1], opacity: [0.4, 1, 0.4] }}
+                  transition={{ duration: 0.8, repeat: Infinity }}
+                  className="text-casino-gold text-lg"
+                >
+                  🎴 Dealing…
+                </Motion.div>
+              ) : (
+                <span>🎴</span>
+              )}
+            </div>
+          )}
         </Motion.div>
-        {isDealing && (
-          <Motion.div
-            initial={{ y: -200, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            className="absolute inset-0 rounded-xl bg-indigo-950 border-2 border-indigo-400/40 flex items-center justify-center z-10"
-          >
-            <span className="text-indigo-300 font-black animate-pulse">…</span>
-          </Motion.div>
-        )}
       </div>
     </div>
   );
