@@ -1,18 +1,13 @@
 import React, { useState } from 'react';
-import { Globe, Megaphone, Headset, BookOpen, Info, ChevronRight, Phone, X, Check } from 'lucide-react';
+import { Megaphone, Headset, BookOpen, Info, ChevronRight, X } from 'lucide-react';
 import { navigateTo } from '../../lib/navigation';
 
 const PlatformFooter = () => {
   const [activeModal, setActiveModal] = useState(null);
-  const [selectedLang, setSelectedLang] = useState('English');
-
-  const languages = ['English', 'हिन्दी (Hindi)', 'తెలుగు (Telugu)', 'தமிழ் (Tamil)', 'मराठी (Marathi)', 'বাংলা (Bengali)'];
 
   const handleMenuClick = (label) => {
     if (label === 'Announcement') {
       navigateTo('/notifications');
-    } else if (label === 'Language') {
-      setActiveModal('language');
     } else if (label === '24/7 Customer service') {
       setActiveModal('support');
     } else if (label === "Beginner's Guide") {
@@ -23,7 +18,6 @@ const PlatformFooter = () => {
   };
 
   const menuItems = [
-    { icon: Globe, label: 'Language', subtitle: selectedLang },
     { icon: Megaphone, label: 'Announcement', subtitle: 'Latest platform news' },
     { icon: Headset, label: '24/7 Customer service', subtitle: 'Live chat & ticket support' },
     { icon: BookOpen, label: "Beginner's Guide", subtitle: 'How to play & deposit' },
@@ -99,40 +93,7 @@ const PlatformFooter = () => {
         ))}
       </div>
 
-      {/* Modals */}
-      {activeModal === 'language' && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[130] flex items-center justify-center p-4">
-          <div className="bg-[#1B233D] rounded-3xl p-6 border border-white/10 max-w-sm w-full text-white shadow-2xl">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="font-black text-base uppercase text-casino-gold">Select Language</h3>
-              <button type="button" onClick={() => setActiveModal(null)} className="p-1 hover:text-red-400 cursor-pointer">
-                <X size={20} />
-              </button>
-            </div>
-            <div className="space-y-2">
-              {languages.map((lang) => (
-                <button
-                  key={lang}
-                  type="button"
-                  onClick={() => {
-                    setSelectedLang(lang.split(' ')[0]);
-                    setActiveModal(null);
-                  }}
-                  className={`w-full flex items-center justify-between p-3 rounded-xl border text-sm font-bold transition-all cursor-pointer ${
-                    selectedLang === lang.split(' ')[0]
-                      ? 'bg-casino-accent/20 border-casino-accent text-white'
-                      : 'bg-white/5 border-white/10 text-gray-300 hover:bg-white/10'
-                  }`}
-                >
-                  <span>{lang}</span>
-                  {selectedLang === lang.split(' ')[0] && <Check size={16} className="text-casino-gold" />}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
+      {/* 24/7 Support Modal */}
       {activeModal === 'support' && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[130] flex items-center justify-center p-4">
           <div className="bg-[#1B233D] rounded-3xl p-6 border border-white/10 max-w-sm w-full text-white shadow-2xl">
@@ -156,6 +117,7 @@ const PlatformFooter = () => {
         </div>
       )}
 
+      {/* Beginner's Guide Modal */}
       {activeModal === 'guide' && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[130] flex items-center justify-center p-4">
           <div className="bg-[#1B233D] rounded-3xl p-6 border border-white/10 max-w-sm w-full text-white shadow-2xl">
@@ -177,6 +139,7 @@ const PlatformFooter = () => {
         </div>
       )}
 
+      {/* About Us Modal */}
       {activeModal === 'about' && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[130] flex items-center justify-center p-4">
           <div className="bg-[#1B233D] rounded-3xl p-6 border border-white/10 max-w-sm w-full text-white shadow-2xl">
