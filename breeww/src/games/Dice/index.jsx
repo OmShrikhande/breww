@@ -22,12 +22,12 @@ const DiceIcon = ({ value, rolling }) => {
   const v = rolling ? Math.floor(Math.random() * 6) + 1 : value;
 
   return (
-    <div className="w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br from-rose-600 via-red-700 to-red-950 rounded-2xl shadow-[0_4px_15px_rgba(225,29,72,0.4)] p-2.5 border-2 border-rose-400/40 flex items-center justify-center">
-      <div className="grid grid-cols-3 grid-rows-3 gap-1 h-full w-full">
+    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-rose-600 via-red-700 to-red-950 rounded-xl shadow-[0_3px_10px_rgba(225,29,72,0.4)] p-1.5 border-2 border-rose-400/40 flex items-center justify-center">
+      <div className="grid grid-cols-3 grid-rows-3 gap-0.5 h-full w-full">
         {[...Array(9)].map((_, i) => (
           <div key={i} className="flex items-center justify-center">
             {dots[v]?.includes(i) && (
-              <div className="w-2.5 h-2.5 bg-amber-300 rounded-full shadow-[0_0_6px_rgba(252,211,77,0.8)] border border-amber-100/50" />
+              <div className="w-2 h-2 bg-amber-300 rounded-full shadow-[0_0_4px_rgba(252,211,77,0.8)] border border-amber-100/50" />
             )}
           </div>
         ))}
@@ -98,28 +98,19 @@ const Dice = () => {
       betDisabled={!bettingOpen || selectedBets.length === 0 || placing || isRolling}
       selectedLabel={selectedLabel}
     >
-      <div className="flex flex-col gap-4 pb-4">
+      <div className="flex flex-col gap-2 h-full justify-between select-none">
         <RoundStatusBar roundId={roundId} timerLeft={timerLeft} bettingOpen={bettingOpen} accent={ACCENT} />
 
-        {/* Dice Arena Table */}
-        <div className="game-glass rounded-3xl p-6 border border-white/10 flex flex-col items-center gap-4 bg-[#0d1527]/90 shadow-2xl relative overflow-hidden">
+        {/* Dice Arena Table (Compact height) */}
+        <div className="game-glass rounded-2xl p-2.5 border border-white/10 flex flex-col items-center gap-2 bg-[#0d1527]/90 shadow-2xl relative overflow-hidden shrink-0">
           <div className="absolute inset-0 bg-gradient-to-b from-blue-500/5 via-transparent to-black/40 pointer-events-none" />
 
-          {result && !isRolling && (
-            <div className="relative z-10 text-center">
-              <span className="text-[10px] font-black uppercase tracking-widest text-casino-gold flex items-center justify-center gap-1">
-                <Sparkles size={12} /> Declared Outcome
-              </span>
-              <p className="text-xl font-black text-white uppercase mt-0.5 tracking-wide">{result}</p>
-            </div>
-          )}
-
           {/* 3 Rolling Dice */}
-          <div className="relative z-10 flex gap-4 sm:gap-6 p-5 rounded-3xl bg-gradient-to-b from-emerald-950/70 to-[#072417] border-2 border-emerald-500/30 shadow-[inset_0_2px_10px_rgba(0,0,0,0.5),0_0_25px_rgba(16,185,129,0.2)]">
+          <div className="relative z-10 flex gap-3 sm:gap-5 p-3 rounded-2xl bg-gradient-to-b from-emerald-950/70 to-[#072417] border-2 border-emerald-500/30 shadow-[inset_0_2px_8px_rgba(0,0,0,0.5)]">
             {diceResults.map((val, i) => (
               <Motion.div
                 key={i}
-                animate={isRolling ? { rotate: [0, 90, 180, 270, 360], y: [0, -18, 0], scale: [1, 1.15, 1] } : {}}
+                animate={isRolling ? { rotate: [0, 90, 180, 270, 360], y: [0, -12, 0], scale: [1, 1.1, 1] } : {}}
                 transition={isRolling ? { duration: 0.35, repeat: Infinity } : {}}
               >
                 <DiceIcon value={val} rolling={isRolling} />
@@ -128,8 +119,8 @@ const Dice = () => {
           </div>
 
           {!isRolling && diceResults.length === 3 && (
-            <div className="relative z-10 flex items-center gap-3 bg-black/40 px-4 py-1.5 rounded-full border border-white/10 text-xs font-bold text-white/70">
-              <span>Sum: <strong className="text-white text-sm font-black">{totalSum}</strong></span>
+            <div className="relative z-10 flex items-center gap-2 bg-black/40 px-3 py-1 rounded-full border border-white/10 text-[11px] font-bold text-white/70">
+              <span>Sum: <strong className="text-white text-xs font-black">{totalSum}</strong></span>
               <span>·</span>
               <span className="text-emerald-400 font-black">{totalSum >= 11 ? 'BIG' : 'SMALL'}</span>
               <span>·</span>
@@ -139,121 +130,132 @@ const Dice = () => {
         </div>
 
         {betError && (
-          <p className="text-center text-sm text-red-400 bg-red-500/15 border border-red-500/30 rounded-2xl py-2.5 px-4 font-bold animate-fadeIn">
+          <p className="text-center text-xs text-red-400 bg-red-500/15 border border-red-500/30 rounded-xl py-1.5 px-3 font-bold">
             {betError}
           </p>
         )}
 
-        {/* Multi-Selection Counter & Clear Bar */}
-        {selectedBets.length > 0 && (
-          <div className="flex items-center justify-between px-4 py-2.5 rounded-2xl bg-casino-gold/15 border border-casino-gold/30 text-xs text-casino-gold font-bold">
-            <span>✨ {selectedBets.length} Bet{selectedBets.length > 1 ? 's' : ''} Selected</span>
+        {/* Tab & Clear Bar */}
+        <div className="flex items-center justify-between gap-1">
+          <div className="flex gap-1 flex-1">
+            {[
+              { id: 'sum', label: 'Sum (3–18)' },
+              { id: 'size', label: 'Big / Small (2×)' },
+              { id: 'parity', label: 'Even / Odd (2×)' },
+            ].map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => setTab(t.id)}
+                className={`flex-1 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${
+                  tab === t.id ? 'bg-white/15 text-white shadow-sm' : 'text-white/40 hover:text-white/70'
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+          {selectedBets.length > 0 && (
             <button
               type="button"
               onClick={() => setSelectedBets([])}
-              className="flex items-center gap-1 hover:text-white px-2 py-0.5 rounded bg-black/30 cursor-pointer"
+              className="flex items-center gap-1 text-[10px] font-black text-rose-400 hover:text-rose-300 px-2 py-1 rounded-lg bg-rose-500/10 border border-rose-500/20 cursor-pointer"
             >
-              <RotateCcw size={12} /> Clear
+              <RotateCcw size={10} /> Clear ({selectedBets.length})
             </button>
-          </div>
-        )}
-
-        {/* Betting Mode Switcher */}
-        <div className="game-glass rounded-2xl p-1 border border-white/10 flex gap-1">
-          {[
-            { id: 'sum', label: 'Total Sum (3–18)' },
-            { id: 'size', label: 'Big / Small / Parity' },
-          ].map((t) => (
-            <button
-              key={t.id}
-              type="button"
-              onClick={() => setTab(t.id)}
-              className={`flex-1 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
-                tab === t.id ? 'bg-white/15 text-white shadow-sm' : 'text-white/40 hover:text-white/70'
-              }`}
-            >
-              {t.label}
-            </button>
-          ))}
+          )}
         </div>
 
-        {/* Tab 1: Total Sum 3-18 Grid */}
-        <div className={`${!bettingOpen ? 'opacity-50 pointer-events-none' : ''}`}>
+        {/* Bet Selection Options (Compact grid) */}
+        <div className={`flex-1 min-h-0 flex flex-col justify-center ${!bettingOpen ? 'opacity-50 pointer-events-none' : ''}`}>
           {tab === 'sum' && (
-            <div className="space-y-2">
-              <p className="game-section-title">Select Total Dice Sum</p>
-              <div className="grid grid-cols-4 gap-2">
-                {Object.entries(SUM_MULTIPLIERS).map(([sumStr, mult]) => {
-                  const n = parseInt(sumStr, 10);
-                  const isSel = selectedBets.some((b) => b.type === 'sum' && b.value === n);
-                  return (
-                    <button
-                      key={sumStr}
-                      type="button"
-                      onClick={() => toggleBet('sum', n, mult)}
-                      className={`bet-chip py-3.5 rounded-2xl border transition-all flex flex-col items-center active:scale-95 cursor-pointer ${
-                        isSel
-                          ? 'border-casino-gold bg-casino-gold/25 text-casino-gold shadow-glow-gold ring-2 ring-casino-gold scale-[1.02]'
-                          : 'border-white/10 bg-white/5 text-white hover:border-white/25 hover:bg-white/10'
-                      }`}
-                    >
-                      <span className="text-[10px] font-mono font-bold text-white/50">{mult}×</span>
-                      <span className="font-black text-xl text-white mt-0.5">{sumStr}</span>
-                    </button>
-                  );
-                })}
-              </div>
+            <div className="grid grid-cols-4 gap-1.5">
+              {Object.entries(SUM_MULTIPLIERS).map(([sum, mult]) => {
+                const isSelected = selectedBets.some((b) => b.type === 'sum' && b.value === sum);
+                return (
+                  <button
+                    key={sum}
+                    type="button"
+                    onClick={() => toggleBet('sum', sum, `${mult}×`)}
+                    className={`py-2 px-1 rounded-xl text-center border transition-all active:scale-95 cursor-pointer ${
+                      isSelected
+                        ? 'border-casino-gold bg-casino-gold/25 text-casino-gold shadow-glow-gold'
+                        : 'border-white/10 bg-white/5 text-white/80 hover:border-white/20'
+                    }`}
+                  >
+                    <span className="text-xs font-black block">{sum}</span>
+                    <span className="text-[9px] font-mono text-white/50 block">{mult}×</span>
+                  </button>
+                );
+              })}
             </div>
           )}
 
-          {/* Tab 2: Big / Small / Even / Odd */}
           {tab === 'size' && (
-            <div className="space-y-2">
-              <p className="game-section-title">Select Size & Parity (2× Payout)</p>
-              <div className="grid grid-cols-2 gap-3">
-                {[
-                  { type: 'size', val: 'Small', label: 'Small (3–10)', bg: 'from-sky-600 to-blue-900', emoji: '🔹' },
-                  { type: 'size', val: 'Big', label: 'Big (11–18)', bg: 'from-orange-500 to-red-800', emoji: '🔥' },
-                  { type: 'parity', val: 'Even', label: 'Even', bg: 'from-emerald-600 to-green-900', emoji: '🟢' },
-                  { type: 'parity', val: 'Odd', label: 'Odd', bg: 'from-violet-600 to-purple-900', emoji: '🟣' },
-                ].map(({ type, val, label, bg, emoji }) => {
-                  const isSel = selectedBets.some((b) => b.type === type && b.value === val);
-                  return (
-                    <button
-                      key={val}
-                      type="button"
-                      onClick={() => toggleBet(type, val, 2)}
-                      className={`py-5 px-4 rounded-2xl font-black uppercase text-white bg-gradient-to-br ${bg} border transition-all active:scale-95 cursor-pointer text-center ${
-                        isSel
-                          ? 'ring-2 ring-casino-gold border-casino-gold shadow-glow-gold scale-[1.02]'
-                          : 'border-white/10 hover:border-white/30 hover:scale-[1.01]'
-                      }`}
-                    >
-                      <span className="text-2xl block mb-1">{emoji}</span>
-                      <span className="text-sm font-black tracking-wide block">{label}</span>
-                      <span className="text-xs font-mono opacity-80 mt-0.5 block">2.00×</span>
-                    </button>
-                  );
-                })}
-              </div>
+            <div className="grid grid-cols-2 gap-2 my-auto">
+              {[
+                { value: 'big', label: 'Big (11–17)', mult: '2×', color: 'from-amber-600 to-orange-800' },
+                { value: 'small', label: 'Small (4–10)', mult: '2×', color: 'from-blue-600 to-indigo-800' },
+              ].map((b) => {
+                const isSelected = selectedBets.some((x) => x.type === 'size' && x.value === b.value);
+                return (
+                  <button
+                    key={b.value}
+                    type="button"
+                    onClick={() => toggleBet('size', b.value, b.mult)}
+                    className={`py-4 rounded-xl border bg-gradient-to-br ${b.color} transition-all active:scale-95 cursor-pointer text-center ${
+                      isSelected ? 'ring-2 ring-casino-gold border-casino-gold shadow-glow-gold' : 'border-white/10'
+                    }`}
+                  >
+                    <span className="text-sm font-black text-white block uppercase">{b.label}</span>
+                    <span className="text-xs font-mono font-bold text-white/80 block mt-1">{b.mult}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {tab === 'parity' && (
+            <div className="grid grid-cols-2 gap-2 my-auto">
+              {[
+                { value: 'even', label: 'Even', mult: '2×', color: 'from-emerald-600 to-teal-800' },
+                { value: 'odd', label: 'Odd', mult: '2×', color: 'from-purple-600 to-pink-800' },
+              ].map((b) => {
+                const isSelected = selectedBets.some((x) => x.type === 'parity' && x.value === b.value);
+                return (
+                  <button
+                    key={b.value}
+                    type="button"
+                    onClick={() => toggleBet('parity', b.value, b.mult)}
+                    className={`py-4 rounded-xl border bg-gradient-to-br ${b.color} transition-all active:scale-95 cursor-pointer text-center ${
+                      isSelected ? 'ring-2 ring-casino-gold border-casino-gold shadow-glow-gold' : 'border-white/10'
+                    }`}
+                  >
+                    <span className="text-sm font-black text-white block uppercase">{b.label}</span>
+                    <span className="text-xs font-mono font-bold text-white/80 block mt-1">{b.mult}</span>
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>
 
-        {/* History Table */}
+        {/* Recent Outcomes History (Compact single-line ribbon) */}
         {displayHistory.length > 0 && (
-          <div className="glass-panel rounded-3xl p-4 sm:p-5 border border-white/10 shadow-xl">
-            <div className="flex items-center gap-2 font-black text-xs text-white/60 mb-3">
-              <History size={14} />
-              <span>Recent Outcomes</span>
+          <div className="glass-panel rounded-xl p-2 border border-white/10 flex items-center justify-between gap-2 overflow-hidden shrink-0">
+            <div className="flex items-center gap-1 text-[9px] font-black uppercase tracking-wider text-white/40 shrink-0">
+              <History size={12} />
+              <span>History</span>
             </div>
-            <div className="flex gap-2 overflow-x-auto custom-scrollbar pb-1">
-              {displayHistory.slice(0, 14).map((h, i) => (
+            <div className="flex gap-1.5 overflow-x-auto custom-scrollbar py-0.5">
+              {displayHistory.slice(0, 10).map((h, i) => (
                 <div
                   key={i}
-                  className="px-3 py-1.5 rounded-xl text-xs font-black shrink-0 border bg-white/5 border-white/10 text-white/80"
+                  className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase shrink-0 border border-white/10 bg-white/5 text-white/80 flex items-center gap-1"
                 >
-                  🎲 Sum {h.sum}
+                  <span className="text-casino-gold font-bold">{h.sum}</span>
+                  <span className="text-white/40">·</span>
+                  <span className={h.size === 'Big' ? 'text-amber-400' : 'text-blue-400'}>{h.size[0]}</span>
                 </div>
               ))}
             </div>
@@ -267,9 +269,9 @@ const Dice = () => {
               initial={{ opacity: 0, scale: 0.9, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9 }}
-              className="fixed bottom-28 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 rounded-full bg-emerald-500 px-6 py-3 text-sm font-black text-white shadow-2xl"
+              className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 rounded-full bg-emerald-500 px-5 py-2.5 text-xs font-black text-white shadow-2xl"
             >
-              <CheckCircle2 size={18} /> {lastPlacedInfo?.count || 1} Bet{lastPlacedInfo?.count > 1 ? 's' : ''} Placed · {formatINR(lastPlacedInfo?.total || 50)}!
+              <CheckCircle2 size={16} /> Placed {lastPlacedInfo?.count} Bet(s) · {formatINR(lastPlacedInfo?.total || 50)}!
             </Motion.div>
           )}
         </AnimatePresence>

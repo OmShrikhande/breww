@@ -138,42 +138,39 @@ const Mines = () => {
       if (msg.includes('current game')) {
         try {
           await abandonMinesGame();
-          const data = await startMinesGame({ amount, mineCount });
-          if (data.balance !== undefined) setBalance(data.balance);
-          setSessionId(Number(data.sessionId));
+          const retry = await startMinesGame({ amount, mineCount });
+          if (retry.balance !== undefined) setBalance(retry.balance);
+          setSessionId(Number(retry.sessionId));
           setActiveBet(amount);
           setGameStatus('playing');
           setTiles(buildTiles());
           setRevealedCount(0);
           setMultiplier(1.0);
-          setNextMult(data.nextMultiplier);
-          setLastWin(null);
+          setNextMult(retry.nextMultiplier);
           await refreshBalance();
           return;
-        } catch (retryErr) {
-          setError(retryErr.message || msg);
+        } catch {
+          // Fall through
         }
-      } else {
-        setError(msg);
       }
+      setError(msg);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleTileClick = async (index) => {
-    if (gameStatus !== 'playing' || !sessionId || loading) return;
+  const handleTileClick = async (tileIndex) => {
+    if (!sessionId || gameStatus !== 'playing' || loading) return;
 
     setLoading(true);
     setError('');
     try {
-      const data = await revealMinesTile({ sessionId, tileIndex: index });
+      const data = await revealMinesTile(sessionId, tileIndex);
 
       if (data.hitMine) {
         playAudio(loseSoundUrl, soundEnabled);
-        setTiles(buildTiles(data.revealedTiles, data.minePositions, true, index));
         setGameStatus('ended');
-        if (data.balance !== undefined) setBalance(data.balance);
+        setTiles(buildTiles(data.revealedTiles, data.minePositions, true, data.hitTileIndex ?? tileIndex));
         await refreshBalance();
         setTimeout(resetBoard, 3000);
         return;
@@ -223,34 +220,34 @@ const Mines = () => {
       hideBetPanel
       isWide
     >
-      <div className="flex flex-col gap-4 pb-6 max-w-lg mx-auto w-full">
+      <div className="flex flex-col justify-between h-full max-w-md mx-auto w-full gap-2 select-none">
         {/* Status Banner */}
-        <div className="game-glass rounded-2xl border border-white/10 p-4 flex items-center justify-between bg-black/40 backdrop-blur-md">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center text-xl">
+        <div className="game-glass rounded-xl border border-white/10 p-2.5 flex items-center justify-between bg-black/40 backdrop-blur-md shrink-0">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center text-base">
               💎
             </div>
             <div>
-              <p className="text-[10px] font-black uppercase tracking-widest text-emerald-400">Provably Fair · Live</p>
+              <p className="text-[9px] font-black uppercase tracking-widest text-emerald-400">Provably Fair</p>
               <p className="text-xs text-white/70 font-bold">
-                {gameStatus === 'playing' ? `Stake: ${formatINR(activeBet)} · ${mineCount} Mines` : 'Select mines & stake to start'}
+                {gameStatus === 'playing' ? `Stake: ${formatINR(activeBet)} · ${mineCount} Mines` : 'Select mines & stake'}
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             <button
               type="button"
               onClick={() => setSoundEnabled((v) => !v)}
-              className="p-2 rounded-xl bg-white/5 border border-white/10 text-white/60 hover:text-white transition-colors cursor-pointer"
+              className="p-1.5 rounded-lg bg-white/5 border border-white/10 text-white/60 hover:text-white transition-colors cursor-pointer"
               title={soundEnabled ? 'Mute audio' : 'Enable audio'}
             >
-              {soundEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
+              {soundEnabled ? <Volume2 size={14} /> : <VolumeX size={14} />}
             </button>
 
             {gameStatus === 'playing' && (
-              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-casino-gold/15 border border-casino-gold/30 text-casino-gold">
-                <TrendingUp size={16} />
-                <span className="font-black tabular-nums">{multiplier.toFixed(2)}×</span>
+              <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-casino-gold/15 border border-casino-gold/30 text-casino-gold text-xs font-black tabular-nums">
+                <TrendingUp size={13} />
+                <span>{multiplier.toFixed(2)}×</span>
               </div>
             )}
 
@@ -259,23 +256,25 @@ const Mines = () => {
                 type="button"
                 onClick={handleAbandon}
                 disabled={loading}
-                className="p-2 rounded-xl border border-white/10 text-white/50 hover:text-white hover:border-white/30 transition-colors cursor-pointer"
+                className="p-1.5 rounded-lg border border-white/10 text-white/50 hover:text-white hover:border-white/30 transition-colors cursor-pointer"
                 title="Reset game"
               >
-                <RotateCcw size={16} />
+                <RotateCcw size={14} />
               </button>
             )}
           </div>
         </div>
 
         {error && (
-          <p className="text-center text-sm text-red-400 bg-red-500/15 border border-red-500/30 rounded-2xl py-2.5 px-4 font-bold animate-fadeIn">
+          <p className="text-center text-xs text-red-400 bg-red-500/15 border border-red-500/30 rounded-xl py-1.5 px-3 font-bold animate-fadeIn">
             {error}
           </p>
         )}
 
-        {/* 5x5 Grid */}
-        <MineGrid tiles={tiles} onTileClick={handleTileClick} gameStatus={gameStatus} />
+        {/* 5x5 Grid (Compact responsive) */}
+        <div className="flex-1 flex items-center justify-center my-auto min-h-0">
+          <MineGrid tiles={tiles} onTileClick={handleTileClick} gameStatus={gameStatus} />
+        </div>
 
         {/* Action Controls */}
         <MineControls
@@ -302,14 +301,16 @@ const Mines = () => {
               initial={{ opacity: 0, scale: 0.8, y: 15 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.8 }}
-              className="rounded-3xl bg-gradient-to-r from-emerald-600 to-teal-700 border-2 border-emerald-300 p-6 text-center shadow-[0_10px_35px_rgba(16,185,129,0.5)] text-white"
+              className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 pointer-events-none"
             >
-              <div className="inline-flex p-3 rounded-full bg-white/20 mb-2">
-                <Sparkles size={28} className="text-amber-300" />
+              <div className="rounded-3xl bg-gradient-to-r from-emerald-600 to-teal-700 border-2 border-emerald-300 p-6 text-center shadow-2xl text-white max-w-xs w-full">
+                <div className="inline-flex p-3 rounded-full bg-white/20 mb-2">
+                  <Sparkles size={26} className="text-amber-300" />
+                </div>
+                <p className="text-[10px] font-black uppercase tracking-widest text-emerald-200">Cashed Out!</p>
+                <p className="text-3xl font-black tracking-tight mt-1">{formatINR(lastWin)}</p>
+                <p className="text-xs font-bold text-emerald-100 mt-1">{lastWinMult.toFixed(2)}× Multiplier 💎</p>
               </div>
-              <p className="text-xs font-black uppercase tracking-widest text-emerald-200">Cashed Out Successfully!</p>
-              <p className="text-4xl font-black tracking-tight mt-1">{formatINR(lastWin)}</p>
-              <p className="text-sm font-bold text-emerald-100 mt-1">{lastWinMult.toFixed(2)}× Multiplier Achieved 💎</p>
             </motion.div>
           )}
         </AnimatePresence>
@@ -319,11 +320,11 @@ const Mines = () => {
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="rounded-3xl bg-gradient-to-r from-red-600 to-rose-800 border-2 border-red-400 p-5 text-center shadow-[0_10px_30px_rgba(239,68,68,0.4)] text-white"
+            className="rounded-2xl bg-gradient-to-r from-red-600 to-rose-800 border-2 border-red-400 p-3 text-center shadow-xl text-white"
           >
-            <Bomb size={32} className="inline text-amber-300 mb-1" />
-            <p className="text-xl font-black uppercase tracking-wider">BOOM! Mine Exploded</p>
-            <p className="text-xs font-bold text-red-200 mt-0.5">Better luck next round! Starting new board…</p>
+            <Bomb size={24} className="inline text-amber-300 mb-0.5" />
+            <p className="text-sm font-black uppercase tracking-wider">BOOM! Mine Exploded</p>
+            <p className="text-[10px] font-bold text-red-200">Starting new board…</p>
           </motion.div>
         )}
       </div>

@@ -379,7 +379,7 @@ const Aviator = () => {
           {/* Center Stage & Controls */}
           <div className="flex-1 flex flex-col h-full overflow-hidden bg-black">
             {/* Flight Graph Visualizer */}
-            <div className="flex-1 relative aspect-video lg:aspect-auto min-h-[260px] md:min-h-[360px] bg-[#000000] overflow-hidden">
+            <div className="flex-1 relative min-h-0 bg-[#000000] overflow-hidden">
               <AviatorGraph
                 multiplier={multiplier}
                 gameState={visualState}

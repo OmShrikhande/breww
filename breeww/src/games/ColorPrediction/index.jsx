@@ -86,36 +86,36 @@ const ColorPrediction = () => {
       betDisabled={!bettingOpen || !selectedBet || placing}
       selectedLabel={selectedBet ? formatBetLabel(selectedBet) : ''}
     >
-      <div className="flex flex-col gap-4 pb-4">
+      <div className="flex flex-col gap-2 h-full justify-between select-none">
         <RoundStatusBar roundId={roundId} timerLeft={timerLeft} bettingOpen={bettingOpen} accent={ACCENT} />
 
-        {/* Live Result Sphere Announcement */}
+        {/* Live Result Announcement (Compact) */}
         <AnimatePresence>
           {result && (
             <Motion.div
-              initial={{ opacity: 0, scale: 0.9, y: -10 }}
+              initial={{ opacity: 0, scale: 0.9, y: -5 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0 }}
-              className="rounded-3xl border border-casino-gold/40 bg-gradient-to-r from-casino-gold/20 via-black/40 to-orange-500/20 p-5 text-center shadow-2xl flex flex-col items-center justify-center relative overflow-hidden"
+              className="rounded-2xl border border-casino-gold/40 bg-gradient-to-r from-casino-gold/20 via-black/40 to-orange-500/20 p-2.5 text-center shadow-xl flex items-center justify-between px-4 relative overflow-hidden shrink-0"
             >
-              <div className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-casino-gold mb-1">
-                <Sparkles size={13} /> Winning Outcome
+              <div className="flex items-center gap-1 text-[9px] font-black uppercase tracking-widest text-casino-gold">
+                <Sparkles size={11} /> Outcome
               </div>
 
-              <div className="flex items-center gap-3 my-1">
+              <div className="flex items-center gap-2">
                 {currentWinningInfo?.number !== undefined && (
-                  <div className={`w-12 h-12 rounded-full flex items-center justify-center text-xl font-black text-white shadow-lg border-2 border-white/40 ${
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-black text-white shadow-md border border-white/40 ${
                     getColorClass(currentWinningInfo.color)
                   }`}>
                     {currentWinningInfo.number}
                   </div>
                 )}
-                <div>
-                  <p className="text-2xl font-black text-white uppercase tracking-tight leading-none">
+                <div className="text-left">
+                  <p className="text-sm font-black text-white uppercase tracking-tight leading-none">
                     {result}
                   </p>
                   {currentWinningInfo?.size && (
-                    <p className="text-xs font-bold text-casino-gold uppercase tracking-wider mt-0.5">
+                    <p className="text-[10px] font-bold text-casino-gold uppercase tracking-wider">
                       {currentWinningInfo.size} · {currentWinningInfo.color}
                     </p>
                   )}
@@ -125,18 +125,18 @@ const ColorPrediction = () => {
           )}
         </AnimatePresence>
 
-        {/* Recent Draw Ribbon */}
+        {/* Recent Draw Ribbon (Compact single-line) */}
         {recentDots.length > 0 && (
-          <div className="glass-panel rounded-2xl p-3 border border-white/10 flex items-center justify-between gap-2 overflow-hidden">
-            <div className="flex items-center gap-1 text-[10px] font-black uppercase tracking-wider text-white/50 shrink-0">
-              <History size={13} />
+          <div className="glass-panel rounded-xl p-2 border border-white/10 flex items-center justify-between gap-2 overflow-hidden shrink-0">
+            <div className="flex items-center gap-1 text-[9px] font-black uppercase tracking-wider text-white/50 shrink-0">
+              <History size={12} />
               <span>Recent</span>
             </div>
-            <div className="flex gap-1.5 flex-wrap justify-end overflow-x-auto custom-scrollbar">
+            <div className="flex gap-1.5 overflow-x-auto custom-scrollbar py-0.5">
               {recentDots.map((h, i) => (
                 <div
                   key={i}
-                  className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-black text-white shadow-md shrink-0 border border-white/20 ${
+                  className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black text-white shadow-sm shrink-0 border border-white/20 ${
                     typeof h.number === 'number' ? getColorClass(h.color) : 'bg-white/10'
                   }`}
                 >
@@ -148,13 +148,13 @@ const ColorPrediction = () => {
         )}
 
         {betError && (
-          <p className="text-center text-sm text-red-400 bg-red-500/15 border border-red-500/30 rounded-2xl py-2.5 px-4 font-bold animate-fadeIn">
+          <p className="text-center text-xs text-red-400 bg-red-500/15 border border-red-500/30 rounded-xl py-1.5 px-3 font-bold">
             {betError}
           </p>
         )}
 
         {/* Tab Selection */}
-        <div className="game-glass rounded-2xl p-1 border border-white/10 flex gap-1">
+        <div className="game-glass rounded-xl p-1 border border-white/10 flex gap-1 shrink-0">
           {[
             { id: 'color', label: 'Colour (2× / 4.5×)' },
             { id: 'size', label: 'Big / Small (2×)' },
@@ -164,7 +164,7 @@ const ColorPrediction = () => {
               key={tab.id}
               type="button"
               onClick={() => setActiveTab(tab.id)}
-              className={`flex-1 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
+              className={`flex-1 py-1.5 rounded-lg text-[10px] sm:text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
                 activeTab === tab.id ? 'bg-white/15 text-white shadow-sm' : 'text-white/40 hover:text-white/70'
               }`}
             >
@@ -174,7 +174,7 @@ const ColorPrediction = () => {
         </div>
 
         {/* Active Board */}
-        <div className={`space-y-4 ${!bettingOpen ? 'opacity-60 pointer-events-none' : ''}`}>
+        <div className={`flex-1 min-h-0 flex flex-col justify-center ${!bettingOpen ? 'opacity-50 pointer-events-none' : ''}`}>
           {activeTab === 'color' && (
             <ColorBoard selectedBet={selectedBet} onSelectBet={setSelectedBet} disabled={!bettingOpen} />
           )}
@@ -186,7 +186,10 @@ const ColorPrediction = () => {
           )}
         </div>
 
-        <HistoryTable history={displayHistory} myBets={myBets} />
+        {/* Compact History Table */}
+        <div className="shrink-0 max-h-36 overflow-hidden">
+          <HistoryTable history={displayHistory} myBets={myBets} />
+        </div>
 
         {/* Bet Confirmation Toast */}
         <AnimatePresence>
@@ -195,9 +198,9 @@ const ColorPrediction = () => {
               initial={{ opacity: 0, scale: 0.9, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9 }}
-              className="fixed bottom-28 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 rounded-full bg-emerald-500 px-6 py-3 text-sm font-black text-white shadow-2xl"
+              className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 rounded-full bg-emerald-500 px-5 py-2.5 text-xs font-black text-white shadow-2xl"
             >
-              <CheckCircle2 size={18} /> Bet Placed on {formatBetLabel(lastPlacedBet)} · {formatINR(lastPlacedBet?.amount || 50)}!
+              <CheckCircle2 size={16} /> Bet Placed on {formatBetLabel(lastPlacedBet)} · {formatINR(lastPlacedBet?.amount || 50)}!
             </Motion.div>
           )}
         </AnimatePresence>

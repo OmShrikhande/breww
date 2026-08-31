@@ -7,9 +7,8 @@ const COLORS = [
 ];
 
 const ColorBoard = ({ selectedBet, onSelectBet, disabled }) => (
-  <div>
-    <p className="game-section-title">Pick a colour</p>
-    <div className="grid grid-cols-3 gap-3">
+  <div className="select-none">
+    <div className="grid grid-cols-3 gap-2">
       {COLORS.map(({ value, bg, ring, mult }) => {
         const selected = selectedBet?.type === 'color' && selectedBet?.value === value;
         return (
@@ -18,12 +17,12 @@ const ColorBoard = ({ selectedBet, onSelectBet, disabled }) => (
             type="button"
             disabled={disabled}
             onClick={() => onSelectBet({ type: 'color', value })}
-            className={`bet-chip py-5 rounded-2xl text-sm font-black uppercase tracking-wider text-white bg-gradient-to-br ${bg} border border-white/10 shadow-lg ${
+            className={`bet-chip py-3 sm:py-4 rounded-xl text-xs sm:text-sm font-black uppercase tracking-wider text-white bg-gradient-to-br ${bg} border border-white/10 shadow-lg cursor-pointer ${
               selected ? `ring-2 ${ring} scale-[1.03]` : 'opacity-90 hover:opacity-100'
             } ${disabled ? 'bet-chip--disabled' : ''}`}
           >
             {value}
-            <span className="block text-[10px] font-bold opacity-70 mt-1">{mult}</span>
+            <span className="block text-[9px] sm:text-[10px] font-bold opacity-70 mt-0.5">{mult}</span>
           </button>
         );
       })}
