@@ -1,6 +1,7 @@
 import React from 'react';
-import { ChevronLeft, Coins } from 'lucide-react';
+import { ChevronLeft, Coins, Volume2, VolumeX } from 'lucide-react';
 import { useWallet } from '../hooks/useWallet';
+import { useAudio } from '../context/AudioContext';
 import { formatINR } from '../utils/formatCurrency';
 import BetPanel from '../components/betting/BetPanel';
 import { navigateTo } from '../lib/navigation';
@@ -18,6 +19,7 @@ const GameLayout = ({
   selectedLabel,
 }) => {
   const { balance } = useWallet();
+  const { soundEnabled, toggleSound } = useAudio();
 
   return (
     <div className="fixed inset-0 z-[60] bg-[#070b19] flex justify-center overflow-hidden h-[100dvh] w-full select-none">
@@ -38,14 +40,31 @@ const GameLayout = ({
                 {subtitle && <p className="text-[9px] sm:text-[10px] text-white/40 truncate">{subtitle}</p>}
               </div>
             </div>
-            <button
-              type="button"
-              onClick={() => navigateTo('/wallet')}
-              className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-casino-gold/10 border border-casino-gold/30 cursor-pointer"
-            >
-              <Coins size={13} className="text-casino-gold" />
-              <span className="font-black text-casino-gold text-[11px] sm:text-xs tabular-nums">{formatINR(balance)}</span>
-            </button>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={toggleSound}
+                className={`p-1.5 rounded-full border transition-all cursor-pointer ${
+                  soundEnabled
+                    ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40 hover:bg-emerald-500/30'
+                    : 'bg-white/5 text-white/40 border-white/10 hover:bg-white/10 hover:text-white/60'
+                }`}
+                title={soundEnabled ? 'Mute Game Audio' : 'Unmute Game Audio'}
+                aria-label={soundEnabled ? 'Mute Game Audio' : 'Unmute Game Audio'}
+              >
+                {soundEnabled ? <Volume2 size={15} /> : <VolumeX size={15} />}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => navigateTo('/wallet')}
+                className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-casino-gold/10 border border-casino-gold/30 cursor-pointer hover:bg-casino-gold/20 transition-all"
+              >
+                <Coins size={13} className="text-casino-gold" />
+                <span className="font-black text-casino-gold text-[11px] sm:text-xs tabular-nums">{formatINR(balance)}</span>
+              </button>
+            </div>
           </header>
         )}
 

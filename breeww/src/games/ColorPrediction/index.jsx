@@ -8,6 +8,7 @@ import RoundStatusBar from '../../components/games/RoundStatusBar';
 
 import { useGameRound } from '../../hooks/useGameRound';
 import { useRoundBetting } from '../../hooks/useRoundBetting';
+import { useAudio } from '../../context/AudioContext';
 import { parseColourResult, formatBetLabel, getColorClass } from '../../utils/gameHelpers';
 import { formatINR } from '../../utils/formatCurrency';
 
@@ -41,6 +42,7 @@ const SIZES = [
 const ColorPrediction = () => {
   const { timerLeft, bettingOpen, result, history, roundId, refresh } = useGameRound(GAME_ID);
   const { placeBet, betError, betSuccess, placing } = useRoundBetting(GAME_ID);
+  const { playChip, playWin, playLose, playTick, playGem } = useAudio();
 
   const [selectedBet, setSelectedBet] = useState(null);
   const [lastPlacedBet, setLastPlacedBet] = useState(null);
@@ -55,19 +57,30 @@ const ColorPrediction = () => {
   }, [roundId]);
 
   useEffect(() => {
+    if (timerLeft > 0 && timerLeft <= 5) {
+      playTick(true);
+    }
+  }, [timerLeft, playTick]);
+
+  useEffect(() => {
     if (result && result !== lastResult) {
       setLastResult(result);
+      playGem();
       const parsed = parseColourResult(result);
       // Settle pending bets for this round
+      let anyWin = false;
+      let anyBet = false;
       setMyBets((prev) =>
         prev.map((b) => {
           if (b.status !== 'pending') return b;
+          anyBet = true;
           const opt = String(b.option || '').toLowerCase();
           const winColor = String(parsed.color || '').toLowerCase();
           const winNumber = String(parsed.number);
           const winSize = String(parsed.size || '').toLowerCase();
 
           const isWin = opt.includes(winColor) || opt.includes(winNumber) || opt.includes(winSize);
+          if (isWin) anyWin = true;
           const mult = opt.includes('violet') ? 4.5 : opt.includes('number') ? 9 : 2;
           return {
             ...b,
@@ -76,9 +89,14 @@ const ColorPrediction = () => {
           };
         })
       );
+      if (anyWin) {
+        playWin();
+      } else if (anyBet) {
+        playLose();
+      }
       refresh();
     }
-  }, [result, lastResult, refresh]);
+  }, [result, lastResult, refresh, playGem, playWin, playLose]);
 
   const displayHistory = history.map((h) => ({
     period: h.roundId,
@@ -90,6 +108,7 @@ const ColorPrediction = () => {
 
   const handleBetClick = async (amount) => {
     if (!selectedBet) return;
+    playChip();
     const betInfo = { ...selectedBet, amount, roundId: roundId || 'Live', id: Date.now(), status: 'pending' };
     setLastPlacedBet(betInfo);
     setMyBets((prev) => [betInfo, ...prev.slice(0, 19)]);
@@ -190,7 +209,10 @@ const ColorPrediction = () => {
                 <button
                   key={value}
                   type="button"
-                  onClick={() => setSelectedBet(selected ? null : { type: 'color', value })}
+                  onClick={() => {
+                    playChip();
+                    setSelectedBet(selected ? null : { type: 'color', value });
+                  }}
                   className={`py-2.5 sm:py-3 rounded-xl text-xs font-black uppercase tracking-wider text-white bg-gradient-to-br ${bg} border border-white/15 shadow-md transition-all active:scale-95 cursor-pointer text-center ${
                     selected ? `ring-2 ${ring} ring-offset-1 ring-offset-black scale-[1.03] shadow-glow-gold` : 'opacity-90 hover:opacity-100'
                   }`}
@@ -210,7 +232,10 @@ const ColorPrediction = () => {
                 <button
                   key={num}
                   type="button"
-                  onClick={() => setSelectedBet(selected ? null : { type: 'number', value: num })}
+                  onClick={() => {
+                    playChip();
+                    setSelectedBet(selected ? null : { type: 'number', value: num });
+                  }}
                   className={`h-9 sm:h-10 rounded-xl border text-white font-black text-sm flex flex-col items-center justify-center transition-all active:scale-95 cursor-pointer relative overflow-hidden shadow-sm ${bg} ${border} ${
                     selected ? `ring-2 ring-casino-gold scale-105 shadow-glow-gold border-casino-gold z-10` : 'hover:opacity-90'
                   }`}
@@ -230,7 +255,10 @@ const ColorPrediction = () => {
                 <button
                   key={value}
                   type="button"
-                  onClick={() => setSelectedBet(selected ? null : { type: 'size', value })}
+                  onClick={() => {
+                    playChip();
+                    setSelectedBet(selected ? null : { type: 'size', value });
+                  }}
                   className={`py-2 rounded-xl text-xs font-black uppercase tracking-wider text-white bg-gradient-to-br ${bg} border border-white/15 shadow-md transition-all active:scale-95 cursor-pointer text-center ${
                     selected ? `ring-2 ${ring} ring-offset-1 ring-offset-black scale-[1.02] shadow-glow-gold` : 'opacity-90 hover:opacity-100'
                   }`}

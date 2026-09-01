@@ -4,6 +4,7 @@ import './index.css'
 import { AuthProvider } from './context/AuthContext'
 import { WalletProvider } from './context/WalletContext'
 import { WebSocketProvider } from './context/WebSocketContext'
+import { AudioProvider } from './context/AudioContext'
 import PageRoot from './pageRegistry.jsx'
 
 createRoot(document.getElementById('root')).render(
@@ -11,7 +12,9 @@ createRoot(document.getElementById('root')).render(
     <AuthProvider>
       <WalletProvider>
         <WebSocketProvider>
-          <PageRoot />
+          <AudioProvider>
+            <PageRoot />
+          </AudioProvider>
         </WebSocketProvider>
       </WalletProvider>
     </AuthProvider>

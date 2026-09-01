@@ -6,6 +6,7 @@ import GameLayout from '../GameLayout';
 import RoundStatusBar from '../../components/games/RoundStatusBar';
 import { useGameRound, parseDragonTigerResult } from '../../hooks/useGameRound';
 import { useRoundBetting } from '../../hooks/useRoundBetting';
+import { useAudio } from '../../context/AudioContext';
 import { formatBetLabel } from '../../utils/gameHelpers';
 import { formatINR } from '../../utils/formatCurrency';
 
@@ -23,6 +24,7 @@ const CARD_RANKS = { 1: 'A', 11: 'J', 12: 'Q', 13: 'K' };
 const DragonTiger = () => {
   const { timerLeft, bettingOpen, result, history, roundId, refresh } = useGameRound(GAME_ID);
   const { placeBet, betError, betSuccess, placing } = useRoundBetting(GAME_ID);
+  const { playChip, playCard, playDragon, playTiger, playTie, playWin, playLose, playTick } = useAudio();
 
   const [selectedBet, setSelectedBet] = useState(null);
   const [lastPlacedBet, setLastPlacedBet] = useState(null);
@@ -40,24 +42,43 @@ const DragonTiger = () => {
   }, [roundId]);
 
   useEffect(() => {
+    if (timerLeft > 0 && timerLeft <= 5) {
+      playTick(true);
+    }
+  }, [timerLeft, playTick]);
+
+  useEffect(() => {
     if (!result || result === lastResult) return;
     setLastResult(result);
     setIsDealing(true);
+    playCard();
 
     const parsed = parseDragonTigerResult(result, roundId);
 
     setTimeout(() => {
       setDisplayResult(parsed);
       setIsDealing(false);
+      
+      if (parsed.winner === 'dragon') playDragon();
+      else if (parsed.winner === 'tiger') playTiger();
+      else if (parsed.winner === 'tie') playTie();
+
+      if (lastPlacedBet?.type === parsed.winner) {
+        setTimeout(() => playWin(), 250);
+      } else if (lastPlacedBet) {
+        setTimeout(() => playLose(), 250);
+      }
+
       refresh();
       setTimeout(() => setDisplayResult(null), 5000);
     }, 1200);
-  }, [result, lastResult, roundId, refresh]);
+  }, [result, lastResult, roundId, refresh, playCard, playDragon, playTiger, playTie, playWin, playLose, lastPlacedBet]);
 
   const gameHistory = history.map((h) => parseDragonTigerResult(h.result, h.roundId));
 
   const handleBetClick = async (amount) => {
     if (!selectedBet) return;
+    playChip();
     const bet = { type: 'side', value: selectedBet.type };
     setLastPlacedBet({ ...selectedBet, amount });
     const ok = await placeBet(bet, amount, { bettingOpen });
@@ -160,7 +181,10 @@ const DragonTiger = () => {
               <button
                 key={b.type}
                 type="button"
-                onClick={() => setSelectedBet(isSelected ? null : b)}
+                onClick={() => {
+                  playChip();
+                  setSelectedBet(isSelected ? null : b);
+                }}
                 className={`group relative overflow-hidden rounded-xl py-2.5 px-1.5 border transition-all duration-150 active:scale-95 cursor-pointer text-center bg-gradient-to-br ${b.gradient} ${
                   isSelected
                     ? 'ring-2 ring-casino-gold border-casino-gold shadow-glow-gold scale-[1.02]'

@@ -6,6 +6,7 @@ import GameLayout from '../GameLayout';
 import RoundStatusBar from '../../components/games/RoundStatusBar';
 import { useGameRound } from '../../hooks/useGameRound';
 import { useRoundBetting } from '../../hooks/useRoundBetting';
+import { useAudio } from '../../context/AudioContext';
 import { formatBetLabel } from '../../utils/gameHelpers';
 import { formatINR } from '../../utils/formatCurrency';
 
@@ -58,6 +59,7 @@ function generateRoundCards(roundId, winner = 'andar') {
 const AndarBahar = () => {
   const { timerLeft, bettingOpen, result, history, roundId, refresh } = useGameRound(GAME_ID);
   const { placeBet, betError, betSuccess, placing } = useRoundBetting(GAME_ID);
+  const { playChip, playCard, playWin, playLose, playTick } = useAudio();
 
   const [selectedBet, setSelectedBet] = useState(null);
   const [lastPlacedBet, setLastPlacedBet] = useState(null);
@@ -78,9 +80,16 @@ const AndarBahar = () => {
   }, [roundId]);
 
   useEffect(() => {
+    if (timerLeft > 0 && timerLeft <= 5) {
+      playTick(true);
+    }
+  }, [timerLeft, playTick]);
+
+  useEffect(() => {
     if (!result || result === lastResult) return;
     setLastResult(result);
     setIsDealing(true);
+    playCard();
     
     const outcome = String(result).toLowerCase().includes('bahar') ? 'bahar' : 'andar';
     const cards = generateRoundCards(roundId, outcome);
@@ -89,13 +98,19 @@ const AndarBahar = () => {
     setTimeout(() => {
       setDisplayResult(outcome);
       setIsDealing(false);
+      if (lastPlacedBet?.type === outcome) {
+        playWin();
+      } else if (lastPlacedBet) {
+        playLose();
+      }
       refresh();
       setTimeout(() => setDisplayResult(null), 5000);
     }, 1600);
-  }, [result, lastResult, roundId, refresh]);
+  }, [result, lastResult, roundId, refresh, playCard, playWin, playLose, lastPlacedBet]);
 
   const handleBetClick = async (amount) => {
     if (!selectedBet) return;
+    playChip();
     const bet = { type: 'side', value: selectedBet.type };
     setLastPlacedBet({ ...selectedBet, amount });
     const ok = await placeBet(bet, amount, { bettingOpen });
@@ -221,7 +236,10 @@ const AndarBahar = () => {
               <button
                 key={b.type}
                 type="button"
-                onClick={() => setSelectedBet(isSelected ? null : b)}
+                onClick={() => {
+                  playChip();
+                  setSelectedBet(isSelected ? null : b);
+                }}
                 className={`group relative overflow-hidden rounded-xl py-2.5 px-2 border transition-all duration-150 active:scale-95 cursor-pointer text-center bg-gradient-to-br ${b.gradient} ${
                   isSelected
                     ? 'ring-2 ring-casino-gold border-casino-gold shadow-glow-gold scale-[1.02]'

@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { motion as Motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, Volume2, VolumeX } from 'lucide-react';
 import GameLayout from '../GameLayout';
 import { useWallet } from '../../hooks/useWallet';
 import { useAuth } from '../../context/AuthContext';
+import { useAudio } from '../../context/AudioContext';
 import { formatINR } from '../../utils/formatCurrency';
 import { navigateTo } from '../../lib/navigation';
 import { getAviatorState, placeAviatorBet, cashoutAviator } from '../../api/aviatorApi';
@@ -23,6 +24,7 @@ const calcMultiplier = (elapsedSec) => {
 const Aviator = () => {
   const { balance, refreshBalance, setBalance } = useWallet();
   const { isAuthenticated } = useAuth();
+  const { soundEnabled, toggleSound, playTakeoff, playFlyAway, playCashout, playWin, playChip } = useAudio();
 
   const [phase, setPhase] = useState('betting');
   const [multiplier, setMultiplier] = useState(1.00);
@@ -149,6 +151,7 @@ const Aviator = () => {
     if (msg.roundId) setRoundId(msg.roundId);
 
     if (msg.phase === 'flying') {
+      playTakeoff();
       flightSyncRef.current = { elapsed: 0, receivedAt: Date.now() };
       setMultiplier(1.00);
       setDisplayTimer(0);
@@ -156,6 +159,7 @@ const Aviator = () => {
         setCanCashout(true);
       }
     } else if (msg.phase === 'crashed') {
+      playFlyAway();
       const finalCrash = Number(msg.crashPoint || 1.5);
       setMultiplier(finalCrash);
       setCrashPoint(finalCrash);
@@ -173,7 +177,7 @@ const Aviator = () => {
       setMyBet(null);
       setCanCashout(false);
     }
-  }, [myBet, hasCashedOut]);
+  }, [myBet, hasCashedOut, playTakeoff, playFlyAway]);
 
   const handleWsNewBet = useCallback((bet) => {
     setRoundBets((prev) => [bet, ...prev.slice(0, 49)]);
@@ -186,19 +190,22 @@ const Aviator = () => {
   }, []);
 
   const handleWsMyBetConfirmed = useCallback((data) => {
+    playChip();
     setMyBet({ amount: data.amount, status: 'active' });
     setHasCashedOut(false);
     setCashoutMult(null);
     setCashoutPayout(null);
     if (data.balance !== undefined) setBalance(data.balance);
-  }, [setBalance]);
+  }, [setBalance, playChip]);
 
   const handleWsMyCashoutConfirmed = useCallback((data) => {
+    playCashout();
+    playWin();
     setHasCashedOut(true);
     setCashoutMult(data.multiplier);
     setCashoutPayout(data.payout);
     if (data.balance !== undefined) setBalance(data.balance);
-  }, [setBalance]);
+  }, [setBalance, playCashout, playWin]);
 
   // Hook up WebSocket
   const { isConnected } = useAviatorWebSocket({
@@ -359,6 +366,19 @@ const Aviator = () => {
             {phase === 'flying' && (
               <span className="text-[10px] font-black text-red-400 uppercase animate-pulse">Flying</span>
             )}
+            <button
+              type="button"
+              onClick={toggleSound}
+              className={`p-1.5 rounded-full border transition-all cursor-pointer ${
+                soundEnabled
+                  ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40 hover:bg-emerald-500/30'
+                  : 'bg-white/5 text-white/40 border-white/10 hover:bg-white/10'
+              }`}
+              title={soundEnabled ? 'Mute audio' : 'Enable audio'}
+              aria-label={soundEnabled ? 'Mute audio' : 'Enable audio'}
+            >
+              {soundEnabled ? <Volume2 size={15} /> : <VolumeX size={15} />}
+            </button>
             <div className="flex items-center gap-2 bg-[#0b1024] px-3 py-1.5 rounded-xl border border-white/10">
               <span className="text-xs text-gray-400">Balance:</span>
               <span className="text-xs font-black text-emerald-400 tabular-nums">{formatINR(balance)}</span>

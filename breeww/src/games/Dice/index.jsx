@@ -6,6 +6,7 @@ import GameLayout from '../GameLayout';
 import RoundStatusBar from '../../components/games/RoundStatusBar';
 import { useGameRound, parseDiceResult } from '../../hooks/useGameRound';
 import { useRoundBetting } from '../../hooks/useRoundBetting';
+import { useAudio } from '../../context/AudioContext';
 import { formatBetLabel } from '../../utils/gameHelpers';
 import { formatINR } from '../../utils/formatCurrency';
 
@@ -39,9 +40,11 @@ const DiceIcon = ({ value, rolling }) => {
 const Dice = () => {
   const { timerLeft, bettingOpen, result, history, roundId, refresh } = useGameRound(GAME_ID);
   const { placeMultipleBets, betError, betSuccess, placing } = useRoundBetting(GAME_ID);
+  const { playChip, playDiceShake, playDiceRoll, playWin, playLose, playTick } = useAudio();
 
   const [selectedBets, setSelectedBets] = useState([]);
   const [lastPlacedInfo, setLastPlacedInfo] = useState(null);
+  const [lastPlacedBetsList, setLastPlacedBetsList] = useState([]);
   const [isRolling, setIsRolling] = useState(false);
   const [diceResults, setDiceResults] = useState([4, 5, 3]);
   const [lastResult, setLastResult] = useState(null);
@@ -56,20 +59,47 @@ const Dice = () => {
   }, [roundId]);
 
   useEffect(() => {
+    if (timerLeft > 0 && timerLeft <= 5) {
+      playTick(true);
+    }
+  }, [timerLeft, playTick]);
+
+  useEffect(() => {
     if (!result || result === lastResult) return;
     setLastResult(result);
     setIsRolling(true);
+    playDiceShake();
+    setTimeout(() => playDiceRoll(), 400);
 
     const parsed = parseDiceResult(result);
 
     setTimeout(() => {
       setDiceResults(parsed.dice);
       setIsRolling(false);
+      
+      // Check win for user's bets
+      if (lastPlacedBetsList.length > 0) {
+        const sum = parsed.sum;
+        const size = sum >= 11 ? 'big' : 'small';
+        const parity = sum % 2 === 0 ? 'even' : 'odd';
+        const won = lastPlacedBetsList.some((b) => {
+          if (b.type === 'sum' && Number(b.value) === sum) return true;
+          if (b.type === 'size' && String(b.value).toLowerCase() === size) return true;
+          if (b.type === 'parity' && String(b.value).toLowerCase() === parity) return true;
+          return false;
+        });
+        if (won) {
+          playWin();
+        } else {
+          playLose();
+        }
+      }
       refresh();
     }, 1200);
-  }, [result, lastResult, refresh]);
+  }, [result, lastResult, refresh, playDiceShake, playDiceRoll, playWin, playLose, lastPlacedBetsList]);
 
   const toggleBet = (type, value, multiplier) => {
+    playChip();
     const idx = selectedBets.findIndex((b) => b.type === type && b.value === value);
     if (idx >= 0) setSelectedBets((p) => p.filter((_, i) => i !== idx));
     else setSelectedBets((p) => [...p, { type, value, multiplier }]);
@@ -77,7 +107,9 @@ const Dice = () => {
 
   const handlePlaceBet = async (amount) => {
     if (selectedBets.length === 0) return;
+    playChip();
     setLastPlacedInfo({ count: selectedBets.length, total: amount * selectedBets.length });
+    setLastPlacedBetsList([...selectedBets]);
     const ok = await placeMultipleBets(selectedBets, amount, { bettingOpen });
     if (ok) setSelectedBets([]);
   };

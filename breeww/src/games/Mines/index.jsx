@@ -5,6 +5,7 @@ import { Bomb, CheckCircle2, TrendingUp, RotateCcw, Volume2, VolumeX, Sparkles }
 import GameLayout from '../GameLayout';
 import { useWallet } from '../../hooks/useWallet';
 import { useAuth } from '../../context/AuthContext';
+import { useAudio } from '../../context/AudioContext';
 import { formatINR } from '../../utils/formatCurrency';
 import { navigateTo } from '../../lib/navigation';
 import MineGrid from './MineGrid';
@@ -17,24 +18,8 @@ import {
   abandonMinesGame,
 } from '../../api/minesApi';
 
-// Sound asset imports
-import safeSoundUrl from '../../assets/sounds/safe.wav';
-import loseSoundUrl from '../../assets/sounds/lose.wav';
-import cashoutSoundUrl from '../../assets/sounds/cashout.wav';
-
 const GRID_SIZE = 25;
 const ACCENT = '#10B981';
-
-const playAudio = (url, soundEnabled = true) => {
-  if (!soundEnabled || !url) return;
-  try {
-    const audio = new Audio(url);
-    audio.volume = 0.6;
-    audio.play().catch(() => {});
-  } catch {
-    // Audio playback fallback
-  }
-};
 
 const buildTiles = (revealed = [], minePositions = [], ended = false, hitIndex = null) =>
   Array.from({ length: GRID_SIZE }, (_, i) => {
@@ -47,6 +32,7 @@ const buildTiles = (revealed = [], minePositions = [], ended = false, hitIndex =
 const Mines = () => {
   const { balance, loading: walletLoading, refreshBalance, setBalance } = useWallet();
   const { isAuthenticated } = useAuth();
+  const { soundEnabled, toggleSound, playChip, playGem, playBomb, playCashout, playWin } = useAudio();
 
   const [mineCount, setMineCount] = useState(3);
   const [betAmount, setBetAmount] = useState(50);
@@ -61,7 +47,6 @@ const Mines = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [activeBet, setActiveBet] = useState(0);
-  const [soundEnabled, setSoundEnabled] = useState(true);
 
   const applySession = useCallback((session) => {
     if (!session) return;
@@ -122,6 +107,7 @@ const Mines = () => {
     setError('');
     setLoading(true);
     try {
+      playChip();
       const data = await startMinesGame({ amount, mineCount });
       if (data.balance !== undefined) setBalance(data.balance);
       setSessionId(Number(data.sessionId));
@@ -168,7 +154,7 @@ const Mines = () => {
       const data = await revealMinesTile(sessionId, tileIndex);
 
       if (data.hitMine) {
-        playAudio(loseSoundUrl, soundEnabled);
+        playBomb();
         setGameStatus('ended');
         setTiles(buildTiles(data.revealedTiles, data.minePositions, true, data.hitTileIndex ?? tileIndex));
         await refreshBalance();
@@ -176,7 +162,7 @@ const Mines = () => {
         return;
       }
 
-      playAudio(safeSoundUrl, soundEnabled);
+      playGem();
       setRevealedCount(data.revealedCount);
       setMultiplier(data.multiplier);
       setNextMult(data.nextMultiplier ?? null);
@@ -195,7 +181,8 @@ const Mines = () => {
     setError('');
     try {
       const data = await cashoutMines(sessionId);
-      playAudio(cashoutSoundUrl, soundEnabled);
+      playCashout();
+      playWin();
       setGameStatus('ended');
       setLastWin(data.payout);
       setLastWinMult(multiplier);
@@ -237,7 +224,7 @@ const Mines = () => {
           <div className="flex items-center gap-1.5">
             <button
               type="button"
-              onClick={() => setSoundEnabled((v) => !v)}
+              onClick={toggleSound}
               className="p-1.5 rounded-lg bg-white/5 border border-white/10 text-white/60 hover:text-white transition-colors cursor-pointer"
               title={soundEnabled ? 'Mute audio' : 'Enable audio'}
             >

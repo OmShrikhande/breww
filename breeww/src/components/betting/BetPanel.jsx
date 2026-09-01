@@ -1,15 +1,18 @@
 import React, { useState } from 'react';
 import { Zap } from 'lucide-react';
 import { useWallet } from '../../hooks/useWallet';
+import { useAudio } from '../../context/AudioContext';
 import { formatINR } from '../../utils/formatCurrency';
 
 const BetPanel = ({ onPlaceBet, disabled = false, accent = '#4F8EF7' }) => {
   const { balance } = useWallet();
+  const { playChip } = useAudio();
   const [amount, setAmount] = useState(50);
   const quickBets = [10, 50, 100, 500, 1000];
 
   const handleBet = (e) => {
     e?.preventDefault?.();
+    playChip();
     if (onPlaceBet) {
       onPlaceBet(amount);
     }
@@ -26,7 +29,10 @@ const BetPanel = ({ onPlaceBet, disabled = false, accent = '#4F8EF7' }) => {
         <div className="flex-1 flex items-center rounded-xl bg-black/50 border border-white/10 overflow-hidden shadow-inner h-10 sm:h-11">
           <button
             type="button"
-            onClick={() => setAmount((prev) => Math.max(10, prev - 10))}
+            onClick={() => {
+              playChip();
+              setAmount((prev) => Math.max(10, prev - 10));
+            }}
             className="w-10 h-full flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 font-black text-lg transition-colors active:scale-95 cursor-pointer"
             aria-label="Decrease stake"
           >
@@ -45,7 +51,10 @@ const BetPanel = ({ onPlaceBet, disabled = false, accent = '#4F8EF7' }) => {
           </div>
           <button
             type="button"
-            onClick={() => setAmount((prev) => prev + 10)}
+            onClick={() => {
+              playChip();
+              setAmount((prev) => prev + 10);
+            }}
             className="w-10 h-full flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 font-black text-lg transition-colors active:scale-95 cursor-pointer"
             aria-label="Increase stake"
           >
@@ -76,7 +85,10 @@ const BetPanel = ({ onPlaceBet, disabled = false, accent = '#4F8EF7' }) => {
             <button
               key={val}
               type="button"
-              onClick={() => setAmount(val)}
+              onClick={() => {
+                playChip();
+                setAmount(val);
+              }}
               className={`h-7 sm:h-8 rounded-lg text-[11px] font-black border transition-all active:scale-95 cursor-pointer flex items-center justify-center ${
                 isSelected
                   ? 'border-casino-gold bg-casino-gold/25 text-casino-gold shadow-[0_0_10px_rgba(245,197,66,0.3)] ring-1 ring-casino-gold'
