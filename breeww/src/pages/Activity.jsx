@@ -1,69 +1,428 @@
-import React from 'react';
-import { History, TrendingUp, IndianRupee, Activity as ActivityIcon } from 'lucide-react';
+import React, { useState } from 'react';
+import {
+  Gift,
+  Calendar,
+  CheckCircle2,
+  Award,
+  Zap,
+  Star,
+  ArrowRight,
+  Sparkles,
+  TrendingUp,
+  ChevronRight,
+  Clock,
+  Trophy,
+  Flame,
+  Coins,
+  RefreshCw,
+  Crown,
+} from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { useWallet } from '../hooks/useWallet';
+import { useAudio } from '../context/AudioContext';
+import { formatINR } from '../utils/formatCurrency';
+import { navigateTo } from '../lib/navigation';
+
+const ATTENDANCE_DAYS = [
+  { day: 1, reward: 10, claimed: true, label: 'Day 1' },
+  { day: 2, reward: 20, claimed: true, label: 'Day 2' },
+  { day: 3, reward: 50, claimed: false, label: 'Day 3', isToday: true },
+  { day: 4, reward: 80, claimed: false, label: 'Day 4' },
+  { day: 5, reward: 120, claimed: false, label: 'Day 5' },
+  { day: 6, reward: 200, claimed: false, label: 'Day 6' },
+  { day: 7, reward: 500, claimed: false, label: 'Day 7', isMega: true },
+];
+
+const DAILY_MISSIONS = [
+  {
+    id: 'm1',
+    title: 'Aviator High Flyer',
+    desc: 'Play 5 rounds of Aviator',
+    reward: 25,
+    progress: 5,
+    total: 5,
+    completed: true,
+    gamePath: '/game/aviator',
+    icon: Flame,
+    color: 'text-red-400 bg-red-500/10 border-red-500/30',
+  },
+  {
+    id: 'm2',
+    title: 'WinGo Colour Master',
+    desc: 'Place 3 winning bets on WinGo',
+    reward: 50,
+    progress: 3,
+    total: 3,
+    completed: true,
+    gamePath: '/game/color-prediction',
+    icon: Sparkles,
+    color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30',
+  },
+  {
+    id: 'm3',
+    title: 'Mines Emerald Seeker',
+    desc: 'Cash out in 3 Mines games with 2+ gems',
+    reward: 40,
+    progress: 2,
+    total: 3,
+    completed: false,
+    gamePath: '/game/mines',
+    icon: Coins,
+    color: 'text-amber-400 bg-amber-500/10 border-amber-500/30',
+  },
+  {
+    id: 'm4',
+    title: 'Dragon Tiger Clash',
+    desc: 'Play 10 rounds of Dragon Tiger',
+    reward: 35,
+    progress: 4,
+    total: 10,
+    completed: false,
+    gamePath: '/game/dragon-tiger',
+    icon: Trophy,
+    color: 'text-purple-400 bg-purple-500/10 border-purple-500/30',
+  },
+];
+
+const VIP_LEVELS = [
+  { level: 'VIP 1', minExp: 0, rebate: '0.6%', levelBonus: 50, monthly: 100 },
+  { level: 'VIP 2', minExp: 1000, rebate: '0.7%', levelBonus: 150, monthly: 300, current: true },
+  { level: 'VIP 3', minExp: 5000, rebate: '0.85%', levelBonus: 500, monthly: 1000 },
+  { level: 'VIP 4', minExp: 20000, rebate: '1.0%', levelBonus: 2000, monthly: 3500 },
+  { level: 'VIP 5', minExp: 100000, rebate: '1.2%', levelBonus: 10000, monthly: 15000 },
+];
 
 const Activity = () => {
-  const activities = [
-    { id: 1, type: 'Bet', game: 'Aviator', amount: '₹10', result: 'Win', payout: '₹25', time: '2 mins ago' },
-    { id: 2, type: 'Bet', game: 'Mines', amount: '₹5', result: 'Loss', payout: '₹0', time: '5 mins ago' },
-    { id: 3, type: 'Bet', game: 'Dice', amount: '₹20', result: 'Win', payout: '₹38', time: '10 mins ago' },
-  ];
+  const { isAuthenticated } = useAuth();
+  const { balance, setBalance, refreshBalance } = useWallet();
+  const { playWin, playChip } = useAudio();
+
+  const [activeTab, setActiveTab] = useState('attendance');
+  const [toastMessage, setToastMessage] = useState('');
+  const [claimedDays, setClaimedDays] = useState({ 1: true, 2: true });
+  const [claimedMissions, setClaimedMissions] = useState({});
+  const [rebateClaimed, setRebateClaimed] = useState(false);
+  const [rebateAmount, setRebateAmount] = useState(148.5);
+
+  const showToast = (msg) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(''), 3000);
+  };
+
+  const handleCheckIn = (day, reward) => {
+    if (!isAuthenticated) {
+      navigateTo('/login');
+      return;
+    }
+    if (claimedDays[day]) return;
+
+    playWin();
+    setClaimedDays((prev) => ({ ...prev, [day]: true }));
+    setBalance((prev) => prev + reward);
+    showToast(`🎉 Attendance Check-in Successful! +${formatINR(reward)} added to your wallet!`);
+  };
+
+  const handleClaimMission = (mission) => {
+    if (!isAuthenticated) {
+      navigateTo('/login');
+      return;
+    }
+    if (claimedMissions[mission.id]) return;
+
+    if (!mission.completed) {
+      navigateTo(mission.gamePath);
+      return;
+    }
+
+    playWin();
+    setClaimedMissions((prev) => ({ ...prev, [mission.id]: true }));
+    setBalance((prev) => prev + mission.reward);
+    showToast(`🎁 Mission Reward Claimed! +${formatINR(mission.reward)} credited!`);
+  };
+
+  const handleClaimRebate = () => {
+    if (!isAuthenticated) {
+      navigateTo('/login');
+      return;
+    }
+    if (rebateClaimed || rebateAmount <= 0) return;
+
+    playWin();
+    setRebateClaimed(true);
+    setBalance((prev) => prev + rebateAmount);
+    showToast(`💰 Real-Time Betting Rebate of +${formatINR(rebateAmount)} credited to your wallet!`);
+    setRebateAmount(0);
+  };
 
   return (
-    <div className="animate-in slide-in-from-right duration-500">
-      <h1 className="text-2xl font-bold mb-6 flex items-center gap-2">
-        <ActivityIcon size={24} /> My Activity
-      </h1>
+    <div className="pb-24 px-3 sm:px-4 pt-2 relative select-none animate-fadeIn">
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div className="fixed top-16 left-1/2 -translate-x-1/2 z-50 bg-emerald-500 text-white px-5 py-2.5 rounded-full text-xs font-black shadow-2xl flex items-center gap-2 max-w-[90%] text-center animate-bounce">
+          <CheckCircle2 size={16} /> {toastMessage}
+        </div>
+      )}
 
-      <div className="grid grid-cols-3 gap-4 mb-8">
-        <div className="bg-casino-card p-4 rounded-xl text-center shadow-lg border border-gray-800">
-          <TrendingUp className="mx-auto mb-2 text-green-500" size={24} />
-          <span className="text-xs text-gray-400 block">Total Win</span>
-          <span className="text-lg font-bold">₹1,250</span>
-        </div>
-        <div className="bg-casino-card p-4 rounded-xl text-center shadow-lg border border-gray-800">
-          <History className="mx-auto mb-2 text-casino-accent" size={24} />
-          <span className="text-xs text-gray-400 block">Bets</span>
-          <span className="text-lg font-bold">142</span>
-        </div>
-        <div className="bg-casino-card p-4 rounded-xl text-center shadow-lg border border-gray-800">
-          <IndianRupee className="mx-auto mb-2 text-yellow-500" size={24} />
-          <span className="text-xs text-gray-400 block">Profit</span>
-          <span className="text-lg font-bold text-green-500">+₹245</span>
+      {/* Hero Banner (Tiranga / Big Mumbai / 1Win Style) */}
+      <div className="relative rounded-3xl p-5 sm:p-6 mb-4 overflow-hidden border border-casino-gold/30 bg-gradient-to-br from-[#1a1438] via-[#0d1424] to-[#1e0e24] shadow-2xl">
+        <div className="absolute top-0 right-0 w-48 h-48 bg-casino-gold/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-casino-gold/15 border border-casino-gold/30 text-casino-gold text-[10px] font-black uppercase tracking-widest mb-2">
+              <Crown size={12} /> Activity Award Center
+            </div>
+            <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight leading-tight">
+              Rewards, Tasks & VIP Rebates
+            </h1>
+            <p className="text-xs text-white/60 mt-1 max-w-sm">
+              Complete daily attendance, quests & claim real-time betting rebates every day!
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => navigateTo('/invite-wheel')}
+              className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-600 text-slate-950 font-black text-xs uppercase tracking-wider shadow-lg hover:brightness-110 active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer"
+            >
+              <Sparkles size={14} /> Lucky Spin
+            </button>
+          </div>
         </div>
       </div>
 
-      <div className="bg-casino-card rounded-xl overflow-hidden shadow-xl border border-gray-800">
-        <div className="p-4 border-b border-gray-800">
-          <h2 className="font-bold uppercase tracking-widest text-sm text-gray-300">Recent Bets</h2>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr className="text-gray-500 border-b border-gray-800">
-                <th className="px-4 py-3 font-semibold uppercase tracking-tighter">Game</th>
-                <th className="px-4 py-3 font-semibold uppercase tracking-tighter text-right">Bet</th>
-                <th className="px-4 py-3 font-semibold uppercase tracking-tighter text-right">Profit</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-800">
-              {activities.map((item) => (
-                <tr key={item.id} className="hover:bg-casino-accent/5 transition-colors">
-                  <td className="px-4 py-4 font-medium flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-lg bg-indigo-900/40 flex items-center justify-center text-indigo-400">
-                      {item.game[0]}
+      {/* Navigation Tabs */}
+      <div className="flex bg-[#0d1424]/90 p-1.5 rounded-2xl border border-white/10 mb-4 gap-1 overflow-x-auto custom-scrollbar">
+        {[
+          { id: 'attendance', label: '7-Day Check-in', icon: Calendar },
+          { id: 'missions', label: 'Mission Center', icon: Zap },
+          { id: 'rebate', label: 'Betting Rebate', icon: Coins },
+          { id: 'vip', label: 'VIP Privileges', icon: Crown },
+        ].map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            onClick={() => {
+              playChip();
+              setActiveTab(t.id);
+            }}
+            className={`flex-1 min-w-[100px] py-2 px-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+              activeTab === t.id
+                ? 'bg-gradient-to-r from-casino-gold/30 via-casino-gold/20 to-orange-500/20 text-casino-gold border border-casino-gold/40 shadow-sm'
+                : 'text-white/40 hover:text-white/70 hover:bg-white/5 border border-transparent'
+            }`}
+          >
+            <t.icon size={14} />
+            <span className="truncate">{t.label}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* TAB 1: 7-Day Attendance Check-in */}
+      {activeTab === 'attendance' && (
+        <div className="space-y-4 animate-fadeIn">
+          <div className="game-glass rounded-3xl p-4 sm:p-5 border border-white/10 bg-[#0d1424]/90 shadow-xl">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <h3 className="font-black text-white text-sm sm:text-base uppercase tracking-wide flex items-center gap-1.5">
+                  <Calendar size={16} className="text-casino-gold" /> 7-Day Continuous Check-in
+                </h3>
+                <p className="text-[11px] text-white/50">Check in every day to claim up to ₹1,000 bonus!</p>
+              </div>
+              <span className="px-2.5 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-[10px] font-black uppercase">
+                Streak: 2 Days
+              </span>
+            </div>
+
+            {/* 7 Days Grid */}
+            <div className="grid grid-cols-4 sm:grid-cols-7 gap-2 my-4">
+              {ATTENDANCE_DAYS.map((d) => {
+                const isClaimed = claimedDays[d.day];
+                return (
+                  <div
+                    key={d.day}
+                    className={`rounded-2xl p-2.5 flex flex-col items-center justify-between text-center border relative transition-all ${
+                      isClaimed
+                        ? 'bg-emerald-950/30 border-emerald-500/40 text-emerald-300'
+                        : d.isToday
+                          ? 'bg-casino-gold/15 border-casino-gold ring-2 ring-casino-gold/50 shadow-glow-gold'
+                          : 'bg-black/40 border-white/10 text-white/70'
+                    }`}
+                  >
+                    {d.isMega && (
+                      <span className="absolute -top-2 bg-gradient-to-r from-red-500 to-amber-500 text-white text-[8px] font-black px-1.5 py-0.2 rounded-full uppercase">
+                        Mega Box
+                      </span>
+                    )}
+                    <span className="text-[10px] font-bold opacity-75">{d.label}</span>
+                    <div className="my-1 text-base sm:text-lg">
+                      {isClaimed ? '✅' : d.isMega ? '🎁' : '🪙'}
                     </div>
-                    <span>{item.game}</span>
-                  </td>
-                  <td className="px-4 py-4 text-right font-mono">{item.amount}</td>
-                  <td className={`px-4 py-4 text-right font-bold font-mono ${item.result === 'Win' ? 'text-green-500' : 'text-red-400'}`}>
-                    {item.result === 'Win' ? `+${item.payout}` : '-₹5'}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                    <span className="text-xs font-black font-mono text-casino-gold">
+                      +{formatINR(d.reward)}
+                    </span>
+                    <button
+                      type="button"
+                      disabled={isClaimed || !d.isToday}
+                      onClick={() => handleCheckIn(d.day, d.reward)}
+                      className={`w-full mt-1.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all cursor-pointer ${
+                        isClaimed
+                          ? 'bg-emerald-500/20 text-emerald-400 cursor-default'
+                          : d.isToday
+                            ? 'bg-casino-gold text-slate-950 hover:brightness-110 active:scale-95 shadow-md'
+                            : 'bg-white/5 text-white/30 cursor-not-allowed'
+                      }`}
+                    >
+                      {isClaimed ? 'Done' : d.isToday ? 'Claim' : 'Locked'}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="p-3 rounded-2xl bg-black/40 border border-white/5 flex items-center justify-between text-xs">
+              <span className="text-white/60">Current Wallet Balance:</span>
+              <span className="font-black text-casino-gold font-mono">{formatINR(balance)}</span>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* TAB 2: Mission Award Center */}
+      {activeTab === 'missions' && (
+        <div className="space-y-3 animate-fadeIn">
+          {DAILY_MISSIONS.map((m) => {
+            const isClaimed = claimedMissions[m.id];
+            return (
+              <div
+                key={m.id}
+                className="game-glass rounded-2xl p-3.5 sm:p-4 border border-white/10 bg-[#0d1424]/90 shadow-xl flex items-center justify-between gap-3 hover:border-casino-gold/30 transition-all"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 border ${m.color}`}>
+                    <m.icon size={22} />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <h4 className="font-black text-white text-xs sm:text-sm truncate">{m.title}</h4>
+                      <span className="text-[10px] font-black font-mono px-2 py-0.5 rounded-full bg-casino-gold/15 text-casino-gold border border-casino-gold/30">
+                        +{formatINR(m.reward)}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-white/50 truncate mt-0.5">{m.desc}</p>
+                    
+                    {/* Progress Bar */}
+                    <div className="flex items-center gap-2 mt-1.5">
+                      <div className="w-24 sm:w-32 h-1.5 bg-white/10 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-gradient-to-r from-casino-gold to-emerald-400 transition-all duration-500"
+                          style={{ width: `${Math.min(100, (m.progress / m.total) * 100)}%` }}
+                        />
+                      </div>
+                      <span className="text-[10px] font-mono font-bold text-white/60">
+                        {m.progress}/{m.total}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  disabled={isClaimed}
+                  onClick={() => handleClaimMission(m)}
+                  className={`px-3.5 sm:px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider shrink-0 transition-all shadow-md active:scale-95 cursor-pointer ${
+                    isClaimed
+                      ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 cursor-default'
+                      : m.completed
+                        ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-emerald-500/30'
+                        : 'bg-white/10 text-white/80 hover:bg-white/20 border border-white/10'
+                  }`}
+                >
+                  {isClaimed ? 'Claimed' : m.completed ? 'Claim' : 'Play'}
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* TAB 3: Betting Rebate */}
+      {activeTab === 'rebate' && (
+        <div className="space-y-4 animate-fadeIn">
+          <div className="game-glass rounded-3xl p-5 border border-white/10 bg-[#0d1424]/90 shadow-2xl text-center relative overflow-hidden">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-[10px] font-black uppercase tracking-wider mb-2">
+              <Coins size={12} /> Real-Time Bet Rebate Engine
+            </div>
+
+            <p className="text-xs text-white/60 mb-1">Accumulated Unclaimed Rebate</p>
+            <div className="text-3xl sm:text-4xl font-black text-casino-gold font-mono tracking-tight my-2">
+              {formatINR(rebateAmount)}
+            </div>
+            <p className="text-[11px] text-white/40 max-w-sm mx-auto mb-4">
+              Rebate rate: <span className="text-emerald-400 font-bold">0.7%</span> · Rebate is calculated on all live game bets automatically.
+            </p>
+
+            <button
+              type="button"
+              disabled={rebateClaimed || rebateAmount <= 0}
+              onClick={handleClaimRebate}
+              className={`w-full max-w-xs mx-auto py-3 rounded-2xl font-black text-xs sm:text-sm uppercase tracking-wider shadow-xl transition-all active:scale-95 cursor-pointer ${
+                rebateClaimed || rebateAmount <= 0
+                  ? 'bg-white/10 text-white/30 border border-white/10 cursor-not-allowed'
+                  : 'bg-gradient-to-r from-casino-gold to-orange-500 text-slate-950 hover:brightness-110 shadow-glow-gold'
+              }`}
+            >
+              {rebateClaimed || rebateAmount <= 0 ? 'No Rebate Available' : '⚡ One-Click Claim Rebate'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 4: VIP Privileges */}
+      {activeTab === 'vip' && (
+        <div className="space-y-3 animate-fadeIn">
+          <div className="game-glass rounded-2xl p-4 border border-white/10 bg-[#0d1424]/90 flex items-center justify-between mb-2">
+            <div>
+              <span className="text-[10px] font-black uppercase tracking-widest text-casino-gold">Your Status</span>
+              <h3 className="text-base sm:text-lg font-black text-white">VIP 2 Platinum</h3>
+              <p className="text-[11px] text-white/50">Exp: 1,420 / 5,000</p>
+            </div>
+            <div className="w-12 h-12 rounded-2xl bg-casino-gold/20 border border-casino-gold/40 flex items-center justify-center text-2xl">
+              👑
+            </div>
+          </div>
+
+          {VIP_LEVELS.map((v) => (
+            <div
+              key={v.level}
+              className={`game-glass rounded-2xl p-3.5 border transition-all ${
+                v.current
+                  ? 'border-casino-gold bg-casino-gold/10 shadow-glow-gold'
+                  : 'border-white/10 bg-[#0d1424]/80'
+              }`}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <Crown size={16} className={v.current ? 'text-casino-gold' : 'text-white/40'} />
+                  <h4 className="font-black text-sm text-white">{v.level}</h4>
+                  {v.current && (
+                    <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-casino-gold text-slate-950">
+                      Current
+                    </span>
+                  )}
+                </div>
+                <span className="text-xs font-mono font-bold text-emerald-400">
+                  {v.rebate} Rebate
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-[11px] text-white/60 bg-black/30 p-2 rounded-xl border border-white/5">
+                <div>Level Bonus: <span className="font-black text-white font-mono">{formatINR(v.levelBonus)}</span></div>
+                <div>Monthly Reward: <span className="font-black text-white font-mono">{formatINR(v.monthly)}</span></div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

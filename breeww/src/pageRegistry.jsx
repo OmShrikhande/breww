@@ -2,6 +2,7 @@ import React from 'react';
 import Layout from './layout/Layout';
 import Home from './pages/Home';
 import Activity from './pages/Activity';
+import Promotion from './pages/Promotion';
 import Bonuses from './pages/Bonuses';
 import Account from './pages/Account';
 import WalletPage from './pages/Wallet';
@@ -48,7 +49,8 @@ const NotFound = () => (
 const pageRegistry = {
   '/': withLayout(Home),
   '/activity': withLayout(Activity),
-  '/promotion': withLayout(Bonuses),
+  '/promotion': withLayout(Promotion),
+  '/bonuses': withLayout(Bonuses),
   '/wallet': withLayout(WalletPage),
   '/account': withLayout(Account),
   '/invite-wheel': <InviteWheel />,
