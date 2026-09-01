@@ -20,6 +20,7 @@ import { useAuth } from '../context/AuthContext';
 import { useWallet } from '../hooks/useWallet';
 import { useAudio } from '../context/AudioContext';
 import { formatINR } from '../utils/formatCurrency';
+import { getReferralUrl, getQrCodeImageUrl } from '../utils/referral';
 import { navigateTo } from '../lib/navigation';
 
 const SUBORDINATES = [
@@ -56,8 +57,8 @@ const Promotion = () => {
   const [showQrModal, setShowQrModal] = useState(false);
 
   const inviteCode = user?.phone ? `BW${user.phone.slice(-4)}` : 'BW9928';
-  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://breeww.vercel.app';
-  const inviteLink = `${origin}/register?code=${inviteCode}`;
+  const inviteLink = getReferralUrl(inviteCode);
+  const qrCodeUrl = getQrCodeImageUrl(inviteLink, 300);
 
   const showToast = (msg) => {
     setToastMessage(msg);
@@ -356,21 +357,41 @@ const Promotion = () => {
 
       {/* QR Code Modal */}
       {showQrModal && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="game-glass rounded-3xl p-6 border border-casino-gold/40 bg-[#0d1424] max-w-xs w-full text-center shadow-2xl">
-            <h3 className="font-black text-white text-base mb-1">Invitation QR Code</h3>
-            <p className="text-xs text-white/50 mb-4">Scan with camera to register</p>
-            <div className="bg-white p-4 rounded-2xl w-44 h-44 mx-auto flex items-center justify-center shadow-inner">
-              <QrCode size={130} className="text-slate-950" />
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="game-glass rounded-3xl p-6 border border-casino-gold/40 bg-[#0d1424] max-w-xs w-full text-center shadow-2xl animate-fadeIn">
+            <h3 className="font-black text-white text-base mb-1">Official Invitation QR</h3>
+            <p className="text-xs text-white/50 mb-3">Scan with any camera or scanner</p>
+
+            <div className="bg-white p-3 rounded-2xl w-48 h-48 mx-auto flex items-center justify-center shadow-inner border border-casino-gold/30">
+              <img
+                src={qrCodeUrl}
+                alt={`Invitation QR - ${inviteCode}`}
+                className="w-full h-full object-contain rounded-xl"
+              />
             </div>
-            <p className="text-xs font-mono font-black text-casino-gold mt-3">Code: {inviteCode}</p>
-            <button
-              type="button"
-              onClick={() => setShowQrModal(false)}
-              className="w-full mt-5 py-2.5 rounded-xl bg-white/10 text-white font-black text-xs uppercase tracking-wider hover:bg-white/20 transition-all cursor-pointer"
-            >
-              Close
-            </button>
+
+            <div className="mt-3 py-1.5 px-3 rounded-xl bg-black/40 border border-white/10 flex items-center justify-between">
+              <span className="text-[10px] text-white/50 uppercase font-bold">Invite Code</span>
+              <span className="text-xs font-mono font-black text-casino-gold">{inviteCode}</span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 mt-4">
+              <button
+                type="button"
+                onClick={handleCopyLink}
+                className="py-2 px-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-[11px] uppercase tracking-wider flex items-center justify-center gap-1 shadow-md cursor-pointer"
+              >
+                {copiedLink ? <CheckCheck size={13} /> : <Copy size={13} />}
+                <span>{copiedLink ? 'Copied' : 'Copy Link'}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowQrModal(false)}
+                className="py-2 px-2 rounded-xl bg-white/10 text-white font-black text-[11px] uppercase tracking-wider hover:bg-white/20 transition-all cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -3,6 +3,7 @@ import { ChevronLeft, HelpCircle, FileText, CheckCircle2, Copy, X, Share2 } from
 import { goBackOr, navigateTo } from '../lib/navigation';
 import { useAuth } from '../context/AuthContext';
 import { useWallet } from '../hooks/useWallet';
+import { getReferralUrl } from '../utils/referral';
 
 const PRIZES = [
   { value: 500, label: '₹500', angle: 0 },
@@ -32,8 +33,7 @@ const InviteWheel = () => {
   };
 
   const inviteCode = user?.inviteCode || 'BW9928';
-  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://breeww.vercel.app';
-  const inviteUrl = `${origin}/register?code=${inviteCode}`;
+  const inviteUrl = getReferralUrl(inviteCode);
 
   const handleCopyLink = () => {
     navigator.clipboard?.writeText(inviteUrl).then(() => {
