@@ -224,6 +224,25 @@ const initDb = async () => {
     `ALTER TABLE game_rounds ADD COLUMN IF NOT EXISTS closes_at TIMESTAMP`,
     `ALTER TABLE game_rounds ADD COLUMN IF NOT EXISTS flying_started_at TIMESTAMP`,
 
+    // Enable Row-Level Security (RLS) on all public tables to prevent unauthorized direct Supabase PostgREST access
+    `ALTER TABLE IF EXISTS admins ENABLE ROW LEVEL SECURITY`,
+    `ALTER TABLE IF EXISTS admin_sessions ENABLE ROW LEVEL SECURITY`,
+    `ALTER TABLE IF EXISTS admin_login_logs ENABLE ROW LEVEL SECURITY`,
+    `ALTER TABLE IF EXISTS platform_games ENABLE ROW LEVEL SECURITY`,
+    `ALTER TABLE IF EXISTS game_settings ENABLE ROW LEVEL SECURITY`,
+    `ALTER TABLE IF EXISTS game_stats_daily ENABLE ROW LEVEL SECURITY`,
+    `ALTER TABLE IF EXISTS game_rounds ENABLE ROW LEVEL SECURITY`,
+    `ALTER TABLE IF EXISTS users ENABLE ROW LEVEL SECURITY`,
+    `ALTER TABLE IF EXISTS round_bets ENABLE ROW LEVEL SECURITY`,
+    `ALTER TABLE IF EXISTS user_balance_ledger ENABLE ROW LEVEL SECURITY`,
+    `ALTER TABLE IF EXISTS user_admin_notes ENABLE ROW LEVEL SECURITY`,
+    `ALTER TABLE IF EXISTS transactions ENABLE ROW LEVEL SECURITY`,
+    `ALTER TABLE IF EXISTS platform_settings ENABLE ROW LEVEL SECURITY`,
+    `ALTER TABLE IF EXISTS api_keys ENABLE ROW LEVEL SECURITY`,
+    `ALTER TABLE IF EXISTS webhook_logs ENABLE ROW LEVEL SECURITY`,
+    `ALTER TABLE IF EXISTS notifications ENABLE ROW LEVEL SECURITY`,
+    `ALTER TABLE IF EXISTS activity_log ENABLE ROW LEVEL SECURITY`,
+
     `UPDATE game_settings SET manual_result_mode = FALSE WHERE manual_result_mode IS DISTINCT FROM FALSE`,
     `UPDATE game_settings SET auto_result_interval = 10 WHERE game_id = 'aviator'`,
     `UPDATE game_rounds SET scheduled_result = NULL

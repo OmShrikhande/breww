@@ -95,6 +95,13 @@ const STATEMENTS = [
   )`,
   `CREATE INDEX IF NOT EXISTS idx_aviator_bets_round ON aviator_bets(round_id, status)`,
   `CREATE INDEX IF NOT EXISTS idx_aviator_bets_user ON aviator_bets(user_id, created_at DESC)`,
+  `ALTER TABLE IF EXISTS users ENABLE ROW LEVEL SECURITY`,
+  `ALTER TABLE IF EXISTS player_sessions ENABLE ROW LEVEL SECURITY`,
+  `ALTER TABLE IF EXISTS user_balance_ledger ENABLE ROW LEVEL SECURITY`,
+  `ALTER TABLE IF EXISTS game_bets ENABLE ROW LEVEL SECURITY`,
+  `ALTER TABLE IF EXISTS player_notifications ENABLE ROW LEVEL SECURITY`,
+  `ALTER TABLE IF EXISTS mines_sessions ENABLE ROW LEVEL SECURITY`,
+  `ALTER TABLE IF EXISTS aviator_bets ENABLE ROW LEVEL SECURITY`,
 ];
 
 async function initDb() {
