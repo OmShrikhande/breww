@@ -81,7 +81,20 @@ function initWebSocketServer(server) {
   // Start continuous 50ms fast Aviator flight sync loop
   startAviatorBroadcastLoop();
 
-  console.log('⚡ Unified WebSocket server initialized on /ws');
+  // 25s server-side ping heartbeat to keep reverse-proxies (Render/Cloudflare/AWS) from closing idle sockets after 50s
+  setInterval(() => {
+    for (const [ws] of clients.entries()) {
+      if (ws.readyState === WebSocket.OPEN) {
+        try {
+          ws.ping();
+        } catch {
+          clients.delete(ws);
+        }
+      }
+    }
+  }, 25000);
+
+  console.log('⚡ Unified WebSocket server initialized on /ws (with 25s proxy keep-alive ping)');
   return wss;
 }
 

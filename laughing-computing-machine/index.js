@@ -15,6 +15,7 @@ const pool = require('./config/database');
 const { ensureDatabase, getDbConfigFromEnv } = require('./config/ensureDatabase');
 const { startRoundEngine } = require('./services/roundEngine');
 const { initWebSocketServer } = require('./services/websocketServer');
+const { startKeepAliveService } = require('./services/keepAliveService');
 const getSystemIP = require('./utils/getSystemIP');
 const { globalLimiter, apiLimiter, sanitizeBody, sanitizeQuery, securityHeaders } = require('./middleware/security');
 const { createPlayerApp, initDb: initPlayerDb } = require('./backend/server');
@@ -170,6 +171,7 @@ const startServer = async () => {
 
   const server = http.createServer(app);
   initWebSocketServer(server);
+  startKeepAliveService();
 
   const HOST = getSystemIP();
   server.listen(PORT, '0.0.0.0', () => {
