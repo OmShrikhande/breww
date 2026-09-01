@@ -31,7 +31,7 @@ const InviteWheel = () => {
     setTimeout(() => setToastMessage(''), 3000);
   };
 
-  const inviteCode = user?.inviteCode || 'BREW888';
+  const inviteCode = user?.inviteCode || 'BW9928';
   const inviteUrl = `${window.location.origin}/register?invite=${inviteCode}`;
 
   const handleCopyLink = () => {

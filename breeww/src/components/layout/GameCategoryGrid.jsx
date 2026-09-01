@@ -1,41 +1,42 @@
 import React from 'react';
+import { Flame, Rocket, Sparkles, Gem, Dices, Crown, LayoutGrid } from 'lucide-react';
+import { useAudio } from '../../context/AudioContext';
 
-const GameCategoryGrid = () => {
-  const categories = [
-    { id: 'popular', label: 'Popular', image: 'https://placehold.co/150x80/5482FF/ffffff?text=Popular', size: 'large' },
-    { id: 'lottery', label: 'Lottery', image: 'https://placehold.co/150x80/9C27B0/ffffff?text=Lottery', size: 'large' },
-    { id: 'casino', label: 'Casino', image: 'https://placehold.co/80x80/FF5722/ffffff?text=Casino', size: 'small' },
-    { id: 'slots', label: 'Slots', image: 'https://placehold.co/80x80/673AB7/ffffff?text=Slots', size: 'small' },
-    { id: 'sports', label: 'Sports', image: 'https://placehold.co/80x80/FF9800/ffffff?text=Sports', size: 'small' },
-    { id: 'rummy', label: 'Rummy', image: 'https://placehold.co/80x80/4CAF50/ffffff?text=Rummy', size: 'small' },
-    { id: 'fishing', label: 'Fishing', image: 'https://placehold.co/80x80/03A9F4/ffffff?text=Fishing', size: 'small' },
-    { id: 'original', label: 'Original', image: 'https://placehold.co/80x80/F44336/ffffff?text=Original', size: 'small' },
-  ];
+const CATEGORIES = [
+  { id: 'all', label: 'All Games', icon: LayoutGrid },
+  { id: 'crash', label: 'Crash / Aviator', icon: Rocket, color: 'text-red-400' },
+  { id: 'lottery', label: 'WinGo Lottery', icon: Sparkles, color: 'text-emerald-400' },
+  { id: 'originals', label: 'Mines & Dice', icon: Gem, color: 'text-amber-400' },
+  { id: 'cards', label: 'Live Casino', icon: Crown, color: 'text-purple-400' },
+];
 
-  const largeCategories = categories.filter(c => c.size === 'large');
-  const smallCategories = categories.filter(c => c.size === 'small');
+const GameCategoryGrid = ({ activeCategory = 'all', onSelectCategory }) => {
+  const { playChip } = useAudio();
 
   return (
-    <div className="px-4 mb-6">
-      <div className="grid grid-cols-2 gap-3 mb-3">
-        {largeCategories.map((cat) => (
-          <div key={cat.id} className="relative rounded-xl overflow-hidden aspect-[1.8/1] shadow-lg border border-white/5">
-            <img src={cat.image} alt={cat.label} className="w-full h-full object-cover" />
-            <div className="absolute inset-0 bg-gradient-to-r from-black/40 to-transparent flex items-end p-2">
-              <span className="text-white text-xs font-bold">{cat.label}</span>
-            </div>
-          </div>
-        ))}
-      </div>
-      <div className="grid grid-cols-3 gap-3">
-        {smallCategories.map((cat) => (
-          <div key={cat.id} className="relative rounded-xl overflow-hidden aspect-square shadow-lg border border-white/5">
-            <img src={cat.image} alt={cat.label} className="w-full h-full object-cover" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent flex flex-col justify-end items-center pb-2">
-              <span className="text-white text-[10px] font-bold">{cat.label}</span>
-            </div>
-          </div>
-        ))}
+    <div className="px-4 mb-4 select-none">
+      <div className="flex gap-2 overflow-x-auto pb-1 custom-scrollbar">
+        {CATEGORIES.map((cat) => {
+          const isActive = activeCategory === cat.id;
+          return (
+            <button
+              key={cat.id}
+              type="button"
+              onClick={() => {
+                playChip();
+                if (onSelectCategory) onSelectCategory(cat.id);
+              }}
+              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-black uppercase tracking-wider whitespace-nowrap transition-all active:scale-95 cursor-pointer shrink-0 border ${
+                isActive
+                  ? 'bg-gradient-to-r from-casino-gold via-amber-400 to-orange-500 text-slate-950 border-casino-gold shadow-md font-black'
+                  : 'bg-[#121936] text-white/60 hover:text-white hover:bg-[#1a2348] border-white/10'
+              }`}
+            >
+              <cat.icon size={14} className={isActive ? 'text-slate-950' : cat.color || 'text-casino-gold'} />
+              <span>{cat.label}</span>
+            </button>
+          );
+        })}
       </div>
     </div>
   );

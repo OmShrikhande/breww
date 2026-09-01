@@ -1,41 +1,69 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { Trophy, TrendingUp, Sparkles, Crown } from 'lucide-react';
+import { formatINR } from '../../utils/formatCurrency';
+
+const WINNERS = [
+  { id: 1, name: 'Player 98***120', game: 'Aviator', amount: 18450, vip: 'VIP 3', mult: '3.69x', icon: '✈️', color: 'from-red-500 to-rose-600' },
+  { id: 2, name: 'Player 91***482', game: 'WinGo', amount: 4500, vip: 'VIP 2', mult: '9.00x', icon: '🎨', color: 'from-emerald-500 to-teal-600' },
+  { id: 3, name: 'Player 97***339', game: 'Mines', amount: 12700, vip: 'VIP 4', mult: '5.20x', icon: '💎', color: 'from-amber-500 to-yellow-600' },
+  { id: 4, name: 'Player 99***810', game: 'Dragon Tiger', amount: 8200, vip: 'VIP 2', mult: '1.95x', icon: '🐉', color: 'from-purple-500 to-indigo-600' },
+  { id: 5, name: 'Player 93***661', game: 'Dice Roll', amount: 24000, vip: 'VIP 5', mult: '8.00x', icon: '🎲', color: 'from-sky-500 to-blue-600' },
+  { id: 6, name: 'Player 95***204', game: 'Andar Bahar', amount: 6400, vip: 'VIP 3', mult: '1.95x', icon: '🃏', color: 'from-orange-500 to-amber-600' },
+];
 
 const WinningInfo = () => {
-  const winners = [
-    { id: 1, name: 'Mem***AQJ', amount: '50.00', avatar: 'https://i.pravatar.cc/150?u=1' },
-    { id: 2, name: 'Mem***PNH', amount: '25.00', avatar: 'https://i.pravatar.cc/150?u=2' },
-    { id: 3, name: 'Mem***ASZ', amount: '625.00', avatar: 'https://i.pravatar.cc/150?u=3' },
-    { id: 4, name: 'Mem***XJR', amount: '750.00', avatar: 'https://i.pravatar.cc/150?u=4' },
-    { id: 5, name: 'Mem***CKR', amount: '40.00', avatar: 'https://i.pravatar.cc/150?u=5' },
-  ];
-
   return (
-    <div className="px-4 mb-6">
-      <div className="flex items-center gap-2 mb-4">
-        <div className="w-1.5 h-6 bg-[#5D87E6] rounded-full"></div>
-        <h2 className="text-xl font-black text-white tracking-tight">Winning information</h2>
+    <div className="px-4 mb-6 select-none animate-fadeIn">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-3 px-1">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-xl bg-casino-gold/15 border border-casino-gold/30 flex items-center justify-center text-casino-gold">
+            <Trophy size={16} />
+          </div>
+          <div>
+            <h2 className="text-sm sm:text-base font-black text-white uppercase tracking-tight flex items-center gap-1.5">
+              Live Winning Feed
+            </h2>
+            <p className="text-[10px] text-white/40">Real-time multiplayer jackpot payouts</p>
+          </div>
+        </div>
+        <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-[9px] font-black uppercase">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+          Live
+        </span>
       </div>
 
-      <div className="flex flex-col gap-3">
-        {winners.map((winner) => (
-          <div key={winner.id} className="bg-[#242E4D] rounded-xl p-3 flex items-center justify-between border border-white/5 shadow-lg">
-            <div className="flex items-center gap-3">
-              <img src={winner.avatar} alt={winner.name} className="w-12 h-12 rounded-full border-2 border-white/10" />
-              <span className="text-sm font-bold text-gray-300">{winner.name}</span>
+      {/* Winners List */}
+      <div className="space-y-2">
+        {WINNERS.map((w) => (
+          <div
+            key={w.id}
+            className="game-glass rounded-2xl p-3 bg-[#0d1424]/90 border border-white/10 flex items-center justify-between hover:border-casino-gold/30 transition-all shadow-md"
+          >
+            {/* Left: Avatar & User */}
+            <div className="flex items-center gap-2.5">
+              <div className={`w-10 h-10 rounded-2xl bg-gradient-to-tr ${w.color} flex items-center justify-center text-lg shadow-md shrink-0`}>
+                {w.icon}
+              </div>
+              <div>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs font-bold text-white font-mono">{w.name}</span>
+                  <span className="text-[8px] font-black uppercase px-1.5 py-0.2 rounded-full bg-casino-gold/20 text-casino-gold border border-casino-gold/40">
+                    {w.vip}
+                  </span>
+                </div>
+                <p className="text-[10px] text-white/40 font-medium">Won on {w.game} ({w.mult})</p>
+              </div>
             </div>
-            
-            <div className="flex items-center gap-3">
-              <div className="bg-[#1B233D] p-1 rounded-lg">
-                <img 
-                  src="https://placehold.co/100x100/2D4594/ffffff?text=W" 
-                  alt="Game" 
-                  className="w-12 h-10 object-cover rounded-md" 
-                />
-              </div>
-              <div className="flex flex-col items-end">
-                <span className="text-xs font-black text-white">Receive ₹{winner.amount}</span>
-                <span className="text-[10px] text-gray-500 font-bold uppercase">Winning amount</span>
-              </div>
+
+            {/* Right: Payout Amount */}
+            <div className="text-right">
+              <span className="text-xs sm:text-sm font-black font-mono text-emerald-400 block tracking-tight">
+                +{formatINR(w.amount)}
+              </span>
+              <span className="text-[8px] font-bold uppercase text-white/30 tracking-wider">
+                Payout Credited
+              </span>
             </div>
           </div>
         ))}

@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion as Motion } from 'framer-motion';
-import { pageHref } from '../../lib/navigation';
+import { pageHref, navigateTo } from '../../lib/navigation';
+import { useAudio } from '../../context/AudioContext';
 import GamePreview from './GamePreview';
 
 const CATEGORY_MAP = {
@@ -20,19 +21,27 @@ const CATEGORY_MAP = {
 };
 
 const GameCard = ({ game }) => {
+  const { playChip } = useAudio();
   const normId = String(game.id).toLowerCase();
   const accent = game.accentColor || '#6366f1';
   const category = CATEGORY_MAP[normId] || game.category || 'LIVE';
 
   const defaultGradient = `linear-gradient(135deg, ${accent}22 0%, #0d1530 100%)`;
 
+  const handleClick = (e) => {
+    e.preventDefault();
+    playChip();
+    navigateTo(game.path);
+  };
+
   return (
     <Motion.a
       href={pageHref(game.path)}
+      onClick={handleClick}
       whileHover={{ y: -4, scale: 1.02 }}
       whileTap={{ scale: 0.97 }}
       transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-      className="group relative flex flex-col rounded-2xl overflow-hidden border border-white/10 bg-[#121936]/90 shadow-xl hover:border-white/25 hover:shadow-[0_8px_24px_rgba(0,0,0,0.5)] transition-colors duration-200"
+      className="group relative flex flex-col rounded-2xl overflow-hidden border border-white/10 bg-[#121936]/90 shadow-xl hover:border-white/25 hover:shadow-[0_8px_24px_rgba(0,0,0,0.5)] transition-colors duration-200 cursor-pointer"
       style={{ '--accent': accent }}
     >
       {/* Top Preview Area with Live Simulation */}
