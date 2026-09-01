@@ -267,12 +267,19 @@ const SettingsPage = () => {
                 <p>Configure deposit and withdrawal rules and payment gateways</p>
               </div>
               <div className="settings-group">
+                <div className="settings-group-title">UPI QR Code & Gateway</div>
+                <InputRow label="Merchant UPI ID (VPA)" hint="e.g. breeww@upi" value={payments.upiId} onChange={setPay('upiId')} disabled={!editable} />
+                <InputRow label="Merchant Display Name" hint="e.g. Breeww Gaming" value={payments.upiMerchantName} onChange={setPay('upiMerchantName')} disabled={!editable} />
+                <InputRow label="Custom QR Code Image URL" hint="Direct image URL for deposit QR" value={payments.upiQrImageUrl} onChange={setPay('upiQrImageUrl')} disabled={!editable} />
+                <ToggleRow label="Enable UPI QR Payments" checked={payments.upiEnabled !== false} onChange={setPay('upiEnabled')} disabled={!editable} />
+              </div>
+              <div className="settings-group">
+                <div className="settings-group-title">Deposit & Cashout Limits</div>
                 <InputRow label="Minimum Deposit" value={payments.minDeposit} onChange={setPay('minDeposit')} type="number" prefix="₹" disabled={!editable} />
                 <InputRow label="Maximum Deposit" value={payments.maxDeposit} onChange={setPay('maxDeposit')} type="number" prefix="₹" disabled={!editable} />
                 <InputRow label="Minimum Withdrawal" value={payments.minWithdrawal} onChange={setPay('minWithdrawal')} type="number" prefix="₹" disabled={!editable} />
                 <InputRow label="Maximum Withdrawal" value={payments.maxWithdrawal} onChange={setPay('maxWithdrawal')} type="number" prefix="₹" disabled={!editable} />
                 <InputRow label="Withdrawal Fee" value={payments.withdrawalFee} onChange={setPay('withdrawalFee')} type="number" suffix="%" disabled={!editable} />
-                <ToggleRow label="UPI Payments" checked={payments.upiEnabled} onChange={setPay('upiEnabled')} disabled={!editable} />
                 <ToggleRow label="Net Banking" checked={payments.netBankingEnabled} onChange={setPay('netBankingEnabled')} disabled={!editable} />
                 <ToggleRow label="Credit / Debit Cards" checked={payments.cardEnabled} onChange={setPay('cardEnabled')} disabled={!editable} />
                 <ToggleRow label="Cryptocurrency" checked={payments.cryptoEnabled} onChange={setPay('cryptoEnabled')} disabled={!editable} />

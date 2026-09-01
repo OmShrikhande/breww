@@ -85,7 +85,14 @@ const TransactionsPage = () => {
               <span className={`tx-type tx-type--${tx.type}`}>{tx.type}</span>
             </div>
             <div className="tx-amount">{formatINR(tx.amount)}</div>
-            <div className="tx-meta">{tx.method} · {tx.status || 'pending'}</div>
+            <div className="tx-meta">
+              <span>{tx.method} · {tx.status || 'pending'}</span>
+              {tx.utr && (
+                <span className="tx-utr-badge" style={{ display: 'inline-block', marginLeft: '8px', color: '#10b981', fontWeight: 'bold' }}>
+                  UTR: {tx.utr}
+                </span>
+              )}
+            </div>
             {tab === 'pending' && canWrite && (
               <div className="tx-actions">
                 <button type="button" onClick={() => act(tx.txId, 'approve')}>Approve</button>

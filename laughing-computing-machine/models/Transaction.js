@@ -14,7 +14,7 @@ class Transaction {
 
     values.push(limit, offset);
     const { rows } = await pool.query(
-      `SELECT t.id AS "txId", t.user_id AS "userId", u.username, t.type, t.amount, t.method, t.status, t.requested_at AS "createdAt"
+      `SELECT t.id AS "txId", t.user_id AS "userId", u.username, t.type, t.amount, t.method, t.gateway_ref AS "utr", t.status, t.requested_at AS "createdAt"
        FROM transactions t JOIN users u ON u.id = t.user_id ${where} ORDER BY t.requested_at DESC LIMIT $${p} OFFSET $${p + 1}`,
       values
     );
@@ -35,21 +35,21 @@ class Transaction {
 
   static async getPending() {
     const { rows } = await pool.query(`
-      SELECT t.id AS "txId", t.user_id AS "userId", u.username, t.type, t.amount, t.method, t.requested_at AS "requestedAt"
+      SELECT t.id AS "txId", t.user_id AS "userId", u.username, t.type, t.amount, t.method, t.gateway_ref AS "utr", t.requested_at AS "requestedAt"
       FROM transactions t JOIN users u ON u.id = t.user_id
       WHERE t.status='pending' ORDER BY t.requested_at ASC
     `);
     return rows;
   }
 
-  static async create({ userId, type, amount, method }) {
+  static async create({ userId, type, amount, method, utr }) {
     const fee = type === 'withdrawal' ? amount * 0.02 : 0;
     const net = type === 'withdrawal' ? amount - fee : amount;
     const { rows } = await pool.query(
-      `INSERT INTO transactions (user_id, type, amount, fee, net_amount, method, status)
-       VALUES ($1,$2,$3,$4,$5,$6,'pending')
-       RETURNING id AS "txId", type, amount, method, status, requested_at AS "requestedAt"`,
-      [userId, type, amount, fee, net, method]
+      `INSERT INTO transactions (user_id, type, amount, fee, net_amount, method, gateway_ref, status)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,'pending')
+       RETURNING id AS "txId", type, amount, method, gateway_ref AS "utr", status, requested_at AS "requestedAt"`,
+      [userId, type, amount, fee, net, method, utr || null]
     );
     return rows[0];
   }

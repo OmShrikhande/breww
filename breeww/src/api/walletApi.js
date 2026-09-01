@@ -18,10 +18,22 @@ export const getLedger = async () => {
   return res.data || [];
 };
 
-export const requestDeposit = async (amount, method = 'upi') => {
+export const getPaymentQrConfig = async () => {
+  const res = await apiClient('/wallet/qr-config');
+  return res.data || {
+    upiId: 'breeww@upi',
+    merchantName: 'Breeww Gaming',
+    qrImageUrl: '',
+    minDeposit: 100,
+    maxDeposit: 50000,
+    bonusPercent: 3,
+  };
+};
+
+export const requestDeposit = async (amount, { method = 'upi', utr } = {}) => {
   const res = await apiClient('/wallet/deposit', {
     method: 'POST',
-    body: { amount, method },
+    body: { amount, method, utr },
   });
   return res.data;
 };

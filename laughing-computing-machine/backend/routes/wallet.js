@@ -62,14 +62,44 @@ router.post('/adjust', authenticatePlayer, async (req, res) => {
   }
 });
 
+router.get('/qr-config', async (req, res) => {
+  try {
+    const settings = await pool.query(
+      `SELECT key, value FROM platform_settings WHERE group_name = 'payments'`
+    );
+    const map = {};
+    for (const r of settings.rows) {
+      map[r.key] = r.value;
+    }
+    return ok(res, {
+      upiId: map.upiId || 'breeww@upi',
+      merchantName: map.upiMerchantName || 'Breeww Gaming',
+      qrImageUrl: map.upiQrImageUrl || '',
+      minDeposit: Number(map.minDeposit || 100),
+      maxDeposit: Number(map.maxDeposit || 50000),
+      bonusPercent: 3,
+    });
+  } catch (e) {
+    return ok(res, {
+      upiId: 'breeww@upi',
+      merchantName: 'Breeww Gaming',
+      qrImageUrl: '',
+      minDeposit: 100,
+      maxDeposit: 50000,
+      bonusPercent: 3,
+    });
+  }
+});
+
 router.post('/deposit', authenticatePlayer, async (req, res) => {
   try {
     const amount = Number(req.body?.amount);
     const method = req.body?.method || 'upi';
+    const utr = req.body?.utr ? String(req.body.utr).trim() : null;
     if (!Number.isFinite(amount) || amount < 100) return err(res, 'Minimum recharge is ₹100');
     const Transaction = require('../../models/Transaction');
-    const tx = await Transaction.create({ userId: req.user.id, type: 'deposit', amount, method });
-    return ok(res, { ...tx, message: 'Recharge request submitted. Coins credited after admin approval.' }, 201);
+    const tx = await Transaction.create({ userId: req.user.id, type: 'deposit', amount, method, utr });
+    return ok(res, { ...tx, message: 'Recharge request submitted with UTR verification. Coins credited within 1-2 minutes!' }, 201);
   } catch (e) {
     return err(res, e.message || 'Deposit failed', 500);
   }
