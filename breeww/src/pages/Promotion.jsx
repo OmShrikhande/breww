@@ -56,7 +56,8 @@ const Promotion = () => {
   const [showQrModal, setShowQrModal] = useState(false);
 
   const inviteCode = user?.phone ? `BW${user.phone.slice(-4)}` : 'BW9928';
-  const inviteLink = `http://localhost:5173/register?code=${inviteCode}`;
+  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://breeww.vercel.app';
+  const inviteLink = `${origin}/register?code=${inviteCode}`;
 
   const showToast = (msg) => {
     setToastMessage(msg);

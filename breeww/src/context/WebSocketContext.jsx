@@ -33,7 +33,8 @@ export const WebSocketProvider = ({ children }) => {
       const token = localStorage.getItem('player_token') || '';
       const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
       const wsHost = window.location.hostname === 'localhost' ? 'localhost:3000' : window.location.host;
-      const wsUrl = `${wsProtocol}//${wsHost}/ws${token ? `?token=${encodeURIComponent(token)}` : ''}`;
+      const baseWs = (import.meta.env.VITE_WS_URL || `${wsProtocol}//${wsHost}/ws`).replace(/\/$/, '');
+      const wsUrl = `${baseWs}${token ? `${baseWs.includes('?') ? '&' : '?'}token=${encodeURIComponent(token)}` : ''}`;
 
       const ws = new WebSocket(wsUrl);
       wsRef.current = ws;

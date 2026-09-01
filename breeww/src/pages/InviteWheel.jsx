@@ -32,7 +32,8 @@ const InviteWheel = () => {
   };
 
   const inviteCode = user?.inviteCode || 'BW9928';
-  const inviteUrl = `${window.location.origin}/register?invite=${inviteCode}`;
+  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://breeww.vercel.app';
+  const inviteUrl = `${origin}/register?code=${inviteCode}`;
 
   const handleCopyLink = () => {
     navigator.clipboard?.writeText(inviteUrl).then(() => {
