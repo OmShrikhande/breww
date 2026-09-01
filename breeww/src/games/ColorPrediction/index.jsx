@@ -3,9 +3,6 @@ import { motion as Motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle2, Sparkles, History } from 'lucide-react';
 
 import GameLayout from '../GameLayout';
-import ColorBoard from './ColorBoard';
-import SizeBoard from './SizeBoard';
-import NumberBoard from './NumberBoard';
 import HistoryTable from './HistoryTable';
 import RoundStatusBar from '../../components/games/RoundStatusBar';
 
@@ -17,6 +14,30 @@ import { formatINR } from '../../utils/formatCurrency';
 const GAME_ID = 'colour';
 const ACCENT = '#E74C3C';
 
+const COLORS = [
+  { value: 'Green', bg: 'from-emerald-600 to-emerald-800', ring: 'ring-emerald-400', mult: '2×', emoji: '🟢' },
+  { value: 'Violet', bg: 'from-violet-600 to-purple-800', ring: 'ring-violet-400', mult: '4.5×', emoji: '🟣' },
+  { value: 'Red', bg: 'from-rose-600 to-red-800', ring: 'ring-rose-400', mult: '2×', emoji: '🔴' },
+];
+
+const NUMBERS = [
+  { num: 0, bg: 'bg-gradient-to-br from-violet-600 via-purple-700 to-rose-600', ring: 'ring-purple-400', border: 'border-purple-400/50' },
+  { num: 1, bg: 'bg-gradient-to-br from-emerald-500 to-emerald-700', ring: 'ring-emerald-400', border: 'border-emerald-400/40' },
+  { num: 2, bg: 'bg-gradient-to-br from-rose-500 to-rose-700', ring: 'ring-rose-400', border: 'border-rose-400/40' },
+  { num: 3, bg: 'bg-gradient-to-br from-emerald-500 to-emerald-700', ring: 'ring-emerald-400', border: 'border-emerald-400/40' },
+  { num: 4, bg: 'bg-gradient-to-br from-rose-500 to-rose-700', ring: 'ring-rose-400', border: 'border-rose-400/40' },
+  { num: 5, bg: 'bg-gradient-to-br from-violet-600 via-purple-700 to-emerald-600', ring: 'ring-violet-400', border: 'border-purple-400/50' },
+  { num: 6, bg: 'bg-gradient-to-br from-rose-500 to-rose-700', ring: 'ring-rose-400', border: 'border-rose-400/40' },
+  { num: 7, bg: 'bg-gradient-to-br from-emerald-500 to-emerald-700', ring: 'ring-emerald-400', border: 'border-emerald-400/40' },
+  { num: 8, bg: 'bg-gradient-to-br from-rose-500 to-rose-700', ring: 'ring-rose-400', border: 'border-rose-400/40' },
+  { num: 9, bg: 'bg-gradient-to-br from-emerald-500 to-emerald-700', ring: 'ring-emerald-400', border: 'border-emerald-400/40' },
+];
+
+const SIZES = [
+  { value: 'Big', label: 'Big (5–9)', bg: 'from-orange-500 to-amber-700', ring: 'ring-amber-400', mult: '2×' },
+  { value: 'Small', label: 'Small (0–4)', bg: 'from-sky-500 to-blue-700', ring: 'ring-sky-400', mult: '2×' },
+];
+
 const ColorPrediction = () => {
   const { timerLeft, bettingOpen, result, history, roundId, refresh } = useGameRound(GAME_ID);
   const { placeBet, betError, betSuccess, placing } = useRoundBetting(GAME_ID);
@@ -24,7 +45,6 @@ const ColorPrediction = () => {
   const [selectedBet, setSelectedBet] = useState(null);
   const [lastPlacedBet, setLastPlacedBet] = useState(null);
   const [lastResult, setLastResult] = useState(null);
-  const [activeTab, setActiveTab] = useState('color');
   const [myBets, setMyBets] = useState([]);
   const activeRoundRef = useRef(roundId);
 
@@ -77,6 +97,10 @@ const ColorPrediction = () => {
     if (ok) setSelectedBet(null);
   };
 
+  const isColorSelected = (val) => selectedBet?.type === 'color' && selectedBet?.value === val;
+  const isNumberSelected = (num) => selectedBet?.type === 'number' && selectedBet?.value === num;
+  const isSizeSelected = (val) => selectedBet?.type === 'size' && selectedBet?.value === val;
+
   return (
     <GameLayout
       title="WinGo"
@@ -86,7 +110,8 @@ const ColorPrediction = () => {
       betDisabled={!bettingOpen || !selectedBet || placing}
       selectedLabel={selectedBet ? formatBetLabel(selectedBet) : ''}
     >
-      <div className="flex flex-col gap-2 h-full justify-between select-none">
+      <div className="flex flex-col gap-2 select-none h-full justify-between">
+        {/* Top Status & Live Countdown Bar */}
         <RoundStatusBar roundId={roundId} timerLeft={timerLeft} bettingOpen={bettingOpen} accent={ACCENT} />
 
         {/* Live Result Announcement (Compact) */}
@@ -96,7 +121,7 @@ const ColorPrediction = () => {
               initial={{ opacity: 0, scale: 0.9, y: -5 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0 }}
-              className="rounded-2xl border border-casino-gold/40 bg-gradient-to-r from-casino-gold/20 via-black/40 to-orange-500/20 p-2.5 text-center shadow-xl flex items-center justify-between px-4 relative overflow-hidden shrink-0"
+              className="rounded-xl border border-casino-gold/40 bg-gradient-to-r from-casino-gold/20 via-black/40 to-orange-500/20 p-2 text-center shadow-lg flex items-center justify-between px-3 relative overflow-hidden shrink-0"
             >
               <div className="flex items-center gap-1 text-[9px] font-black uppercase tracking-widest text-casino-gold">
                 <Sparkles size={11} /> Outcome
@@ -104,18 +129,18 @@ const ColorPrediction = () => {
 
               <div className="flex items-center gap-2">
                 {currentWinningInfo?.number !== undefined && (
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-black text-white shadow-md border border-white/40 ${
+                  <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-black text-white shadow-md border border-white/40 ${
                     getColorClass(currentWinningInfo.color)
                   }`}>
                     {currentWinningInfo.number}
                   </div>
                 )}
                 <div className="text-left">
-                  <p className="text-sm font-black text-white uppercase tracking-tight leading-none">
+                  <p className="text-xs font-black text-white uppercase tracking-tight leading-none">
                     {result}
                   </p>
                   {currentWinningInfo?.size && (
-                    <p className="text-[10px] font-bold text-casino-gold uppercase tracking-wider">
+                    <p className="text-[9px] font-bold text-casino-gold uppercase tracking-wider">
                       {currentWinningInfo.size} · {currentWinningInfo.color}
                     </p>
                   )}
@@ -127,16 +152,16 @@ const ColorPrediction = () => {
 
         {/* Recent Draw Ribbon (Compact single-line) */}
         {recentDots.length > 0 && (
-          <div className="glass-panel rounded-xl p-2 border border-white/10 flex items-center justify-between gap-2 overflow-hidden shrink-0">
+          <div className="glass-panel rounded-xl p-1.5 border border-white/10 flex items-center justify-between gap-2 overflow-hidden shrink-0">
             <div className="flex items-center gap-1 text-[9px] font-black uppercase tracking-wider text-white/50 shrink-0">
-              <History size={12} />
+              <History size={11} />
               <span>Recent</span>
             </div>
-            <div className="flex gap-1.5 overflow-x-auto custom-scrollbar py-0.5">
+            <div className="flex gap-1 overflow-x-auto custom-scrollbar py-0.5">
               {recentDots.map((h, i) => (
                 <div
                   key={i}
-                  className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black text-white shadow-sm shrink-0 border border-white/20 ${
+                  className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-black text-white shadow-sm shrink-0 border border-white/20 ${
                     typeof h.number === 'number' ? getColorClass(h.color) : 'bg-white/10'
                   }`}
                 >
@@ -148,46 +173,78 @@ const ColorPrediction = () => {
         )}
 
         {betError && (
-          <p className="text-center text-xs text-red-400 bg-red-500/15 border border-red-500/30 rounded-xl py-1.5 px-3 font-bold">
+          <p className="text-center text-xs text-red-400 bg-red-500/15 border border-red-500/30 rounded-xl py-1 px-3 font-bold">
             {betError}
           </p>
         )}
 
-        {/* Tab Selection */}
-        <div className="game-glass rounded-xl p-1 border border-white/10 flex gap-1 shrink-0">
-          {[
-            { id: 'color', label: 'Colour (2× / 4.5×)' },
-            { id: 'size', label: 'Big / Small (2×)' },
-            { id: 'number', label: 'Number 0–9 (9×)' },
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex-1 py-1.5 rounded-lg text-[10px] sm:text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
-                activeTab === tab.id ? 'bg-white/15 text-white shadow-sm' : 'text-white/40 hover:text-white/70'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
+        {/* Unified WinGo Betting Board (Colors + Attached Numbers + Attached Big/Small) */}
+        <div className={`game-glass rounded-2xl p-2.5 border border-white/10 bg-[#0d1424]/90 shadow-2xl flex flex-col gap-2 shrink-0 ${
+          !bettingOpen ? 'opacity-50 pointer-events-none' : ''
+        }`}>
+          {/* Row 1: The Three Main Colors */}
+          <div className="grid grid-cols-3 gap-2">
+            {COLORS.map(({ value, bg, ring, mult }) => {
+              const selected = isColorSelected(value);
+              return (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setSelectedBet(selected ? null : { type: 'color', value })}
+                  className={`py-2.5 sm:py-3 rounded-xl text-xs font-black uppercase tracking-wider text-white bg-gradient-to-br ${bg} border border-white/15 shadow-md transition-all active:scale-95 cursor-pointer text-center ${
+                    selected ? `ring-2 ${ring} ring-offset-1 ring-offset-black scale-[1.03] shadow-glow-gold` : 'opacity-90 hover:opacity-100'
+                  }`}
+                >
+                  <span className="block text-xs sm:text-sm font-black">{value}</span>
+                  <span className="block text-[9px] font-bold opacity-80 mt-0.5">{mult}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Row 2 & 3: Attached Numbers 0–9 (10 number badges with authentic Tiranga styling) */}
+          <div className="grid grid-cols-5 gap-1.5 pt-0.5">
+            {NUMBERS.map(({ num, bg, ring, border }) => {
+              const selected = isNumberSelected(num);
+              return (
+                <button
+                  key={num}
+                  type="button"
+                  onClick={() => setSelectedBet(selected ? null : { type: 'number', value: num })}
+                  className={`h-9 sm:h-10 rounded-xl border text-white font-black text-sm flex flex-col items-center justify-center transition-all active:scale-95 cursor-pointer relative overflow-hidden shadow-sm ${bg} ${border} ${
+                    selected ? `ring-2 ring-casino-gold scale-105 shadow-glow-gold border-casino-gold z-10` : 'hover:opacity-90'
+                  }`}
+                >
+                  <span className="leading-none text-sm sm:text-base font-black drop-shadow">{num}</span>
+                  <span className="text-[7px] font-mono text-white/70 leading-none mt-0.5">9×</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Row 4: Attached Big / Small (2x) */}
+          <div className="grid grid-cols-2 gap-2 pt-0.5">
+            {SIZES.map(({ value, label, bg, ring, mult }) => {
+              const selected = isSizeSelected(value);
+              return (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setSelectedBet(selected ? null : { type: 'size', value })}
+                  className={`py-2 rounded-xl text-xs font-black uppercase tracking-wider text-white bg-gradient-to-br ${bg} border border-white/15 shadow-md transition-all active:scale-95 cursor-pointer text-center ${
+                    selected ? `ring-2 ${ring} ring-offset-1 ring-offset-black scale-[1.02] shadow-glow-gold` : 'opacity-90 hover:opacity-100'
+                  }`}
+                >
+                  <span className="block text-xs font-black">{label}</span>
+                  <span className="block text-[8px] opacity-80 mt-0.5">{mult}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
-        {/* Active Board */}
-        <div className={`flex-1 min-h-0 flex flex-col justify-center ${!bettingOpen ? 'opacity-50 pointer-events-none' : ''}`}>
-          {activeTab === 'color' && (
-            <ColorBoard selectedBet={selectedBet} onSelectBet={setSelectedBet} disabled={!bettingOpen} />
-          )}
-          {activeTab === 'size' && (
-            <SizeBoard selectedBet={selectedBet} onSelectBet={setSelectedBet} disabled={!bettingOpen} />
-          )}
-          {activeTab === 'number' && (
-            <NumberBoard selectedBet={selectedBet} onSelectBet={setSelectedBet} disabled={!bettingOpen} />
-          )}
-        </div>
-
-        {/* Compact History Table */}
-        <div className="shrink-0 max-h-36 overflow-hidden">
+        {/* Uplifted Game Record & My Bets Table (Directly below betting board) */}
+        <div className="flex-1 min-h-0 overflow-hidden flex flex-col justify-start">
           <HistoryTable history={displayHistory} myBets={myBets} />
         </div>
 
@@ -198,9 +255,9 @@ const ColorPrediction = () => {
               initial={{ opacity: 0, scale: 0.9, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9 }}
-              className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 rounded-full bg-emerald-500 px-5 py-2.5 text-xs font-black text-white shadow-2xl"
+              className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 rounded-full bg-emerald-500 px-5 py-2 text-xs font-black text-white shadow-2xl"
             >
-              <CheckCircle2 size={16} /> Bet Placed on {formatBetLabel(lastPlacedBet)} · {formatINR(lastPlacedBet?.amount || 50)}!
+              <CheckCircle2 size={15} /> Bet Placed on {formatBetLabel(lastPlacedBet)} · {formatINR(lastPlacedBet?.amount || 50)}!
             </Motion.div>
           )}
         </AnimatePresence>
