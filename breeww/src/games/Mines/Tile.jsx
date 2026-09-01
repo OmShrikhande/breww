@@ -1,8 +1,10 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Sparkles, Loader2 } from 'lucide-react';
 
 const Tile = ({ status, index, onClick, disabled }) => {
   const isHidden = status === 'hidden';
+  const isRevealing = status === 'revealing';
   const isSafe = status === 'safe';
   const isMineHit = status === 'mine';
   const isMineRevealed = status === 'mine-revealed';
@@ -12,12 +14,16 @@ const Tile = ({ status, index, onClick, disabled }) => {
     <motion.button
       type="button"
       whileHover={!disabled && isHidden ? { scale: 1.05, y: -2 } : {}}
-      whileTap={!disabled && isHidden ? { scale: 0.93 } : {}}
+      whileTap={!disabled && isHidden ? { scale: 0.92 } : {}}
       onClick={() => onClick(index)}
-      disabled={disabled || !isHidden}
-      className={`relative aspect-square rounded-2xl border-2 transition-all duration-300 flex items-center justify-center text-2xl sm:text-3xl shadow-lg select-none cursor-pointer ${
+      disabled={disabled || (!isHidden && !isRevealing)}
+      className={`relative aspect-square rounded-2xl border-2 transition-all duration-200 flex items-center justify-center text-2xl sm:text-3xl shadow-lg select-none cursor-pointer overflow-hidden ${
         isHidden
           ? 'bg-gradient-to-b from-[#1e293b] to-[#0f172a] border-slate-600/50 hover:border-amber-400/80 hover:shadow-[0_0_15px_rgba(245,158,11,0.3)] active:border-amber-400'
+          : ''
+      } ${
+        isRevealing
+          ? 'bg-gradient-to-br from-emerald-600/60 to-slate-900 border-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.6)] animate-pulse'
           : ''
       } ${
         isSafe
@@ -47,13 +53,25 @@ const Tile = ({ status, index, onClick, disabled }) => {
           />
         )}
 
+        {isRevealing && (
+          <motion.div
+            key="revealing-spinner"
+            initial={{ scale: 0.5, rotate: 0 }}
+            animate={{ scale: 1, rotate: 360 }}
+            transition={{ repeat: Infinity, duration: 0.8, ease: 'linear' }}
+            className="flex items-center justify-center text-emerald-400"
+          >
+            <Sparkles size={20} className="animate-spin" />
+          </motion.div>
+        )}
+
         {isSafe && (
           <motion.div
             key="gem"
             initial={{ scale: 0, rotate: -45 }}
-            animate={{ scale: [0, 1.2, 1], rotate: 0 }}
-            transition={{ duration: 0.35, type: 'spring' }}
-            className="flex items-center justify-center drop-shadow-[0_2px_10px_rgba(255,255,255,0.6)]"
+            animate={{ scale: [0, 1.25, 1], rotate: 0 }}
+            transition={{ duration: 0.3, type: 'spring', stiffness: 400, damping: 20 }}
+            className="flex items-center justify-center drop-shadow-[0_2px_12px_rgba(255,255,255,0.7)]"
           >
             💎
           </motion.div>
@@ -64,7 +82,7 @@ const Tile = ({ status, index, onClick, disabled }) => {
             key="hit-bomb"
             initial={{ scale: 0, rotate: 180 }}
             animate={{ scale: [0, 1.3, 1], rotate: 0 }}
-            transition={{ duration: 0.4, type: 'spring' }}
+            transition={{ duration: 0.35, type: 'spring' }}
             className="flex items-center justify-center drop-shadow-[0_2px_12px_rgba(239,68,68,0.8)] text-3xl"
           >
             💥

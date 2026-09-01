@@ -1,4 +1,19 @@
-const BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/player/api').replace(/\/$/, '');
+const getBaseUrl = () => {
+  if (import.meta.env.VITE_API_BASE_URL) {
+    return import.meta.env.VITE_API_BASE_URL.replace(/\/$/, '');
+  }
+  if (typeof window !== 'undefined') {
+    const host = window.location.hostname;
+    if (host === 'localhost' || host === '127.0.0.1') {
+      return 'http://localhost:3000/player/api';
+    }
+    // On Vercel / Production: Use relative /player/api (handled seamlessly by Vercel edge rewrites with zero CORS preflight delay)
+    return '/player/api';
+  }
+  return 'http://localhost:3000/player/api';
+};
+
+const BASE_URL = getBaseUrl();
 
 const getToken = () => localStorage.getItem('player_token');
 

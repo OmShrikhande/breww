@@ -146,9 +146,17 @@ const Mines = () => {
   };
 
   const handleTileClick = async (tileIndex) => {
-    if (!sessionId || gameStatus !== 'playing' || loading) return;
+    if (!sessionId || gameStatus !== 'playing') return;
+    if (tiles[tileIndex] !== 'hidden') return;
 
-    setLoading(true);
+    // Instant 0ms Optimistic Tap Feedback
+    playChip();
+    setTiles((prev) => {
+      const next = [...prev];
+      next[tileIndex] = 'revealing';
+      return next;
+    });
+
     setError('');
     try {
       const data = await revealMinesTile(sessionId, tileIndex);
@@ -168,9 +176,13 @@ const Mines = () => {
       setNextMult(data.nextMultiplier ?? null);
       setTiles(buildTiles(data.revealedTiles));
     } catch (e) {
+      // Revert tile back to hidden on error
+      setTiles((prev) => {
+        const next = [...prev];
+        if (next[tileIndex] === 'revealing') next[tileIndex] = 'hidden';
+        return next;
+      });
       setError(e.message || 'Reveal failed');
-    } finally {
-      setLoading(false);
     }
   };
 
