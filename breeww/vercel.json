@@ -11,6 +11,10 @@
     {
       "source": "/player/api/:path*",
       "destination": "https://breww-ysqj.onrender.com/player/api/:path*"
+    },
+    {
+      "source": "/((?!api/|assets/|favicon\\.ico|.*\\..*).*)",
+      "destination": "/index.html"
     }
   ],
   "headers": [

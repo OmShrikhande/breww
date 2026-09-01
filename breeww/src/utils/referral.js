@@ -5,19 +5,14 @@ export const getPublicAppOrigin = () => {
   if (import.meta.env.VITE_APP_URL) {
     return import.meta.env.VITE_APP_URL.replace(/\/$/, '');
   }
-  if (typeof window !== 'undefined') {
-    const host = window.location.hostname;
-    // When running in local preview or dev, always show the clean live Vercel production frontend link
-    if (host === 'localhost' || host === '127.0.0.1' || host === '0.0.0.0') {
-      return 'https://breeww.vercel.app';
-    }
+  if (typeof window !== 'undefined' && window.location?.origin) {
     return window.location.origin;
   }
-  return 'https://breeww.vercel.app';
+  return '';
 };
 
 /**
- * Returns formatted referral link for a player
+ * Returns formatted referral link for a player matching the current host/Vercel domain
  */
 export const getReferralUrl = (inviteCode) => {
   const origin = getPublicAppOrigin();

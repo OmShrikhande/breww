@@ -1,0 +1,19 @@
+{
+  "buildCommand": "cd breeww && npm install && npm run build",
+  "outputDirectory": "breeww/dist",
+  "cleanUrls": true,
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://breww-ysqj.onrender.com/player/api/:path*"
+    },
+    {
+      "source": "/player/api/:path*",
+      "destination": "https://breww-ysqj.onrender.com/player/api/:path*"
+    },
+    {
+      "source": "/((?!api/|assets/|favicon\\.ico|.*\\..*).*)",
+      "destination": "/index.html"
+    }
+  ]
+}
