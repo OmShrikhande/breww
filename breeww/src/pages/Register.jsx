@@ -1,70 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Eye,
   EyeOff,
   LockKeyhole,
-  Mail,
-  ReceiptText,
   Smartphone,
   UserRoundPlus,
+  Gift,
+  CheckCircle2,
+  Headphones,
+  ArrowRight,
+  ShieldCheck,
 } from 'lucide-react';
-import AuthShell from '../components/auth/AuthShell';
-import { pageHref, navigateTo } from '../lib/navigation';
+import { navigateTo } from '../lib/navigation';
 import { useAuth } from '../context/AuthContext';
-
-const methodOptions = [
-  { id: 'phone', label: 'Phone number', icon: Smartphone, prefix: '+91' },
-  { id: 'email', label: 'Email address', icon: Mail, prefix: null },
-];
-
-const agreementLabel = 'I have read and agree';
-
-const AuthField = ({
-  label,
-  icon: IconComponent,
-  type = 'text',
-  placeholder,
-  value,
-  onChange,
-  rightSlot,
-  prefix,
-  maxLength,
-  inputMode,
-}) => (
-  <label className="block">
-    <div className="mb-2 flex items-center gap-2 font-medium text-white">
-      <IconComponent size={18} className="text-[#58acff]" />
-      <span className="text-base">{label}</span>
-    </div>
-    <div className="flex gap-2">
-      {prefix ? (
-        <div className="flex h-[3.5rem] min-w-[4.8rem] items-center justify-center rounded-2xl bg-[#353d86] px-3 text-lg font-bold text-blue-100 select-none">
-          {prefix}
-        </div>
-      ) : null}
-      <div className="relative flex-1">
-        <input
-          type={type}
-          value={value}
-          onChange={onChange}
-          placeholder={placeholder}
-          maxLength={maxLength}
-          inputMode={inputMode}
-          className="auth-input w-full pr-12"
-          autoComplete={type === 'password' ? 'new-password' : 'username'}
-        />
-        {rightSlot ? (
-          <div className="absolute inset-y-0 right-4 flex items-center text-white/60">{rightSlot}</div>
-        ) : null}
-      </div>
-    </div>
-  </label>
-);
+import { useAudio } from '../context/AudioContext';
 
 const Register = () => {
   const { register } = useAuth();
-  const [method, setMethod] = useState('phone');
-  const [identifier, setIdentifier] = useState('');
+  const { playWin, playChip } = useAudio();
+
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [inviteCode, setInviteCode] = useState('');
@@ -73,44 +28,48 @@ const Register = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
-  const selectedMethod = methodOptions.find((option) => option.id === method);
+  const [toastMessage, setToastMessage] = useState('');
 
-  const handleIdentifierChange = (e) => {
-    setError('');
-    if (method === 'phone') {
-      const cleanDigits = e.target.value.replace(/\D/g, '').slice(0, 10);
-      setIdentifier(cleanDigits);
-    } else {
-      setIdentifier(e.target.value.slice(0, 100));
+  // Auto-read referral code from URL if present
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const code = params.get('code') || params.get('r') || params.get('invite');
+      if (code) setInviteCode(code);
+    } catch {
+      // ignore
     }
+  }, []);
+
+  const showToast = (msg) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(''), 3000);
+  };
+
+  const handlePhoneChange = (e) => {
+    setError('');
+    const cleanDigits = e.target.value.replace(/\D/g, '').slice(0, 10);
+    setPhone(cleanDigits);
   };
 
   const onSubmit = async (e) => {
     if (e) e.preventDefault();
     setError('');
 
-    const raw = identifier.trim();
+    const raw = phone.trim();
     if (!raw) {
-      setError(method === 'phone' ? 'Please enter your 10-digit mobile number' : 'Please enter your email address');
+      setError('Please enter your 10-digit mobile number');
       return;
     }
 
-    if (method === 'phone') {
-      const digits = raw.replace(/\D/g, '');
-      if (digits.length !== 10) {
-        setError('Mobile number must be exactly 10 digits (e.g. 9876543210)');
-        return;
-      }
-      if (!/^[6-9]\d{9}$/.test(digits)) {
-        setError('Please enter a valid 10-digit mobile number starting with 6, 7, 8, or 9');
-        return;
-      }
-    } else {
-      const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-      if (!emailRegex.test(raw)) {
-        setError('Please enter a valid email address (e.g. name@domain.com)');
-        return;
-      }
+    if (raw.length !== 10) {
+      setError('Mobile number must be exactly 10 digits');
+      return;
+    }
+
+    if (!/^[6-9]\d{9}$/.test(raw)) {
+      setError('Please enter a valid Indian mobile number starting with 6, 7, 8, or 9');
+      return;
     }
 
     if (password.length < 6) {
@@ -121,156 +80,219 @@ const Register = () => {
       setError('Password cannot exceed 32 characters');
       return;
     }
+
     if (password !== confirmPassword) {
-      setError('Passwords do not match');
+      setError('Passwords do not match. Please re-enter.');
       return;
     }
+
     if (!agreed) {
-      setError('Please accept the privacy agreement to continue');
+      setError('Please accept the Privacy Policy and User Agreement');
       return;
     }
 
     setBusy(true);
     try {
-      await register({ method, identifier: raw, password, inviteCode: inviteCode.trim() });
-      navigateTo('/');
+      playChip();
+      await register({
+        method: 'phone',
+        identifier: raw,
+        password,
+        inviteCode: inviteCode.trim() || undefined,
+      });
+      playWin();
+      showToast('🎉 Account registered successfully! Welcome to Breeww!');
+      setTimeout(() => navigateTo('/'), 800);
     } catch (err) {
-      setError(err.message || 'Registration failed. Please check your details.');
+      setError(err.message || 'Registration failed. Please try again.');
     } finally {
       setBusy(false);
     }
   };
 
   return (
-    <AuthShell
-      title="Register"
-      subtitle="Please register by phone number or email"
-      icon={UserRoundPlus}
-      sectionTitle={`Register with your ${method === 'phone' ? 'Phone Number' : 'Email'}`}
-      altPrompt="Already have an account"
-      altLinkLabel="Login"
-      altLinkTo="/login"
-    >
-      <div className="grid grid-cols-2 gap-3 rounded-[1.4rem] bg-[#2b3270] p-1.5 mb-2">
-        {methodOptions.map((option) => (
-          <button
-            key={option.id}
-            type="button"
-            onClick={() => {
-              setMethod(option.id);
-              setIdentifier('');
-              setError('');
-            }}
-            className={`rounded-[1rem] px-4 py-3 text-sm font-semibold transition ${
-              method === option.id
-                ? 'bg-[#4aa4ff] text-white shadow-[0_10px_24px_rgba(53,134,255,0.35)]'
-                : 'text-blue-100/70 hover:bg-white/5'
-            }`}
-          >
-            {option.label}
-          </button>
-        ))}
-      </div>
+    <div className="min-h-screen bg-[#0b0f24] flex justify-center text-white select-none px-3 py-6">
+      {toastMessage && (
+        <div className="fixed top-12 left-1/2 -translate-x-1/2 z-50 bg-emerald-500 text-white px-5 py-2.5 rounded-full text-xs font-black shadow-2xl flex items-center gap-2 animate-bounce">
+          <CheckCircle2 size={16} /> {toastMessage}
+        </div>
+      )}
 
-      <form onSubmit={onSubmit} className="flex flex-col gap-4">
-        <AuthField
-          label={selectedMethod.label}
-          icon={selectedMethod.icon}
-          type={method === 'phone' ? 'tel' : 'email'}
-          inputMode={method === 'phone' ? 'numeric' : 'email'}
-          maxLength={method === 'phone' ? 10 : 100}
-          placeholder={method === 'phone' ? 'Enter 10-digit mobile number' : 'Enter email (e.g. name@domain.com)'}
-          prefix={selectedMethod.prefix}
-          value={identifier}
-          onChange={handleIdentifierChange}
-        />
-
-        <AuthField
-          label="Set password"
-          icon={LockKeyhole}
-          type={showPassword ? 'text' : 'password'}
-          placeholder="Set password (min 6 characters)"
-          maxLength={32}
-          value={password}
-          onChange={(event) => {
-            setPassword(event.target.value);
-            setError('');
-          }}
-          rightSlot={
+      <div className="w-full max-w-md rounded-3xl bg-[#131b38] border border-white/10 shadow-2xl overflow-hidden flex flex-col justify-between">
+        {/* Header Ribbon (Tiranga / Big Mumbai / 1Win Style) */}
+        <div className="px-6 pt-6 pb-5 bg-gradient-to-b from-[#1c2752] to-[#131b38] border-b border-white/10 relative">
+          <div className="flex items-center justify-between mb-4">
             <button
               type="button"
-              onClick={() => setShowPassword((value) => !value)}
-              aria-label="Toggle password visibility"
-              className="hover:text-white transition-colors"
+              onClick={() => navigateTo('/')}
+              className="text-2xl font-black italic tracking-tighter text-white flex items-center gap-1 cursor-pointer"
             >
-              {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              <span className="text-casino-gold">B</span>reeww
             </button>
-          }
-        />
 
-        <AuthField
-          label="Confirm password"
-          icon={LockKeyhole}
-          type={showConfirmPassword ? 'text' : 'password'}
-          placeholder="Confirm password"
-          maxLength={32}
-          value={confirmPassword}
-          onChange={(event) => {
-            setConfirmPassword(event.target.value);
-            setError('');
-          }}
-          rightSlot={
-            <button
-              type="button"
-              onClick={() => setShowConfirmPassword((value) => !value)}
-              aria-label="Toggle confirm password visibility"
-              className="hover:text-white transition-colors"
+            <a
+              href="https://t.me/"
+              target="_blank"
+              rel="noreferrer"
+              className="p-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-white/70 hover:text-white transition-all flex items-center gap-1 text-[11px] font-bold"
             >
-              {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-            </button>
-          }
-        />
-
-        <AuthField
-          label="Invite code (Optional)"
-          icon={ReceiptText}
-          placeholder="Enter invite code (if any)"
-          maxLength={30}
-          value={inviteCode}
-          onChange={(event) => setInviteCode(event.target.value)}
-        />
-
-        <label className="mt-1 flex items-center gap-3 text-sm text-blue-50/80 cursor-pointer">
-          <input
-            type="checkbox"
-            className="auth-checkbox"
-            checked={agreed}
-            onChange={(e) => {
-              setAgreed(e.target.checked);
-              setError('');
-            }}
-          />
-          <span>{agreementLabel}</span>
-          <a href={pageHref('/')} className="text-amber-400 transition hover:text-amber-300 ml-1">
-            [Privacy Agreement]
-          </a>
-        </label>
-
-        {error ? (
-          <div className="rounded-xl bg-red-500/15 border border-red-500/30 px-3 py-2 text-xs font-semibold text-red-200 animate-fadeIn">
-            {error}
+              <Headphones size={14} /> 24/7 Support
+            </a>
           </div>
-        ) : null}
 
-        <button
-          type="submit"
-          className="auth-primary-button mt-2 w-full"
-          disabled={busy}
-        >
-          {busy ? 'Creating account…' : 'Register'}
-        </button>
-      </form>
-    </AuthShell>
+          <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">Register Account</h1>
+          <p className="text-xs text-white/60 mt-1">Register using your mobile number to claim bonus</p>
+        </div>
+
+        {/* Register Form */}
+        <div className="p-6 space-y-4">
+          {error && (
+            <div className="p-3 rounded-2xl bg-red-500/15 border border-red-500/30 text-red-400 text-xs font-bold animate-shake">
+              {error}
+            </div>
+          )}
+
+          <form onSubmit={onSubmit} className="space-y-4">
+            {/* Phone Number Field */}
+            <div>
+              <label className="block text-[11px] font-bold uppercase tracking-wider text-white/60 mb-1.5 flex items-center gap-1.5">
+                <Smartphone size={14} className="text-casino-gold" /> Mobile Phone Number
+              </label>
+              <div className="flex gap-2">
+                <div className="h-12 px-3.5 rounded-2xl bg-black/40 border border-white/10 flex items-center justify-center font-black text-sm text-casino-gold shrink-0">
+                  +91
+                </div>
+                <input
+                  type="tel"
+                  inputMode="numeric"
+                  maxLength={10}
+                  required
+                  value={phone}
+                  onChange={handlePhoneChange}
+                  placeholder="Enter 10-digit mobile number"
+                  className="flex-1 h-12 px-4 rounded-2xl bg-black/40 border border-white/10 text-white font-bold text-sm focus:outline-none focus:border-casino-gold focus:ring-1 focus:ring-casino-gold transition-all tabular-nums"
+                />
+              </div>
+            </div>
+
+            {/* Set Password */}
+            <div>
+              <label className="block text-[11px] font-bold uppercase tracking-wider text-white/60 mb-1.5 flex items-center gap-1.5">
+                <LockKeyhole size={14} className="text-casino-gold" /> Set Login Password
+              </label>
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  required
+                  value={password}
+                  onChange={(e) => {
+                    setError('');
+                    setPassword(e.target.value);
+                  }}
+                  placeholder="Set password (6–32 characters)"
+                  className="w-full h-12 px-4 pr-11 rounded-2xl bg-black/40 border border-white/10 text-white font-bold text-sm focus:outline-none focus:border-casino-gold focus:ring-1 focus:ring-casino-gold transition-all"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/40 hover:text-white transition-colors cursor-pointer"
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+            </div>
+
+            {/* Confirm Password */}
+            <div>
+              <label className="block text-[11px] font-bold uppercase tracking-wider text-white/60 mb-1.5 flex items-center gap-1.5">
+                <ShieldCheck size={14} className="text-casino-gold" /> Confirm Password
+              </label>
+              <div className="relative">
+                <input
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  required
+                  value={confirmPassword}
+                  onChange={(e) => {
+                    setError('');
+                    setConfirmPassword(e.target.value);
+                  }}
+                  placeholder="Re-enter password"
+                  className="w-full h-12 px-4 pr-11 rounded-2xl bg-black/40 border border-white/10 text-white font-bold text-sm focus:outline-none focus:border-casino-gold focus:ring-1 focus:ring-casino-gold transition-all"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword((prev) => !prev)}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/40 hover:text-white transition-colors cursor-pointer"
+                >
+                  {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+            </div>
+
+            {/* Invitation Code */}
+            <div>
+              <label className="block text-[11px] font-bold uppercase tracking-wider text-white/60 mb-1.5 flex items-center gap-1.5">
+                <Gift size={14} className="text-casino-gold" /> Invitation Code (Optional)
+              </label>
+              <input
+                type="text"
+                value={inviteCode}
+                onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
+                placeholder="Enter referral / invitation code"
+                className="w-full h-12 px-4 rounded-2xl bg-black/40 border border-white/10 text-casino-gold font-mono font-bold text-sm uppercase focus:outline-none focus:border-casino-gold focus:ring-1 focus:ring-casino-gold transition-all"
+              />
+            </div>
+
+            {/* Agreement Checkbox */}
+            <div className="flex items-center gap-2 pt-1">
+              <input
+                type="checkbox"
+                id="agreement"
+                checked={agreed}
+                onChange={(e) => setAgreed(e.target.checked)}
+                className="w-4 h-4 rounded bg-black/40 border-white/20 text-casino-gold focus:ring-casino-gold cursor-pointer"
+              />
+              <label htmlFor="agreement" className="text-xs text-white/60 cursor-pointer">
+                I have read and agree to the{' '}
+                <span className="text-casino-gold underline">Privacy Policy & Service Terms</span>
+              </label>
+            </div>
+
+            {/* Submit Button */}
+            <button
+              type="submit"
+              disabled={busy}
+              className="w-full h-13 py-3 rounded-2xl bg-gradient-to-r from-casino-gold via-amber-400 to-orange-500 text-slate-950 font-black text-sm uppercase tracking-wider shadow-lg hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+            >
+              {busy ? (
+                <div className="w-5 h-5 border-2 border-slate-950 border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <>
+                  <UserRoundPlus size={18} /> Register Now
+                </>
+              )}
+            </button>
+          </form>
+
+          {/* Already have an account link */}
+          <div className="pt-2 text-center">
+            <button
+              type="button"
+              onClick={() => navigateTo('/login')}
+              className="text-xs font-bold text-white/60 hover:text-white transition-colors cursor-pointer"
+            >
+              Already have an account?{' '}
+              <span className="text-casino-gold font-black underline">Log In</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Security Footer Note */}
+        <div className="p-4 bg-black/40 border-t border-white/5 text-center text-[10px] text-white/40 font-medium">
+          🔒 256-Bit SSL Encrypted · Provably Fair Gaming Engine
+        </div>
+      </div>
+    </div>
   );
 };
 

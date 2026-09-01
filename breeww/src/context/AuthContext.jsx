@@ -78,6 +78,15 @@ export const AuthProvider = ({ children }) => {
     return res.data;
   }, []);
 
+  const forgotPassword = useCallback(async ({ phone, newPassword, otp }) => {
+    const res = await apiClient('/auth/forgot-password', {
+      method: 'POST',
+      auth: false,
+      body: { phone, newPassword, otp },
+    });
+    return res.data;
+  }, []);
+
   const logout = useCallback(async () => {
     try {
       await apiClient('/auth/logout', { method: 'POST' });
@@ -94,11 +103,12 @@ export const AuthProvider = ({ children }) => {
       isAuthenticated: Boolean(user && localStorage.getItem('player_token')),
       login,
       register,
+      forgotPassword,
       logout,
       refreshMe,
       setUser,
     }),
-    [user, loading, login, register, logout, refreshMe]
+    [user, loading, login, register, forgotPassword, logout, refreshMe]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

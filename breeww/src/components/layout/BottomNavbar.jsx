@@ -1,6 +1,6 @@
 import React from 'react';
 import { Home, Activity, CircleDollarSign, User } from 'lucide-react';
-import { isCurrentPath, pageHref } from '../../lib/navigation';
+import { isCurrentPath, pageHref, navigateTo } from '../../lib/navigation';
 
 const BottomNavbar = () => {
   const navItems = [
@@ -18,6 +18,10 @@ const BottomNavbar = () => {
           <a
             key={item.path || idx}
             href={pageHref(item.path)}
+            onClick={(e) => {
+              e.preventDefault();
+              navigateTo(item.path);
+            }}
             className={
               `flex flex-col items-center justify-center transition-colors ${
                 item.isCenter ? 'relative -top-4 scale-110' : ''

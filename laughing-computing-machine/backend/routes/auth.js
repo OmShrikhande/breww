@@ -198,4 +198,36 @@ router.post('/logout', authenticatePlayer, async (req, res) => {
   }
 });
 
+router.post('/forgot-password', loginLimiter, async (req, res) => {
+  try {
+    const { phone, newPassword, otp } = req.body || {};
+    if (!phone || !newPassword) return err(res, 'Phone number and new password are required', 400);
+
+    const parsed = parseAuthIdentifier('phone', phone);
+    if (parsed.error || !parsed.phone) return err(res, parsed.error || 'Valid 10-digit mobile number required', 400);
+
+    if (String(newPassword).length < 6) return err(res, 'New password must be at least 6 characters', 400);
+    if (String(newPassword).length > 32) return err(res, 'New password cannot exceed 32 characters', 400);
+
+    const userResult = await pool.query('SELECT id, phone, status FROM users WHERE phone = $1 LIMIT 1', [parsed.phone]);
+    if (!userResult.rows.length) {
+      return err(res, 'No account found registered with this mobile number', 404);
+    }
+
+    const user = userResult.rows[0];
+    if (user.status !== 'active') {
+      return err(res, 'Account is suspended or inactive. Please contact support.', 403);
+    }
+
+    const hash = await bcrypt.hash(newPassword, 10);
+    await pool.query('UPDATE users SET password_hash = $1 WHERE id = $2', [hash, user.id]);
+    await pool.query('DELETE FROM player_sessions WHERE user_id = $1', [user.id]);
+
+    return ok(res, { message: 'Password reset successfully! Please log in with your new password.' });
+  } catch (e) {
+    console.error('Forgot password error:', e.message);
+    return err(res, 'Failed to reset password. Please try again.', 500);
+  }
+});
+
 module.exports = router;
