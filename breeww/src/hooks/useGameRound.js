@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { fetchRoundHistory, fetchRoundState } from '../api/gamesApi';
 import { useWebSocket } from '../context/WebSocketContext';
 
-export function useGameRound(gameId, { pollMs = 3000 } = {}) {
+export function useGameRound(gameId, { pollMs = 1500 } = {}) {
   const [round, setRound] = useState(null);
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -15,8 +15,16 @@ export function useGameRound(gameId, { pollMs = 3000 } = {}) {
         fetchRoundState(gameId),
         fetchRoundHistory(gameId, 12),
       ]);
-      setRound(state);
-      setHistory(hist);
+      setRound((prev) => {
+        if (!state) return prev;
+        return {
+          ...(prev || {}),
+          ...state,
+          timerLeft: Number.isFinite(state.secondsLeft) ? state.secondsLeft : (state.timerLeft ?? prev?.timerLeft ?? 0),
+          bettingOpen: state.secondsLeft !== undefined ? state.secondsLeft > 5 : (state.bettingOpen ?? true),
+        };
+      });
+      setHistory(hist || []);
       if (state?.result && state.result !== lastResultRef.current) {
         lastResultRef.current = state.result;
       }
@@ -26,6 +34,25 @@ export function useGameRound(gameId, { pollMs = 3000 } = {}) {
       setLoading(false);
     }
   }, [gameId]);
+
+  // Real-time continuous 1-second local timer clock (eliminates 3s gap)
+  useEffect(() => {
+    const clock = setInterval(() => {
+      setRound((prev) => {
+        if (!prev) return prev;
+        const current = prev.timerLeft ?? 0;
+        if (current <= 0) return prev;
+        const next = current - 1;
+        return {
+          ...prev,
+          timerLeft: next,
+          bettingOpen: next > 5,
+        };
+      });
+    }, 1000);
+
+    return () => clearInterval(clock);
+  }, []);
 
   // Real-time WebSocket game event listener
   useEffect(() => {
@@ -98,50 +125,59 @@ export function betToOptionId(bet) {
 }
 
 /** Build three dice + metadata from round result string */
-export function parseDiceResult(result) {
-  const r = String(result || '').toLowerCase();
-  const makeDice = (sum) => {
-    const s = Math.min(18, Math.max(3, sum));
-    const d1 = Math.min(6, Math.max(1, Math.floor(s / 3)));
-    const d2 = Math.min(6, Math.max(1, Math.floor((s - d1) / 2)));
-    const d3 = Math.min(6, Math.max(1, s - d1 - d2));
-    return [d1, d2, d3];
-  };
-
-  const direct = parseInt(r, 10);
-  if (Number.isFinite(direct) && direct >= 3 && direct <= 18) {
-    const dice = makeDice(direct);
-    const sum = dice.reduce((a, b) => a + b, 0);
-    return {
-      dice,
-      sum,
-      size: sum >= 11 ? 'Big' : 'Small',
-      parity: sum % 2 === 0 ? 'Even' : 'Odd',
-      label: String(sum),
-    };
+export function parseDiceResult(raw) {
+  if (!raw) return { dice: [1, 2, 3], sum: 6, size: 'small', parity: 'even' };
+  try {
+    if (typeof raw === 'object' && Array.isArray(raw.dice)) return raw;
+    const parts = String(raw).split(',').map((x) => parseInt(x.trim(), 10)).filter((n) => !Number.isNaN(n));
+    if (parts.length >= 3) {
+      const dice = parts.slice(0, 3);
+      const sum = dice.reduce((a, b) => a + b, 0);
+      return { dice, sum, size: sum >= 11 ? 'big' : 'small', parity: sum % 2 === 0 ? 'even' : 'odd' };
+    }
+  } catch {
+    /* fallback */
   }
-
-  const hash = r.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
-  const fallback = [(hash % 6) + 1, ((hash * 2) % 6) + 1, ((hash * 3) % 6) + 1];
-  return { dice: fallback, sum: 10, size: 'Small', parity: 'Even', label: r };
+  return { dice: [3, 4, 5], sum: 12, size: 'big', parity: 'even' };
 }
 
-/** Deterministic cards for dragon/tiger/tie from round id + result */
-export function parseDragonTigerResult(result, roundId = 0) {
-  const winner = String(result || 'tie').toLowerCase();
-  const seed = Number(roundId) || Date.now();
-  const suits = ['♠', '♣', '♥', '♦'];
-  const suit = (i) => suits[(seed + i) % 4];
-  let dragonVal = (seed % 11) + 3;
-  let tigerVal = ((seed * 7) % 11) + 3;
+/** Parse Dragon Tiger card result */
+export function parseDragonTigerResult(raw, roundId = 0) {
+  if (!raw) return { dragon: 10, tiger: 7, winner: 'dragon' };
+  try {
+    const s = String(raw).toLowerCase();
+    if (s.includes('dragon')) return { dragon: 13, tiger: 8, winner: 'dragon' };
+    if (s.includes('tiger')) return { dragon: 6, tiger: 12, winner: 'tiger' };
+    if (s.includes('tie')) return { dragon: 9, tiger: 9, winner: 'tie' };
+    const parts = s.split(':');
+    if (parts.length >= 2) {
+      const d = parseInt(parts[0], 10) || 10;
+      const t = parseInt(parts[1], 10) || 7;
+      const winner = d > t ? 'dragon' : t > d ? 'tiger' : 'tie';
+      return { dragon: d, tiger: t, winner };
+    }
+  } catch {
+    /* fallback */
+  }
+  return { dragon: 11, tiger: 5, winner: 'dragon' };
+}
 
-  if (winner === 'dragon' && dragonVal <= tigerVal) dragonVal = Math.min(13, tigerVal + 1 + (seed % 3));
-  if (winner === 'tiger' && tigerVal <= dragonVal) tigerVal = Math.min(13, dragonVal + 1 + (seed % 3));
-  if (winner === 'tie') tigerVal = dragonVal;
-
-  return {
-    dragon: { value: dragonVal, suit: suit(0) },
-    tiger: { value: tigerVal, suit: suit(1) },
-    winner,
-  };
+/** Parse WinGo color prediction result */
+export function parseColourResult(raw) {
+  if (!raw) return { number: 5, color: 'green', size: 'big' };
+  try {
+    const num = parseInt(raw, 10);
+    if (!Number.isNaN(num)) {
+      const color = num === 0 ? 'violet-red' : num === 5 ? 'violet-green' : num % 2 === 0 ? 'red' : 'green';
+      const size = num >= 5 ? 'big' : 'small';
+      return { number: num, color, size };
+    }
+    const s = String(raw).toLowerCase();
+    if (s.includes('red')) return { number: 2, color: 'red', size: 'small' };
+    if (s.includes('green')) return { number: 7, color: 'green', size: 'big' };
+    if (s.includes('violet')) return { number: 0, color: 'violet', size: 'small' };
+  } catch {
+    /* fallback */
+  }
+  return { number: 8, color: 'red', size: 'big' };
 }

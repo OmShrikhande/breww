@@ -347,8 +347,8 @@ async function tick() {
 function startRoundEngine() {
   if (timer) return;
   tick();
-  timer = setInterval(tick, 2000);
-  console.log('Round engine started (auto/manual, 10s admin preview)');
+  timer = setInterval(tick, 1000);
+  console.log('⚡ High-precision 1-second round engine started');
 }
 
 function stopRoundEngine() {

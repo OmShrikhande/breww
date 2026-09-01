@@ -78,8 +78,26 @@
   100% { transform: scale(1); opacity: 1; }
 }
 
+@keyframes modal-pop {
+  0% { transform: scale(0.93) translateY(6px); opacity: 0; }
+  100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+@keyframes fadeInFast {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
 .result-pop {
   animation: result-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.animate-modalPop {
+  animation: modal-pop 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-fadeInFast {
+  animation: fadeInFast 0.15s ease-out forwards;
 }
 
 .auth-input {
