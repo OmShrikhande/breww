@@ -14,6 +14,7 @@ import {
 import { navigateTo } from '../lib/navigation';
 import { useAuth } from '../context/AuthContext';
 import { useAudio } from '../context/AudioContext';
+import TermsPrivacyModal from '../components/TermsPrivacyModal';
 
 const Register = () => {
   const { register } = useAuth();
@@ -26,6 +27,7 @@ const Register = () => {
   const [agreed, setAgreed] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showTermsModal, setShowTermsModal] = useState(false);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
@@ -254,7 +256,17 @@ const Register = () => {
               />
               <label htmlFor="agreement" className="text-xs text-white/60 cursor-pointer">
                 I have read and agree to the{' '}
-                <span className="text-casino-gold underline">Privacy Policy & Service Terms</span>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setShowTermsModal(true);
+                  }}
+                  className="text-casino-gold underline font-bold hover:text-amber-300 transition-colors cursor-pointer inline"
+                >
+                  Privacy Policy & Service Terms
+                </button>
               </label>
             </div>
 
@@ -292,6 +304,13 @@ const Register = () => {
           🔒 256-Bit SSL Encrypted · Provably Fair Gaming Engine
         </div>
       </div>
+
+      {/* Terms of Service & Privacy Policy Modal */}
+      <TermsPrivacyModal
+        isOpen={showTermsModal}
+        onClose={() => setShowTermsModal(false)}
+        onAccept={() => setAgreed(true)}
+      />
     </div>
   );
 };

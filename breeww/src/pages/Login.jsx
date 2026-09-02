@@ -18,7 +18,7 @@ import { useAuth } from '../context/AuthContext';
 import { useAudio } from '../context/AudioContext';
 
 const Login = () => {
-  const { login, forgotPassword } = useAuth();
+  const { login } = useAuth();
   const { playWin, playChip } = useAudio();
 
   const [method, setMethod] = useState('phone');
@@ -29,16 +29,6 @@ const Login = () => {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
-
-  // Forgot Password Modal State
-  const [showForgotModal, setShowForgotModal] = useState(false);
-  const [forgotPhone, setForgotPhone] = useState('');
-  const [forgotOtp, setForgotOtp] = useState('');
-  const [forgotNewPass, setForgotNewPass] = useState('');
-  const [forgotConfirmPass, setForgotConfirmPass] = useState('');
-  const [forgotBusy, setForgotBusy] = useState(false);
-  const [forgotError, setForgotError] = useState('');
-  const [otpCooldown, setOtpCooldown] = useState(0);
 
   const showToast = (msg) => {
     setToastMessage(msg);
@@ -92,72 +82,6 @@ const Login = () => {
       setError(err.message || 'Invalid credentials. Please check your mobile number and password.');
     } finally {
       setBusy(false);
-    }
-  };
-
-  const handleSendOtp = () => {
-    const raw = forgotPhone.trim();
-    if (raw.length !== 10 || !/^[6-9]\d{9}$/.test(raw)) {
-      setForgotError('Please enter a valid 10-digit mobile number first');
-      return;
-    }
-    setForgotError('');
-    playChip();
-    setForgotOtp('123456');
-    setOtpCooldown(60);
-    showToast('📩 Verification code sent! (OTP: 123456)');
-
-    const timer = setInterval(() => {
-      setOtpCooldown((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-  };
-
-  const handleResetPasswordSubmit = async (e) => {
-    e.preventDefault();
-    setForgotError('');
-
-    const rawPhone = forgotPhone.trim();
-    if (rawPhone.length !== 10) {
-      setForgotError('Please enter a valid 10-digit mobile number');
-      return;
-    }
-
-    if (forgotNewPass.length < 6) {
-      setForgotError('New password must be at least 6 characters');
-      return;
-    }
-
-    if (forgotNewPass !== forgotConfirmPass) {
-      setForgotError('Passwords do not match. Please re-enter.');
-      return;
-    }
-
-    setForgotBusy(true);
-    try {
-      playChip();
-      await forgotPassword({
-        phone: rawPhone,
-        newPassword: forgotNewPass,
-        otp: forgotOtp,
-      });
-      playWin();
-      showToast('🎉 Password reset successfully! Please log in.');
-      setShowForgotModal(false);
-      setForgotPhone('');
-      setForgotOtp('');
-      setForgotNewPass('');
-      setForgotConfirmPass('');
-      setIdentifier(rawPhone);
-    } catch (err) {
-      setForgotError(err.message || 'Failed to reset password. Please check your mobile number.');
-    } finally {
-      setForgotBusy(false);
     }
   };
 
@@ -267,13 +191,6 @@ const Login = () => {
             <div>
               <label className="block text-[11px] font-bold uppercase tracking-wider text-white/60 mb-1.5 flex items-center justify-between">
                 <span>Login Password</span>
-                <button
-                  type="button"
-                  onClick={() => setShowForgotModal(true)}
-                  className="text-casino-gold hover:underline lowercase text-[11px] font-bold cursor-pointer"
-                >
-                  Forgot password?
-                </button>
               </label>
               <div className="relative">
                 <input
@@ -344,126 +261,6 @@ const Login = () => {
           🔒 256-Bit SSL Encrypted · Provably Fair Gaming Engine
         </div>
       </div>
-
-      {/* FORGOT PASSWORD MODAL */}
-      {showForgotModal && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="w-full max-w-sm rounded-3xl bg-[#131b38] border border-casino-gold/40 p-6 shadow-2xl animate-fadeIn">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-casino-gold/20 text-casino-gold flex items-center justify-center">
-                  <KeyRound size={18} />
-                </div>
-                <h3 className="font-black text-white text-base">Reset Password</h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowForgotModal(false)}
-                className="text-white/40 hover:text-white cursor-pointer"
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            {forgotError && (
-              <div className="p-2.5 rounded-xl bg-red-500/15 border border-red-500/30 text-red-400 text-xs font-bold mb-3">
-                {forgotError}
-              </div>
-            )}
-
-            <form onSubmit={handleResetPasswordSubmit} className="space-y-3">
-              {/* Phone */}
-              <div>
-                <label className="text-[10px] font-bold uppercase text-white/50 block mb-1">
-                  Registered Mobile Number
-                </label>
-                <div className="flex gap-2">
-                  <div className="h-10 px-3 rounded-xl bg-black/50 border border-white/10 flex items-center text-xs font-black text-casino-gold">
-                    +91
-                  </div>
-                  <input
-                    type="tel"
-                    inputMode="numeric"
-                    maxLength={10}
-                    required
-                    value={forgotPhone}
-                    onChange={(e) => setForgotPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                    placeholder="10-digit mobile"
-                    className="flex-1 h-10 px-3 rounded-xl bg-black/50 border border-white/10 text-white text-xs font-bold focus:outline-none focus:border-casino-gold"
-                  />
-                </div>
-              </div>
-
-              {/* OTP */}
-              <div>
-                <label className="text-[10px] font-bold uppercase text-white/50 block mb-1">
-                  SMS Verification Code
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    required
-                    value={forgotOtp}
-                    onChange={(e) => setForgotOtp(e.target.value)}
-                    placeholder="Enter code"
-                    className="flex-1 h-10 px-3 rounded-xl bg-black/50 border border-white/10 text-white text-xs font-mono font-bold focus:outline-none focus:border-casino-gold"
-                  />
-                  <button
-                    type="button"
-                    disabled={otpCooldown > 0}
-                    onClick={handleSendOtp}
-                    className={`px-3 h-10 rounded-xl text-[10px] font-black uppercase tracking-wider shrink-0 cursor-pointer ${
-                      otpCooldown > 0
-                        ? 'bg-white/10 text-white/40 cursor-not-allowed'
-                        : 'bg-casino-gold text-slate-950 hover:brightness-110'
-                    }`}
-                  >
-                    {otpCooldown > 0 ? `${otpCooldown}s` : 'Send OTP'}
-                  </button>
-                </div>
-              </div>
-
-              {/* New Password */}
-              <div>
-                <label className="text-[10px] font-bold uppercase text-white/50 block mb-1">
-                  Set New Password
-                </label>
-                <input
-                  type="password"
-                  required
-                  value={forgotNewPass}
-                  onChange={(e) => setForgotNewPass(e.target.value)}
-                  placeholder="Min 6 characters"
-                  className="w-full h-10 px-3 rounded-xl bg-black/50 border border-white/10 text-white text-xs font-bold focus:outline-none focus:border-casino-gold"
-                />
-              </div>
-
-              {/* Confirm New Password */}
-              <div>
-                <label className="text-[10px] font-bold uppercase text-white/50 block mb-1">
-                  Confirm New Password
-                </label>
-                <input
-                  type="password"
-                  required
-                  value={forgotConfirmPass}
-                  onChange={(e) => setForgotConfirmPass(e.target.value)}
-                  placeholder="Re-enter new password"
-                  className="w-full h-10 px-3 rounded-xl bg-black/50 border border-white/10 text-white text-xs font-bold focus:outline-none focus:border-casino-gold"
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={forgotBusy}
-                className="w-full mt-2 py-3 rounded-xl bg-gradient-to-r from-casino-gold to-orange-500 text-slate-950 font-black text-xs uppercase tracking-wider cursor-pointer shadow-lg hover:brightness-110 active:scale-95 transition-all"
-              >
-                {forgotBusy ? 'Resetting…' : 'Reset & Confirm Password'}
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

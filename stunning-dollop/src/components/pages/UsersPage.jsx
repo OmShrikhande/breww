@@ -125,7 +125,7 @@ const UsersPage = () => {
           <input
             className="search-input"
             type="text"
-            placeholder="Search by email or username..."
+            placeholder="Search by mobile, username, or email..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -159,62 +159,74 @@ const UsersPage = () => {
             </tr>
           </thead>
           <tbody>
-            {users.map((u) => (
-              <tr key={u.id} className={`user-row user-row--${u.status}`}>
-                <td className="td-id">#{u.id}</td>
-                <td className="td-user">
-                  <div className="user-cell">
-                    <div className="user-cell-avatar">{(u.username || '?')[0]}</div>
-                    <div className="user-cell-info">
-                      <span className="user-cell-name">{u.username}</span>
-                      <span className="user-cell-email">{u.email}</span>
-                    </div>
-                  </div>
-                </td>
-                <td className="td-balance">₹{u.balance.toLocaleString()}</td>
-                <td className="td-bets">{u.totalBets.toLocaleString()}</td>
-                <td className="td-winloss">
-                  <span className="win-amount">+₹{(u.totalWin / 1000).toFixed(0)}K</span>
-                  {' / '}
-                  <span className="loss-amount">-₹{(u.totalLoss / 1000).toFixed(0)}K</span>
-                </td>
-                <td className="td-vip">
-                  <span className="vip-badge" style={{ color: VIP_COLORS[u.vip], borderColor: VIP_COLORS[u.vip] }}>
-                    {u.vip}
-                  </span>
-                </td>
-                <td className="td-status">
-                  <span className={`badge badge-${u.status === 'active' ? 'active' : 'inactive'}`}>
-                    <span className="badge-dot" />{u.status}
-                  </span>
-                </td>
-                <td className="td-time">{u.lastActive}</td>
-                <td className="td-actions" onClick={(e) => e.stopPropagation()}>
-                  <div className="action-menu-wrap">
-                    <button
-                      className="action-menu-trigger"
-                      onClick={() => setActionMenu(actionMenu === u.id ? null : u.id)}
-                    >
-                      ⋮
-                    </button>
-                    {actionMenu === u.id && (
-                      <div className="action-dropdown">
-                        {canWrite && (
-                          <>
-                            <button onClick={() => handleAction(u.id, 'activate')} className="act-btn act-btn--activate">✅ Activate</button>
-                            <button onClick={() => handleAction(u.id, 'suspend')} className="act-btn act-btn--suspend">⏸ Suspend</button>
-                            <button onClick={() => handleAction(u.id, 'ban')} className="act-btn act-btn--ban">🚫 Ban User</button>
-                            <div className="act-divider" />
-                            <button onClick={() => handleAction(u.id, 'reset-bal')} className="act-btn act-btn--reset">💸 Reset Balance</button>
-                          </>
+            {users.map((u, index) => {
+              const isNearBottom = index >= Math.max(0, users.length - 2);
+              return (
+                <tr key={u.id} className={`user-row user-row--${u.status}`}>
+                  <td className="td-id">#{u.id}</td>
+                  <td className="td-user">
+                    <div className="user-cell">
+                      <div className="user-cell-avatar">{(u.username || '?')[0]}</div>
+                      <div className="user-cell-info">
+                        <span className="user-cell-name">{u.username}</span>
+                        {u.phone ? (
+                          <span className="user-cell-phone" style={{ color: '#f59e0b', fontWeight: 700, fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                            📱 +91 {u.phone}
+                          </span>
+                        ) : null}
+                        {u.email ? (
+                          <span className="user-cell-email">{u.email}</span>
+                        ) : (
+                          !u.phone && <span className="user-cell-email">—</span>
                         )}
-                        <button className="act-btn act-btn--view" onClick={() => setSelectedUser(u)}>👁 View Details</button>
                       </div>
-                    )}
-                  </div>
-                </td>
-              </tr>
-            ))}
+                    </div>
+                  </td>
+                  <td className="td-balance">₹{u.balance.toLocaleString()}</td>
+                  <td className="td-bets">{u.totalBets.toLocaleString()}</td>
+                  <td className="td-winloss">
+                    <span className="win-amount">+₹{(u.totalWin / 1000).toFixed(0)}K</span>
+                    {' / '}
+                    <span className="loss-amount">-₹{(u.totalLoss / 1000).toFixed(0)}K</span>
+                  </td>
+                  <td className="td-vip">
+                    <span className="vip-badge" style={{ color: VIP_COLORS[u.vip], borderColor: VIP_COLORS[u.vip] }}>
+                      {u.vip}
+                    </span>
+                  </td>
+                  <td className="td-status">
+                    <span className={`badge badge-${u.status === 'active' ? 'active' : 'inactive'}`}>
+                      <span className="badge-dot" />{u.status}
+                    </span>
+                  </td>
+                  <td className="td-time">{u.lastActive}</td>
+                  <td className="td-actions" onClick={(e) => e.stopPropagation()}>
+                    <div className="action-menu-wrap">
+                      <button
+                        className="action-menu-trigger"
+                        onClick={() => setActionMenu(actionMenu === u.id ? null : u.id)}
+                      >
+                        ⋮
+                      </button>
+                      {actionMenu === u.id && (
+                        <div className={`action-dropdown ${isNearBottom ? 'action-dropdown--up' : ''}`}>
+                          {canWrite && (
+                            <>
+                              <button onClick={() => handleAction(u.id, 'activate')} className="act-btn act-btn--activate">✅ Activate</button>
+                              <button onClick={() => handleAction(u.id, 'suspend')} className="act-btn act-btn--suspend">⏸ Suspend</button>
+                              <button onClick={() => handleAction(u.id, 'ban')} className="act-btn act-btn--ban">🚫 Ban User</button>
+                              <div className="act-divider" />
+                              <button onClick={() => handleAction(u.id, 'reset-bal')} className="act-btn act-btn--reset">💸 Reset Balance</button>
+                            </>
+                          )}
+                          <button className="act-btn act-btn--view" onClick={() => setSelectedUser(u)}>👁 View Details</button>
+                        </div>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
         {users.length === 0 && (
@@ -232,12 +244,18 @@ const UsersPage = () => {
               <div className="udp-avatar">{(selectedUser.username || '?')[0]}</div>
               <div>
                 <h3>{selectedUser.username}</h3>
-                <p>{selectedUser.email}</p>
+                {selectedUser.phone && (
+                  <p style={{ color: '#f59e0b', fontWeight: 700, fontSize: '0.85rem' }}>
+                    📱 +91 {selectedUser.phone}
+                  </p>
+                )}
+                {selectedUser.email && <p>{selectedUser.email}</p>}
               </div>
               <button className="modal-close" onClick={() => setSelectedUser(null)}>✕</button>
             </div>
             <div className="udp-stats">
               {[
+                { l: 'Mobile Phone', v: selectedUser.phone ? `+91 ${selectedUser.phone}` : '—' },
                 { l: 'Balance', v: `₹${selectedUser.balance.toLocaleString()}` },
                 { l: 'Total Bets', v: selectedUser.totalBets.toLocaleString() },
                 { l: 'Total Won', v: `₹${selectedUser.totalWin.toLocaleString()}` },

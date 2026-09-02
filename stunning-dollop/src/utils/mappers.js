@@ -60,6 +60,7 @@ export const normalizeGame = (g = {}) => {
 export const normalizeUser = (u = {}) => ({
   id: u.id,
   email: u.email || '',
+  phone: u.phone || '',
   username: u.username || 'user',
   balance: Number(u.balance ?? 0),
   totalBets: Number(u.total_bets ?? u.totalBets ?? 0),

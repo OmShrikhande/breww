@@ -20,7 +20,7 @@ class User {
     let p = 1;
 
     if (search) {
-      where += ` AND (username ILIKE $${p} OR email ILIKE $${p})`;
+      where += ` AND (username ILIKE $${p} OR email ILIKE $${p} OR phone ILIKE $${p})`;
       values.push(`%${search}%`);
       p++;
     }
