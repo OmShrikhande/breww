@@ -429,51 +429,27 @@ export const playTieSound = () => {
   });
 };
 
-// 16. Casino Ambient Synthesizer Background Music Pad
-export const startAmbientMusic = (volume = 0.03) => {
-  if (isBgMusicPlaying || typeof window === 'undefined') return;
-  const ctx = getAudioContext();
-  if (!ctx) return;
-
-  try {
-    bgMusicGain = ctx.createGain();
-    bgMusicGain.gain.setValueAtTime(0.001, ctx.currentTime);
-    bgMusicGain.gain.linearRampToValueAtTime(volume, ctx.currentTime + 1.5);
-    bgMusicGain.connect(ctx.destination);
-
-    // Warm lush minor 9th casino chord (C3, G3, D#4, A#4)
-    const chordFrequencies = [130.81, 196.00, 311.13, 466.16];
-    bgMusicOscillators = chordFrequencies.map((freq) => {
-      const osc = ctx.createOscillator();
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(freq, ctx.currentTime);
-      osc.connect(bgMusicGain);
-      osc.start();
-      return osc;
-    });
-
-    isBgMusicPlaying = true;
-  } catch (err) {
-    console.warn('Ambient music init failed:', err);
-  }
+// 16. Casino Ambient Background Music (Disabled to prevent continuous sound across tabs)
+export const startAmbientMusic = () => {
+  // Silent no-op: background continuous music is completely disabled
 };
 
 export const stopAmbientMusic = () => {
-  if (!isBgMusicPlaying) return;
   try {
-    if (bgMusicGain && audioCtx) {
-      bgMusicGain.gain.linearRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
+    bgMusicOscillators.forEach((osc) => {
+      try {
+        osc.stop();
+        osc.disconnect();
+      } catch (_) {}
+    });
+    bgMusicOscillators = [];
+    if (bgMusicGain) {
+      try {
+        bgMusicGain.disconnect();
+      } catch (_) {}
+      bgMusicGain = null;
     }
-    setTimeout(() => {
-      bgMusicOscillators.forEach((osc) => {
-        try {
-          osc.stop();
-          osc.disconnect();
-        } catch (_) {}
-      });
-      bgMusicOscillators = [];
-      isBgMusicPlaying = false;
-    }, 600);
+    isBgMusicPlaying = false;
   } catch (_) {
     isBgMusicPlaying = false;
   }

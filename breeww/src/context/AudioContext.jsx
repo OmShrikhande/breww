@@ -49,15 +49,12 @@ export const AudioProvider = ({ children }) => {
   }, [soundEnabled]);
 
   useEffect(() => {
+    // Ensure any background ambient music is stopped and never plays continuously
     try {
-      localStorage.setItem('breww_music_enabled', String(musicEnabled));
-      if (musicEnabled && soundEnabled) {
-        soundEngine.startAmbientMusic(0.03);
-      } else {
-        soundEngine.stopAmbientMusic();
-      }
+      soundEngine.stopAmbientMusic();
+      localStorage.setItem('breww_music_enabled', 'false');
     } catch (_) {}
-  }, [musicEnabled, soundEnabled]);
+  }, []);
 
   const toggleSound = () => {
     setSoundEnabled((prev) => !prev);
