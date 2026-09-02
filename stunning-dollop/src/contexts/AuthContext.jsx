@@ -135,6 +135,7 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem('admin_token', token);
       localStorage.setItem('admin_token_expiry', expiry.toString());
       localStorage.setItem('admin_user', JSON.stringify(admin));
+      localStorage.setItem('admin_last_activity', now.toString());
 
       setIsAuthenticated(true);
       setUser(admin);

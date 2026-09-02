@@ -28,7 +28,7 @@ async function request(method, endpoint, { body, headers = {}, auth = true, sile
     result = { message: text || `Request failed (${response.status})` };
   }
 
-  if (response.status === 401) {
+  if (response.status === 401 && (cleanEndpoint.includes('/auth/me') || cleanEndpoint.includes('/auth/logout'))) {
     localStorage.removeItem('admin_token');
     localStorage.removeItem('admin_token_expiry');
     localStorage.removeItem('admin_user');

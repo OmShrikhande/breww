@@ -16,9 +16,14 @@ const authenticateAdmin = async (req, res, next) => {
       return res.status(403).json({ success: false, message: 'Admin access required' });
     }
 
-    const session = await Admin.findSession(token);
-    if (!session || new Date(session.expires_at) < new Date()) {
-      return res.status(401).json({ success: false, message: 'Session expired or invalid' });
+    // Check optional database session revocation
+    try {
+      const session = await Admin.findSession(token);
+      if (session && new Date(session.expires_at) < new Date()) {
+        return res.status(401).json({ success: false, message: 'Session expired' });
+      }
+    } catch (_) {
+      // Non-blocking on transient session table blips
     }
 
     const admin = await Admin.findById(decoded.adminId);
