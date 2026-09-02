@@ -352,27 +352,9 @@ export const playFlyAwaySound = () => {
   osc.stop(now + 0.5);
 };
 
-// 12. Countdown Tick Sound (Normal & Urgent)
-export const playTickSound = (isUrgent = false) => {
-  const ctx = getAudioContext();
-  if (!ctx) return;
-  const now = ctx.currentTime;
-
-  const osc = ctx.createOscillator();
-  const gain = ctx.createGain();
-
-  osc.type = isUrgent ? 'sine' : 'triangle';
-  osc.frequency.setValueAtTime(isUrgent ? 1200 : 750, now);
-  osc.frequency.exponentialRampToValueAtTime(200, now + 0.04);
-
-  gain.gain.setValueAtTime(isUrgent ? 0.25 : 0.12, now);
-  gain.gain.exponentialRampToValueAtTime(0.001, now + 0.045);
-
-  osc.connect(gain);
-  gain.connect(ctx.destination);
-
-  osc.start(now);
-  osc.stop(now + 0.05);
+// 12. Countdown Tick Sound (Disabled to prevent continuous background audio)
+export const playTickSound = () => {
+  // Silent no-op
 };
 
 // 13. Dragon Roar / Strike Sound

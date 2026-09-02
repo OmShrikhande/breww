@@ -42,12 +42,6 @@ const DragonTiger = () => {
   }, [roundId]);
 
   useEffect(() => {
-    if (timerLeft > 0 && timerLeft <= 5) {
-      playTick(true);
-    }
-  }, [timerLeft, playTick]);
-
-  useEffect(() => {
     if (!result || result === lastResult) return;
     setLastResult(result);
     setIsDealing(true);

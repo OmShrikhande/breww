@@ -56,12 +56,6 @@ const ColorPrediction = () => {
   }, [roundId]);
 
   useEffect(() => {
-    if (timerLeft > 0 && timerLeft <= 5) {
-      playTick(true);
-    }
-  }, [timerLeft, playTick]);
-
-  useEffect(() => {
     if (result && result !== lastResult) {
       setLastResult(result);
       playGem();
