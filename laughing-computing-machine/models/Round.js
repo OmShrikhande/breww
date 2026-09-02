@@ -39,18 +39,54 @@ class Round {
     );
     if (!round.rows[0]) return null;
     const roundId = round.rows[0].id;
+
+    if (gameId === 'aviator') {
+      const stats = await pool.query(
+        `SELECT 
+           COALESCE(SUM(amount), 0)::NUMERIC AS total,
+           COUNT(*)::INT AS bet_count,
+           COUNT(DISTINCT user_id)::INT AS players_count,
+           COALESCE(AVG(amount), 0)::NUMERIC AS avg_bet
+         FROM aviator_bets
+         WHERE round_id = $1`,
+        [roundId]
+      );
+      const row = stats.rows[0] || {};
+      const totalPot = parseFloat(row.total || 0);
+      const playersCount = parseInt(row.players_count || 0, 10);
+      const betCount = parseInt(row.bet_count || 0, 10);
+      const avgBet = parseFloat(row.avg_bet || 0);
+
+      await pool.query(
+        `UPDATE game_rounds SET total_pot = $1, winners_count = $2 WHERE id = $3`,
+        [totalPot, playersCount, roundId]
+      );
+
+      return {
+        roundId,
+        distribution: { aviator: totalPot },
+        totalPot,
+        playersCount,
+        betCount,
+        avgBet,
+        updatedAt: new Date(),
+      };
+    }
+
     const { rows } = await pool.query(
       `SELECT option_id, SUM(amount) AS total, COUNT(*) AS bet_count FROM round_bets WHERE round_id = $1 GROUP BY option_id`,
       [roundId]
     );
     const distribution = {};
     let totalPot = 0;
+    let betCount = 0;
     rows.forEach((r) => {
       distribution[r.option_id] = parseFloat(r.total);
       totalPot += parseFloat(r.total);
+      betCount += parseInt(r.bet_count, 10);
     });
     await pool.query(`UPDATE game_rounds SET total_pot = $1 WHERE id = $2`, [totalPot, roundId]);
-    return { roundId, distribution, totalPot, updatedAt: new Date() };
+    return { roundId, distribution, totalPot, betCount, updatedAt: new Date() };
   }
 
   static async placeBet(gameId, userId, optionId, amount) {

@@ -83,6 +83,7 @@ const GameControlPage = ({ game, onBack }) => {
   const isMines   = game.id === 'mines';
 
   const [bets,          setBets]          = useState(() => genBets(options.map(o => o.id)));
+  const [totalPotDirect, setTotalPotDirect] = useState(0);
   const [roundTimer,    setRoundTimer]    = useState(game.settings.roundDuration || game.settings.autoResultInterval || 60);
   const [roundId,       setRoundId]       = useState(null);
   const [roundStatus,   setRoundStatus]   = useState('betting');
@@ -97,7 +98,7 @@ const GameControlPage = ({ game, onBack }) => {
   const [notification,  setNotification]  = useState(null);
   const timerRef = useRef(null);
 
-  const totalPot   = Object.values(bets).reduce((a, b) => a + b, 0);
+  const totalPot   = isAviator ? totalPotDirect : (totalPotDirect || Object.values(bets).reduce((a, b) => a + b, 0));
   const maxBetVal  = Math.max(...Object.values(bets), 0);
   const highestOpt = options.find(o => bets[o.id] === maxBetVal);
 
@@ -132,6 +133,13 @@ const GameControlPage = ({ game, onBack }) => {
               : current.status === 'completed' || current.status === 'closed' ? 'completed'
                 : 'betting';
         setRoundStatus(mapped);
+      }
+
+      if (betsRes.data?.totalPot != null) {
+        setTotalPotDirect(Number(betsRes.data.totalPot) || 0);
+      }
+      if (betsRes.data?.playersCount != null) {
+        setLiveCount(Number(betsRes.data.playersCount) || 0);
       }
 
       const distribution = betsRes.data?.distribution || {};
