@@ -3,8 +3,10 @@ const Round = require('../models/Round');
 const getCurrent = async (req, res) => {
   try {
     const round = await Round.getCurrent(req.params.id);
-    if (!round) return res.status(404).json({ success: false, message: 'No active round found' });
-    res.json({ success: true, data: round });
+    res.json({
+      success: true,
+      data: round || { roundId: null, status: 'open', totalPot: 0, playersCount: 0, timerLeft: 0 }
+    });
   } catch (error) {
     console.error('Get current round error:', error);
     res.status(500).json({ success: false, message: 'Internal server error' });
@@ -14,8 +16,10 @@ const getCurrent = async (req, res) => {
 const getBetDistribution = async (req, res) => {
   try {
     const dist = await Round.getBetDistribution(req.params.id);
-    if (!dist) return res.status(404).json({ success: false, message: 'No active round found' });
-    res.json({ success: true, data: dist });
+    res.json({
+      success: true,
+      data: dist || { roundId: null, distribution: {}, totalPot: 0, playersCount: 0, betCount: 0, avgBet: 0 }
+    });
   } catch (error) {
     console.error('Get bet distribution error:', error);
     res.status(500).json({ success: false, message: 'Internal server error' });
@@ -25,8 +29,10 @@ const getBetDistribution = async (req, res) => {
 const getUpcoming = async (req, res) => {
   try {
     const data = await Round.getUpcoming(req.params.id);
-    if (!data) return res.status(404).json({ success: false, message: 'No active round found' });
-    res.json({ success: true, data });
+    res.json({
+      success: true,
+      data: data || { roundId: null, upcomingResult: null }
+    });
   } catch (error) {
     console.error('Get upcoming round error:', error);
     res.status(500).json({ success: false, message: 'Internal server error' });

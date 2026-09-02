@@ -34,10 +34,20 @@ class Round {
 
   static async getBetDistribution(gameId) {
     const round = await pool.query(
-      `SELECT id FROM game_rounds WHERE game_id = $1 AND status IN ('open', 'closed') ORDER BY started_at DESC LIMIT 1`,
+      `SELECT id FROM game_rounds WHERE game_id = $1 ORDER BY started_at DESC LIMIT 1`,
       [gameId]
     );
-    if (!round.rows[0]) return null;
+    if (!round.rows[0]) {
+      return {
+        roundId: null,
+        distribution: {},
+        totalPot: 0,
+        playersCount: 0,
+        betCount: 0,
+        avgBet: 0,
+        updatedAt: new Date(),
+      };
+    }
     const roundId = round.rows[0].id;
 
     if (gameId === 'aviator') {
