@@ -5,12 +5,12 @@ const getBaseUrl = () => {
   if (typeof window !== 'undefined') {
     const host = window.location.hostname;
     if (host === 'localhost' || host === '127.0.0.1') {
-      return 'http://localhost:3000/player/api';
+      return 'https://breww-ysqj.onrender.com/player/api';
     }
     // On Vercel / Production: Use relative /player/api (handled seamlessly by Vercel edge rewrites with zero CORS preflight delay)
     return '/player/api';
   }
-  return 'http://localhost:3000/player/api';
+  return 'https://breww-ysqj.onrender.com/player/api';
 };
 
 const BASE_URL = getBaseUrl();

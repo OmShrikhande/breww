@@ -31,9 +31,21 @@ export const WebSocketProvider = ({ children }) => {
   const connect = useCallback(() => {
     try {
       const token = localStorage.getItem('player_token') || '';
-      const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const wsHost = window.location.hostname === 'localhost' ? 'localhost:3000' : window.location.host;
-      const baseWs = (import.meta.env.VITE_WS_URL || `${wsProtocol}//${wsHost}/ws`).replace(/\/$/, '');
+      let baseWs = import.meta.env.VITE_WS_URL;
+      if (!baseWs) {
+        if (typeof window !== 'undefined') {
+          const host = window.location.hostname;
+          if (host === 'localhost' || host === '127.0.0.1') {
+            baseWs = 'wss://breww-ysqj.onrender.com/ws';
+          } else {
+            const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            baseWs = `${proto}//${window.location.host}/ws`;
+          }
+        } else {
+          baseWs = 'wss://breww-ysqj.onrender.com/ws';
+        }
+      }
+      baseWs = baseWs.replace(/\/$/, '');
       const wsUrl = `${baseWs}${token ? `${baseWs.includes('?') ? '&' : '?'}token=${encodeURIComponent(token)}` : ''}`;
 
       const ws = new WebSocket(wsUrl);
