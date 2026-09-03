@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Trophy, TrendingUp, Sparkles, Crown } from 'lucide-react';
 import { formatINR } from '../../utils/formatCurrency';
 
@@ -17,17 +17,17 @@ const WinningInfo = () => {
       {/* Header */}
       <div className="flex items-center justify-between mb-3 px-1">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-xl bg-casino-gold/15 border border-casino-gold/30 flex items-center justify-center text-casino-gold">
+          <div className="w-8 h-8 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400">
             <Trophy size={16} />
           </div>
           <div>
             <h2 className="text-sm sm:text-base font-black text-white uppercase tracking-tight flex items-center gap-1.5">
               Live Winning Feed
             </h2>
-            <p className="text-[10px] text-white/40">Real-time multiplayer jackpot payouts</p>
+            <p className="text-[10px] text-amber-300/60">Real-time multiplayer jackpot payouts</p>
           </div>
         </div>
-        <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-[9px] font-black uppercase">
+        <span className="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-[9px] font-black uppercase">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
           Live
         </span>
@@ -38,21 +38,21 @@ const WinningInfo = () => {
         {WINNERS.map((w) => (
           <div
             key={w.id}
-            className="game-glass rounded-2xl p-3 bg-[#0d1424]/90 border border-white/10 flex items-center justify-between hover:border-casino-gold/30 transition-all shadow-md"
+            className="rounded-2xl p-3 bg-[#1C0202]/90 border border-amber-500/20 flex items-center justify-between hover:border-amber-500/40 transition-all shadow-md"
           >
             {/* Left: Avatar & User */}
             <div className="flex items-center gap-2.5">
-              <div className={`w-10 h-10 rounded-2xl bg-gradient-to-tr ${w.color} flex items-center justify-center text-lg shadow-md shrink-0`}>
+              <div className={`w-10 h-10 rounded-2xl bg-gradient-to-tr ${w.color} flex items-center justify-center text-lg shadow-md shrink-0 border border-white/20`}>
                 {w.icon}
               </div>
               <div>
                 <div className="flex items-center gap-1.5">
                   <span className="text-xs font-bold text-white font-mono">{w.name}</span>
-                  <span className="text-[8px] font-black uppercase px-1.5 py-0.2 rounded-full bg-casino-gold/20 text-casino-gold border border-casino-gold/40">
+                  <span className="text-[8px] font-black uppercase px-1.5 py-0.2 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40">
                     {w.vip}
                   </span>
                 </div>
-                <p className="text-[10px] text-white/40 font-medium">Won on {w.game} ({w.mult})</p>
+                <p className="text-[10px] text-white/50 font-medium">Won on {w.game} ({w.mult})</p>
               </div>
             </div>
 
@@ -61,7 +61,7 @@ const WinningInfo = () => {
               <span className="text-xs sm:text-sm font-black font-mono text-emerald-400 block tracking-tight">
                 +{formatINR(w.amount)}
               </span>
-              <span className="text-[8px] font-bold uppercase text-white/30 tracking-wider">
+              <span className="text-[8px] font-bold uppercase text-amber-400/60 tracking-wider">
                 Payout Credited
               </span>
             </div>

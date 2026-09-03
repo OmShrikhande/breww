@@ -26,6 +26,7 @@
 
 .custom-scrollbar::-webkit-scrollbar {
   width: 4px;
+  height: 4px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
@@ -33,27 +34,59 @@
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 215, 0, 0.2);
   border-radius: 20px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 215, 0, 0.4);
 }
 
 .pb-safe {
   padding-bottom: env(safe-area-inset-bottom);
 }
 
-/* ─── Game UI system ─── */
-.game-shell-bg {
-  background: radial-gradient(ellipse 120% 80% at 50% -20%, rgba(79, 142, 247, 0.12), transparent),
-    linear-gradient(180deg, #0a1020 0%, #0f1629 50%, #0a0e18 100%);
+/* ─── Casino Luxury Theme Shell ─── */
+.casino-shell-bg {
+  background: radial-gradient(circle at 50% 10%, rgba(255, 215, 0, 0.12), transparent 70%),
+    radial-gradient(circle at 50% 80%, rgba(239, 68, 68, 0.1), transparent 60%),
+    linear-gradient(180deg, #8B0000 0%, #450505 25%, #180202 60%, #0D0101 100%);
 }
 
-.game-glass {
-  background: rgba(20, 30, 56, 0.75);
+.casino-glass {
+  background: rgba(28, 4, 4, 0.85);
   backdrop-filter: blur(12px);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+}
+
+.casino-card {
+  background: linear-gradient(180deg, rgba(43, 5, 5, 0.9) 0%, rgba(24, 2, 2, 0.95) 100%);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.gold-text-gradient {
+  background: linear-gradient(90deg, #FFF0A0 0%, #FFD700 50%, #F59E0B 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.gold-btn {
+  background: linear-gradient(90deg, #FFD700 0%, #FBBF24 50%, #F59E0B 100%);
+  color: #450505;
+  font-weight: 900;
+  border: 2px solid rgba(255, 255, 255, 0.7);
+  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.35);
+  transition: all 0.2s ease;
+}
+
+.gold-btn:hover {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+
+.gold-btn:active {
+  transform: scale(0.97);
 }
 
 .bet-chip {
@@ -69,96 +102,5 @@
 }
 
 .game-section-title {
-  @apply text-[11px] font-black uppercase tracking-[0.2em] text-white/45 mb-3;
-}
-
-@keyframes result-pop {
-  0% { transform: scale(0.8); opacity: 0; }
-  60% { transform: scale(1.05); }
-  100% { transform: scale(1); opacity: 1; }
-}
-
-@keyframes modal-pop {
-  0% { transform: scale(0.93) translateY(6px); opacity: 0; }
-  100% { transform: scale(1) translateY(0); opacity: 1; }
-}
-
-@keyframes fadeInFast {
-  0% { opacity: 0; }
-  100% { opacity: 1; }
-}
-
-.result-pop {
-  animation: result-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-}
-
-.animate-modalPop {
-  animation: modal-pop 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-.animate-fadeInFast {
-  animation: fadeInFast 0.15s ease-out forwards;
-}
-
-.auth-input {
-  height: 3.75rem;
-  border-radius: 1rem;
-  border: 1px solid rgba(122, 177, 255, 0.08);
-  background: #353d86;
-  padding: 0 1rem;
-  color: white;
-  font-size: 1rem;
-  outline: none;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
-}
-
-.auth-input::placeholder {
-  color: rgba(197, 212, 255, 0.45);
-}
-
-.auth-input:focus {
-  border-color: rgba(92, 174, 255, 0.75);
-  box-shadow: 0 0 0 4px rgba(52, 126, 255, 0.16);
-  background: #394290;
-}
-
-.auth-primary-button {
-  height: 3.75rem;
-  border-radius: 9999px;
-  background: linear-gradient(90deg, #36a5ea 0%, #3b82f6 100%);
-  color: white;
-  font-size: 1.5rem;
-  font-weight: 800;
-  letter-spacing: 0.22em;
-  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
-  box-shadow: 0 16px 34px rgba(49, 121, 255, 0.3);
-}
-
-.auth-primary-button:hover {
-  filter: brightness(1.06);
-  transform: translateY(-1px);
-}
-
-.auth-checkbox {
-  height: 1.4rem;
-  width: 1.4rem;
-  appearance: none;
-  border-radius: 9999px;
-  border: 1px solid rgba(255, 255, 255, 0.85);
-  background: transparent;
-  display: inline-block;
-  position: relative;
-}
-
-.auth-checkbox:checked {
-  border-color: #5caeff;
-  background: #5caeff;
-}
-
-.auth-checkbox:checked::after {
-  content: '';
-  position: absolute;
-  inset: 0.28rem;
-  border-radius: 9999px;
-  background: white;
+  @apply text-[11px] font-black uppercase tracking-[0.2em] text-amber-300/60 mb-3;
 }

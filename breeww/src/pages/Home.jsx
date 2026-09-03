@@ -6,8 +6,7 @@ import PlatformRecommendation from '../components/layout/PlatformRecommendation'
 import WinningInfo from '../components/layout/WinningInfo';
 import PlatformFooter from '../components/layout/PlatformFooter';
 import { usePlatformGames } from '../hooks/usePlatformGames';
-import { Users, TrendingUp, Zap, Sparkles } from 'lucide-react';
-import { formatINR } from '../utils/formatCurrency';
+import { Users, TrendingUp, Zap, Sparkles, Trophy } from 'lucide-react';
 
 const Home = () => {
   const { games, loading, error, reload } = usePlatformGames();
@@ -26,7 +25,7 @@ const Home = () => {
   }, [games, activeCategory]);
 
   return (
-    <div className="bg-casino-base min-h-screen select-none animate-fadeIn">
+    <div className="min-h-screen select-none animate-fadeIn pb-4">
       {/* Dynamic Animated Hero Banners */}
       <Banner />
 
@@ -38,17 +37,17 @@ const Home = () => {
 
       {/* Platform Real-Time Statistics Ribbon */}
       <div className="px-4 mb-4">
-        <div className="grid grid-cols-3 gap-2 bg-[#0d1424]/90 p-3 rounded-2xl border border-white/10 shadow-lg">
+        <div className="grid grid-cols-3 gap-2 bg-[#1C0202]/95 p-3 rounded-2xl border border-amber-500/30 shadow-lg">
           <div className="text-center">
-            <span className="text-[8px] sm:text-[9px] font-bold text-white/40 uppercase block">Registered</span>
+            <span className="text-[8px] sm:text-[9px] font-bold text-amber-300/60 uppercase block">Registered</span>
             <span className="text-xs sm:text-sm font-black text-white font-mono">320K+</span>
           </div>
-          <div className="text-center border-x border-white/10">
-            <span className="text-[8px] sm:text-[9px] font-bold text-white/40 uppercase block">Today's Payouts</span>
-            <span className="text-xs sm:text-sm font-black text-casino-gold font-mono">₹2.4 Cr+</span>
+          <div className="text-center border-x border-amber-500/20">
+            <span className="text-[8px] sm:text-[9px] font-bold text-amber-300/60 uppercase block">Today's Payouts</span>
+            <span className="text-xs sm:text-sm font-black text-amber-400 font-mono">₹2.4 Cr+</span>
           </div>
           <div className="text-center">
-            <span className="text-[8px] sm:text-[9px] font-bold text-white/40 uppercase block">Live Players</span>
+            <span className="text-[8px] sm:text-[9px] font-bold text-amber-300/60 uppercase block">Live Players</span>
             <span className="text-xs sm:text-sm font-black text-emerald-400 font-mono">18,420</span>
           </div>
         </div>

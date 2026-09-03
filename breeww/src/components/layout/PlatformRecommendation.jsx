@@ -1,13 +1,21 @@
 import React from 'react';
 import GameCard from '../games/GameCard';
+import { Flame, Sparkles } from 'lucide-react';
 
 const PlatformRecommendation = ({ games, loading, error, onRetry }) => {
   return (
     <div className="px-4 mb-8">
-      <div className="flex justify-between items-end mb-4 px-1">
-        <div>
-          <h2 className="text-lg font-black text-white tracking-tight">Live Games</h2>
-          <p className="text-[11px] text-white/40 mt-0.5">Synced from admin panel</p>
+      <div className="flex justify-between items-center mb-3 px-1">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400">
+            <Flame size={16} />
+          </div>
+          <div>
+            <h2 className="text-sm sm:text-base font-black text-white uppercase tracking-tight">
+              Hot Live Games
+            </h2>
+            <p className="text-[10px] text-amber-300/60">Provably fair real-time multiplier games</p>
+          </div>
         </div>
       </div>
 

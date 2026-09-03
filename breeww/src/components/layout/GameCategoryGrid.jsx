@@ -1,5 +1,5 @@
 import React from 'react';
-import { Flame, Rocket, Sparkles, Gem, Dices, Crown, LayoutGrid } from 'lucide-react';
+import { Rocket, Sparkles, Gem, Crown, LayoutGrid } from 'lucide-react';
 import { useAudio } from '../../context/AudioContext';
 
 const CATEGORIES = [
@@ -28,11 +28,11 @@ const GameCategoryGrid = ({ activeCategory = 'all', onSelectCategory }) => {
               }}
               className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-black uppercase tracking-wider whitespace-nowrap transition-all active:scale-95 cursor-pointer shrink-0 border ${
                 isActive
-                  ? 'bg-gradient-to-r from-casino-gold via-amber-400 to-orange-500 text-slate-950 border-casino-gold shadow-md font-black'
-                  : 'bg-[#121936] text-white/60 hover:text-white hover:bg-[#1a2348] border-white/10'
+                  ? 'bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 text-red-950 border-white/80 shadow-[0_0_12px_rgba(255,215,0,0.5)] font-black'
+                  : 'bg-[#200202]/90 text-white/70 hover:text-white hover:bg-[#2A0404] border-amber-500/20'
               }`}
             >
-              <cat.icon size={14} className={isActive ? 'text-slate-950' : cat.color || 'text-casino-gold'} />
+              <cat.icon size={14} className={isActive ? 'text-red-950' : cat.color || 'text-amber-400'} />
               <span>{cat.label}</span>
             </button>
           );
