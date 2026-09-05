@@ -119,14 +119,14 @@ const TermsPrivacyModal = ({ isOpen, onClose, onAccept }) => {
                   <Gamepad2 size={16} /> 3. Provably Fair Algorithm & Crash Multipliers
                 </h3>
                 <p>
-                  All games hosted on Breeww (including Aviator, WinGo Colour Prediction, Mines, Dragon Tiger, and Dice) operate on an immutable, provably fair cryptographic system:
+                  All games hosted on Breeww (including Aviator, Colour Prediction, Mines, Dragon Tiger, and Dice) operate on an immutable, provably fair cryptographic system:
                 </p>
                 <ul className="list-disc pl-5 space-y-1 text-white/70 text-[11px]">
                   <li>
                     <strong>Aviator Crash Point:</strong> Computed using high-entropy SHA-256 server seed hashing merged with client parameters before each flight begins. No third party or operator can manipulate flight duration during an active round.
                   </li>
                   <li>
-                    <strong>WinGo & Card Games:</strong> Round settlement occurs deterministically every scheduled second interval with automated RNG verification.
+                    <strong>Colour Prediction & Card Games:</strong> Round settlement occurs deterministically every scheduled second interval with automated RNG verification.
                   </li>
                 </ul>
               </section>

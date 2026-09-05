@@ -17,11 +17,15 @@ const UsersPage = () => {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [selectedUser, setSelectedUser] = useState(null);
+  const [rechargeUser, setRechargeUser] = useState(null);
+  const [rechargeAmount, setRechargeAmount] = useState('500');
+  const [rechargeNote, setRechargeNote] = useState('');
   const [actionMenu, setActionMenu] = useState(null);
   const [sortBy, setSortBy] = useState('id');
   const [sortDir, setSortDir] = useState('asc');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
   const [busy, setBusy] = useState(false);
 
   const sortMap = {
@@ -70,6 +74,31 @@ const UsersPage = () => {
     }
   };
 
+  const handleManualRechargeSubmit = async (e) => {
+    if (e) e.preventDefault();
+    if (!rechargeUser || !rechargeAmount || Number(rechargeAmount) <= 0 || busy) return;
+    setBusy(true);
+    setError('');
+    setSuccessMsg('');
+    try {
+      await apiService.patch(API_ENDPOINTS.USER_BALANCE(rechargeUser.id), {
+        action: 'add',
+        amount: Number(rechargeAmount),
+        note: rechargeNote || 'Manual recharge by admin',
+      });
+      setSuccessMsg(`✅ Successfully recharged ₹${Number(rechargeAmount).toLocaleString()} for ${rechargeUser.username || `User #${rechargeUser.id}`}`);
+      setRechargeUser(null);
+      setRechargeAmount('500');
+      setRechargeNote('');
+      await loadUsers();
+      setTimeout(() => setSuccessMsg(''), 5000);
+    } catch (err) {
+      setError(err.message || 'Recharge failed. Please try again.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const handleAction = async (userId, action) => {
     if (!canWrite || busy) return;
     setBusy(true);
@@ -108,6 +137,11 @@ const UsersPage = () => {
   return (
     <div className="users-page" onClick={() => setActionMenu(null)}>
       {error && <p className="usc-lbl" style={{ color: 'var(--red)', marginBottom: 8 }}>{error}</p>}
+      {successMsg && (
+        <div style={{ padding: '10px 16px', background: 'rgba(34, 197, 94, 0.2)', border: '1px solid #22c55e', borderRadius: '8px', color: '#4ade80', fontWeight: 'bold', fontSize: '0.85rem', marginBottom: 12 }}>
+          {successMsg}
+        </div>
+      )}
 
       <div className="users-stats">
         {stats.map((s, i) => (
@@ -141,6 +175,33 @@ const UsersPage = () => {
             </button>
           ))}
         </div>
+        {canWrite && (
+          <button
+            type="button"
+            onClick={() => {
+              setRechargeUser(users[0] || { id: '', username: 'User' });
+              setRechargeAmount('500');
+              setRechargeNote('');
+            }}
+            style={{
+              marginLeft: 'auto',
+              padding: '8px 16px',
+              borderRadius: '8px',
+              background: 'linear-gradient(135deg, #10b981, #059669)',
+              border: 'none',
+              color: 'white',
+              fontWeight: 700,
+              fontSize: '0.82rem',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)',
+            }}
+          >
+            💳 Manual Recharge
+          </button>
+        )}
       </div>
 
       <div className="users-table-wrap">
@@ -212,6 +273,7 @@ const UsersPage = () => {
                         <div className={`action-dropdown ${isNearBottom ? 'action-dropdown--up' : ''}`}>
                           {canWrite && (
                             <>
+                              <button onClick={() => { setRechargeUser(u); setRechargeAmount('500'); setRechargeNote(''); setActionMenu(null); }} className="act-btn act-btn--recharge">💳 Manual Recharge</button>
                               <button onClick={() => handleAction(u.id, 'activate')} className="act-btn act-btn--activate">✅ Activate</button>
                               <button onClick={() => handleAction(u.id, 'suspend')} className="act-btn act-btn--suspend">⏸ Suspend</button>
                               <button onClick={() => handleAction(u.id, 'ban')} className="act-btn act-btn--ban">🚫 Ban User</button>
@@ -237,6 +299,166 @@ const UsersPage = () => {
         )}
       </div>
 
+      {/* Manual Recharge Modal */}
+      {rechargeUser && (
+        <div className="user-detail-overlay" onClick={() => setRechargeUser(null)}>
+          <div className="user-detail-panel" style={{ maxWidth: '440px' }} onClick={(e) => e.stopPropagation()}>
+            <div className="udp-header">
+              <div className="udp-avatar" style={{ background: 'linear-gradient(135deg, #10b981, #059669)' }}>💳</div>
+              <div>
+                <h3 style={{ margin: 0 }}>Manual Balance Recharge</h3>
+                <p style={{ margin: '2px 0 0', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                  Recharge player wallet with instant approved credits
+                </p>
+              </div>
+              <button className="modal-close" onClick={() => setRechargeUser(null)}>✕</button>
+            </div>
+
+            <form onSubmit={handleManualRechargeSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginTop: '14px' }}>
+              {/* Select or switch player */}
+              <div>
+                <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 700, display: 'block', marginBottom: '6px' }}>
+                  Target Player
+                </label>
+                <select
+                  value={rechargeUser.id}
+                  onChange={(e) => {
+                    const found = users.find((x) => x.id === Number(e.target.value));
+                    if (found) setRechargeUser(found);
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '9px 12px',
+                    borderRadius: '8px',
+                    background: 'var(--bg-card-alt)',
+                    border: '1px solid var(--border-strong)',
+                    color: 'white',
+                    fontSize: '0.85rem',
+                    fontWeight: 600,
+                    outline: 'none',
+                  }}
+                >
+                  {users.map((u) => (
+                    <option key={u.id} value={u.id} style={{ background: '#131b38', color: 'white' }}>
+                      #{u.id} {u.username} {u.phone ? `(📱 +91 ${u.phone})` : ''} — Current Bal: ₹{u.balance.toLocaleString()}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Amount */}
+              <div>
+                <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 700, display: 'block', marginBottom: '6px' }}>
+                  Recharge Amount (₹)
+                </label>
+                <div style={{ display: 'flex', gap: '6px', marginBottom: '8px' }}>
+                  {['100', '500', '1000', '2000', '5000'].map((amt) => (
+                    <button
+                      key={amt}
+                      type="button"
+                      onClick={() => setRechargeAmount(amt)}
+                      style={{
+                        flex: 1,
+                        padding: '6px 2px',
+                        borderRadius: '6px',
+                        border: rechargeAmount === amt ? '1px solid #10b981' : '1px solid var(--border)',
+                        background: rechargeAmount === amt ? 'rgba(16, 185, 129, 0.2)' : 'rgba(255,255,255,0.05)',
+                        color: rechargeAmount === amt ? '#10b981' : 'var(--text-secondary)',
+                        fontSize: '0.75rem',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      +₹{amt}
+                    </button>
+                  ))}
+                </div>
+                <input
+                  type="number"
+                  min="1"
+                  step="1"
+                  required
+                  placeholder="Enter amount (₹)"
+                  value={rechargeAmount}
+                  onChange={(e) => setRechargeAmount(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    borderRadius: '8px',
+                    background: 'var(--bg-card-alt)',
+                    border: '1px solid var(--border-strong)',
+                    color: 'white',
+                    fontSize: '0.95rem',
+                    fontWeight: 800,
+                    outline: 'none',
+                  }}
+                />
+              </div>
+
+              {/* Note */}
+              <div>
+                <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 700, display: 'block', marginBottom: '6px' }}>
+                  Recharge Note / Reference (Optional)
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Manual UPI Recharge / VIP Bonus"
+                  value={rechargeNote}
+                  onChange={(e) => setRechargeNote(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '8px 12px',
+                    borderRadius: '8px',
+                    background: 'var(--bg-card-alt)',
+                    border: '1px solid var(--border-strong)',
+                    color: 'white',
+                    fontSize: '0.82rem',
+                    outline: 'none',
+                  }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px', marginTop: '4px' }}>
+                <button
+                  type="button"
+                  onClick={() => setRechargeUser(null)}
+                  style={{
+                    flex: 1,
+                    padding: '10px',
+                    borderRadius: '8px',
+                    background: 'rgba(255,255,255,0.08)',
+                    border: 'none',
+                    color: 'var(--text-secondary)',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={busy || !rechargeAmount || Number(rechargeAmount) <= 0}
+                  style={{
+                    flex: 2,
+                    padding: '10px',
+                    borderRadius: '8px',
+                    background: 'linear-gradient(135deg, #10b981, #059669)',
+                    border: 'none',
+                    color: 'white',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)',
+                  }}
+                >
+                  {busy ? 'Processing…' : `Confirm Recharge ₹${Number(rechargeAmount || 0).toLocaleString()}`}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* User Details Modal */}
       {selectedUser && (
         <div className="user-detail-overlay" onClick={() => setSelectedUser(null)}>
           <div className="user-detail-panel" onClick={(e) => e.stopPropagation()}>

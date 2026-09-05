@@ -109,8 +109,7 @@ async function initDb() {
     await pool.query(sql);
   }
 
-  const { getEnv } = require('../config/env');
-  const seedBalance = Number(getEnv('SEED_BALANCE', '10000')) || 10000;
+  const seedBalance = 0;
   const existing = await pool.query(`SELECT id FROM users WHERE email = $1 OR phone = $2 LIMIT 1`, [
     'player@breeww.com',
     '9999999999',

@@ -18,9 +18,9 @@ import { formatINR } from '../utils/formatCurrency';
 import { navigateTo } from '../lib/navigation';
 
 const ATTENDANCE_DAYS = [
-  { day: 1, reward: 10, claimed: true, label: 'Day 1' },
-  { day: 2, reward: 20, claimed: true, label: 'Day 2' },
-  { day: 3, reward: 50, claimed: false, label: 'Day 3', isToday: true },
+  { day: 1, reward: 10, claimed: false, label: 'Day 1', isToday: true },
+  { day: 2, reward: 20, claimed: false, label: 'Day 2' },
+  { day: 3, reward: 50, claimed: false, label: 'Day 3' },
   { day: 4, reward: 80, claimed: false, label: 'Day 4' },
   { day: 5, reward: 120, claimed: false, label: 'Day 5' },
   { day: 6, reward: 200, claimed: false, label: 'Day 6' },
@@ -33,21 +33,21 @@ const DAILY_MISSIONS = [
     title: 'Aviator High Flyer',
     desc: 'Play 5 rounds of Aviator',
     reward: 25,
-    progress: 5,
+    progress: 0,
     total: 5,
-    completed: true,
+    completed: false,
     gamePath: '/game/aviator',
     icon: Flame,
     color: 'text-red-400 bg-red-500/20 border-red-500/40',
   },
   {
     id: 'm2',
-    title: 'WinGo Colour Master',
-    desc: 'Place 3 winning bets on WinGo',
+    title: 'Colour Prediction Master',
+    desc: 'Place 3 winning bets on Colour Prediction',
     reward: 50,
-    progress: 3,
+    progress: 0,
     total: 3,
-    completed: true,
+    completed: false,
     gamePath: '/game/color-prediction',
     icon: Sparkles,
     color: 'text-emerald-400 bg-emerald-500/20 border-emerald-500/40',
@@ -57,7 +57,7 @@ const DAILY_MISSIONS = [
     title: 'Mines Emerald Seeker',
     desc: 'Cash out in 3 Mines games with 2+ gems',
     reward: 40,
-    progress: 2,
+    progress: 0,
     total: 3,
     completed: false,
     gamePath: '/game/mines',
@@ -69,7 +69,7 @@ const DAILY_MISSIONS = [
     title: 'Dragon Tiger Clash',
     desc: 'Play 10 rounds of Dragon Tiger',
     reward: 35,
-    progress: 4,
+    progress: 0,
     total: 10,
     completed: false,
     gamePath: '/game/dragon-tiger',
@@ -79,8 +79,8 @@ const DAILY_MISSIONS = [
 ];
 
 const VIP_LEVELS = [
-  { level: 'VIP 1', minExp: 0, rebate: '0.6%', levelBonus: 50, monthly: 100 },
-  { level: 'VIP 2', minExp: 1000, rebate: '0.7%', levelBonus: 150, monthly: 300, current: true },
+  { level: 'VIP 1', minExp: 0, rebate: '0.6%', levelBonus: 50, monthly: 100, current: true },
+  { level: 'VIP 2', minExp: 1000, rebate: '0.7%', levelBonus: 150, monthly: 300 },
   { level: 'VIP 3', minExp: 5000, rebate: '0.85%', levelBonus: 500, monthly: 1000 },
   { level: 'VIP 4', minExp: 20000, rebate: '1.0%', levelBonus: 2000, monthly: 3500 },
   { level: 'VIP 5', minExp: 100000, rebate: '1.2%', levelBonus: 10000, monthly: 15000 },
@@ -93,10 +93,10 @@ const Activity = () => {
 
   const [activeTab, setActiveTab] = useState('attendance');
   const [toastMessage, setToastMessage] = useState('');
-  const [claimedDays, setClaimedDays] = useState({ 1: true, 2: true });
+  const [claimedDays, setClaimedDays] = useState({});
   const [claimedMissions, setClaimedMissions] = useState({});
   const [rebateClaimed, setRebateClaimed] = useState(false);
-  const [rebateAmount, setRebateAmount] = useState(148.5);
+  const [rebateAmount, setRebateAmount] = useState(0);
 
   const showToast = (msg) => {
     setToastMessage(msg);
@@ -224,7 +224,7 @@ const Activity = () => {
                 <p className="text-[11px] text-amber-200/60">Check in every day to claim up to ₹1,000 bonus!</p>
               </div>
               <span className="px-2.5 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-[10px] font-black uppercase">
-                Streak: 2 Days
+                Streak: {Object.keys(claimedDays).length} Days
               </span>
             </div>
 
@@ -378,8 +378,8 @@ const Activity = () => {
           <div className="rounded-2xl p-4 border border-amber-500/40 bg-[#1C0202]/95 flex items-center justify-between mb-2 shadow-lg">
             <div>
               <span className="text-[10px] font-black uppercase tracking-widest text-amber-400">Your Status</span>
-              <h3 className="text-base sm:text-lg font-black text-white">VIP 2 Platinum</h3>
-              <p className="text-[11px] text-amber-200/60">Exp: 1,420 / 5,000</p>
+              <h3 className="text-base sm:text-lg font-black text-white">VIP 1 Bronze</h3>
+              <p className="text-[11px] text-amber-200/60">Exp: 0 / 1,000</p>
             </div>
             <div className="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-400/40 flex items-center justify-center text-2xl shadow-inner">
               👑

@@ -11,7 +11,7 @@ class User {
 
   static async findAll({ search, status, vip, page = 1, limit = 20, sortBy = 'joined_at', sortDir = 'DESC' }) {
     const offset = (page - 1) * limit;
-    const allowed = ['id','username','email','balance','total_bets','joined_at','last_active'];
+    const allowed = ['id', 'username', 'email', 'balance', 'total_bets', 'joined_at', 'last_active'];
     const col = allowed.includes(sortBy) ? sortBy : 'joined_at';
     const dir = sortDir === 'ASC' ? 'ASC' : 'DESC';
 

@@ -63,10 +63,20 @@ const InviteWheel = () => {
   const { user, isAuthenticated } = useAuth();
   const { refreshBalance, addWin } = useWallet();
 
+  const storageKey = user?.id ? `invite_wheel_balance_${user.id}` : 'invite_wheel_balance_guest';
+  const historyKey = user?.id ? `invite_wheel_history_${user.id}` : 'invite_wheel_history_guest';
+  const spinsKey = user?.id ? `invite_wheel_spins_${user.id}` : 'invite_wheel_spins_guest';
+
   const [isSpinning, setIsSpinning] = useState(false);
   const [rotation, setRotation] = useState(0);
-  const [currentAmount, setCurrentAmount] = useState(475.60);
-  const [availableSpins, setAvailableSpins] = useState(1);
+  const [currentAmount, setCurrentAmount] = useState(() => {
+    const saved = localStorage.getItem(storageKey);
+    return saved != null ? Math.max(0, Number(saved)) : 0.00;
+  });
+  const [availableSpins, setAvailableSpins] = useState(() => {
+    const saved = localStorage.getItem(spinsKey);
+    return saved != null ? Math.max(0, Number(saved)) : 1;
+  });
   const [toastMessage, setToastMessage] = useState('');
   const [isMuted, setIsMuted] = useState(false);
   
@@ -80,14 +90,31 @@ const InviteWheel = () => {
   // Active tab for history
   const [historyTab, setHistoryTab] = useState('spins');
   const [claimedTasks, setClaimedTasks] = useState({});
-  const [spinHistory, setSpinHistory] = useState([
-    { id: 1, type: 'Registration Bonus', amount: 475.60, time: 'Initial Bonus', date: 'Today' }
-  ]);
+  const [spinHistory, setSpinHistory] = useState(() => {
+    try {
+      const saved = localStorage.getItem(historyKey);
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    localStorage.setItem(storageKey, String(currentAmount));
+  }, [currentAmount, storageKey]);
+
+  useEffect(() => {
+    localStorage.setItem(spinsKey, String(availableSpins));
+  }, [availableSpins, spinsKey]);
+
+  useEffect(() => {
+    localStorage.setItem(historyKey, JSON.stringify(spinHistory));
+  }, [spinHistory, historyKey]);
 
   // Countdown timer state
   const [timeLeft, setTimeLeft] = useState({ hours: 71, minutes: 58, seconds: 45 });
 
-  const inviteCode = user?.inviteCode || 'BW9928';
+  const inviteCode = user?.inviteCode || (user?.phone ? `BW${user.phone.slice(-4)}` : 'BW9928');
   const inviteUrl = getReferralUrl(inviteCode);
   const targetAmount = 500.00;
   const progressPercent = Math.min(100, Math.max(0, (currentAmount / targetAmount) * 100));
@@ -973,20 +1000,27 @@ const InviteWheel = () => {
 
               <div className="flex-1 overflow-y-auto custom-scrollbar space-y-2 pr-1">
                 {historyTab === 'spins' ? (
-                  spinHistory.map(item => (
-                    <div
-                      key={item.id}
-                      className="flex items-center justify-between p-3 rounded-2xl bg-black/40 border border-white/5 text-xs"
-                    >
-                      <div>
-                        <span className="font-bold text-white block">{item.type}</span>
-                        <span className="text-[10px] text-white/40">{item.time}</span>
-                      </div>
-                      <span className={`font-black ${item.amount > 0 ? 'text-emerald-400' : 'text-amber-400'}`}>
-                        {item.amount > 0 ? `+₹${item.amount.toFixed(2)}` : `₹${item.amount.toFixed(2)}`}
-                      </span>
+                  spinHistory.length === 0 ? (
+                    <div className="text-center py-8 text-white/40 text-xs">
+                      <Sparkles size={32} className="mx-auto mb-2 opacity-30 text-amber-400" />
+                      <span>No spin records yet. Spin the wheel to win cash!</span>
                     </div>
-                  ))
+                  ) : (
+                    spinHistory.map(item => (
+                      <div
+                        key={item.id}
+                        className="flex items-center justify-between p-3 rounded-2xl bg-black/40 border border-white/5 text-xs"
+                      >
+                        <div>
+                          <span className="font-bold text-white block">{item.type}</span>
+                          <span className="text-[10px] text-white/40">{item.time}</span>
+                        </div>
+                        <span className={`font-black ${item.amount > 0 ? 'text-emerald-400' : 'text-amber-400'}`}>
+                          {item.amount > 0 ? `+₹${item.amount.toFixed(2)}` : `₹${item.amount.toFixed(2)}`}
+                        </span>
+                      </div>
+                    ))
+                  )
                 ) : (
                   <div className="text-center py-8 text-white/40 text-xs">
                     <Coins size={32} className="mx-auto mb-2 opacity-30" />

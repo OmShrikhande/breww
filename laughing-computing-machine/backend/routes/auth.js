@@ -57,7 +57,7 @@ function parseAuthIdentifier(method, rawIdentifier) {
 
   // Handle phone number
   let digits = raw.replace(/\D/g, '');
-  
+
   // If starts with country code 91 and has 12 digits, strip 91
   if (digits.length === 12 && digits.startsWith('91')) {
     digits = digits.slice(2);
@@ -101,8 +101,8 @@ router.post('/register', loginLimiter, async (req, res) => {
     }
 
     const hash = await bcrypt.hash(password, 10);
-    const seedBalance = Number(getEnv('SEED_BALANCE', '10000')) || 10000;
-    
+    const seedBalance = 0;
+
     // Generate clean username
     const baseUsername = email
       ? email.split('@')[0].replace(/[^a-zA-Z0-9_]/g, '').slice(0, 15)

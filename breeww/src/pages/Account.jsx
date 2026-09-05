@@ -24,20 +24,8 @@ import { useAudio } from '../context/AudioContext';
 import { formatINR } from '../utils/formatCurrency';
 import { navigateTo } from '../lib/navigation';
 
-const SAMPLE_BET_RECORDS = [
-  { game: 'Aviator', round: '#9281', bet: 50, mult: '2.34x', payout: 117, status: 'Won', time: '10m ago' },
-  { game: 'WinGo', round: '#9182', bet: 100, mult: '2.00x', payout: 200, status: 'Won', time: '25m ago' },
-  { game: 'Mines', round: '#8923', bet: 50, mult: '1.27x', payout: 63.5, status: 'Won', time: '1h ago' },
-  { game: 'Dragon Tiger', round: '#8420', bet: 50, mult: '1.95x', payout: 0, status: 'Lost', time: '2h ago' },
-  { game: 'Dice Roll', round: '#8112', bet: 20, mult: '8.00x', payout: 160, status: 'Won', time: '3h ago' },
-];
-
-const SAMPLE_TRANSACTIONS = [
-  { type: 'Deposit', amount: 500, status: 'Success', method: 'UPI Instant', date: '2026-09-01 10:15' },
-  { type: 'Withdrawal', amount: 1200, status: 'Completed', method: 'IMPS Bank', date: '2026-08-31 18:40' },
-  { type: 'Bet Win', amount: 200, status: 'Credited', method: 'WinGo', date: '2026-08-31 16:22' },
-  { type: 'Daily Bonus', amount: 50, status: 'Claimed', method: 'Check-in', date: '2026-08-31 09:00' },
-];
+const SAMPLE_BET_RECORDS = [];
+const SAMPLE_TRANSACTIONS = [];
 
 const Account = () => {
   const { user, logout } = useAuth();
@@ -55,10 +43,10 @@ const Account = () => {
   const [confirmPass, setConfirmPass] = useState('');
 
   // Bank bind states
-  const [bankName, setBankName] = useState('HDFC Bank');
-  const [accNumber, setAccNumber] = useState('501002938192');
-  const [ifsc, setIfsc] = useState('HDFC0000123');
-  const [upiId, setUpiId] = useState('player@okaxis');
+  const [bankName, setBankName] = useState('');
+  const [accNumber, setAccNumber] = useState('');
+  const [ifsc, setIfsc] = useState('');
+  const [upiId, setUpiId] = useState('');
 
   const showToast = (msg) => {
     setToastMessage(msg);
@@ -76,12 +64,19 @@ const Account = () => {
     }
   };
 
-  const displayName = user?.name || user?.phone || 'Player';
-  const initials = displayName.slice(0, 2).toUpperCase();
-  const userId = user?.id ? String(user.id).padStart(8, '0') : '00928371';
-  const displayPhone = user?.phone ? `+91 ${user.phone}` : '+91 98765 43210';
+  const displayName = user?.name || user?.username || (user?.phone ? `+91 ${user.phone}` : 'Player');
+  const initials = (user?.name || user?.username || user?.phone || 'PL').slice(0, 2).toUpperCase();
+  const userId = user?.id ? String(user.id).padStart(8, '0') : '—';
+  const displayPhone = user?.phone ? `+91 ${user.phone}` : (user?.email || '—');
+  const vipLevel = user?.vip || 'VIP 1';
+
+  const totalBets = Number(user?.totalBets || 0);
+  const totalWon = Number(user?.totalWon || 0);
+  const winRate = totalBets > 0 ? ((Number(user?.totalWins || 0) / totalBets) * 100).toFixed(1) : '0.0';
+  const netProfit = Number(user?.netProfit || 0);
 
   const handleCopyId = () => {
+    if (!user?.id) return;
     playChip();
     navigator.clipboard?.writeText(userId).then(() => {
       setCopied(true);
@@ -141,20 +136,22 @@ const Account = () => {
                 <div className="flex items-center gap-2">
                   <h2 className="text-base sm:text-lg font-black text-white">{displayName}</h2>
                   <span className="px-2 py-0.5 rounded-full bg-amber-500/20 border border-amber-400/40 text-amber-300 text-[9px] font-black uppercase">
-                    VIP 2
+                    {vipLevel}
                   </span>
                 </div>
                 <p className="text-xs text-amber-200/60 font-mono">{displayPhone}</p>
                 <div className="flex items-center gap-1.5 mt-0.5">
                   <span className="text-[10px] font-mono text-white/50">UID: {userId}</span>
-                  <button
-                    type="button"
-                    onClick={handleCopyId}
-                    className="p-1 rounded hover:bg-white/10 text-amber-300 hover:text-white transition-colors cursor-pointer"
-                    title="Copy UID"
-                  >
-                    {copied ? <CheckCheck size={12} className="text-emerald-400" /> : <Copy size={12} />}
-                  </button>
+                  {user?.id && (
+                    <button
+                      type="button"
+                      onClick={handleCopyId}
+                      className="p-1 rounded hover:bg-white/10 text-amber-300 hover:text-white transition-colors cursor-pointer"
+                      title="Copy UID"
+                    >
+                      {copied ? <CheckCheck size={12} className="text-emerald-400" /> : <Copy size={12} />}
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -201,19 +198,19 @@ const Account = () => {
       <div className="grid grid-cols-4 gap-2 mb-4">
         <div className="bg-[#1C0202]/95 border border-amber-500/25 rounded-2xl p-2.5 text-center shadow-md">
           <span className="text-[8px] sm:text-[9px] font-bold text-amber-300/60 uppercase block truncate">Total Bets</span>
-          <span className="text-xs sm:text-sm font-black text-white font-mono">142</span>
+          <span className="text-xs sm:text-sm font-black text-white font-mono">{totalBets}</span>
         </div>
         <div className="bg-[#1C0202]/95 border border-amber-500/25 rounded-2xl p-2.5 text-center shadow-md">
           <span className="text-[8px] sm:text-[9px] font-bold text-amber-300/60 uppercase block truncate">Total Won</span>
-          <span className="text-xs sm:text-sm font-black text-emerald-400 font-mono">₹18.9K</span>
+          <span className="text-xs sm:text-sm font-black text-emerald-400 font-mono">{formatINR(totalWon)}</span>
         </div>
         <div className="bg-[#1C0202]/95 border border-amber-500/25 rounded-2xl p-2.5 text-center shadow-md">
           <span className="text-[8px] sm:text-[9px] font-bold text-amber-300/60 uppercase block truncate">Win Rate</span>
-          <span className="text-xs sm:text-sm font-black text-amber-400 font-mono">68.4%</span>
+          <span className="text-xs sm:text-sm font-black text-amber-400 font-mono">{winRate}%</span>
         </div>
         <div className="bg-[#1C0202]/95 border border-amber-500/25 rounded-2xl p-2.5 text-center shadow-md">
           <span className="text-[8px] sm:text-[9px] font-bold text-amber-300/60 uppercase block truncate">Net Profit</span>
-          <span className="text-xs sm:text-sm font-black text-emerald-400 font-mono">+₹4.2K</span>
+          <span className="text-xs sm:text-sm font-black text-emerald-400 font-mono">{netProfit >= 0 ? `+${formatINR(netProfit)}` : formatINR(netProfit)}</span>
         </div>
       </div>
 
@@ -346,17 +343,25 @@ const Account = () => {
               <button type="button" onClick={() => setActiveModal(null)} className="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white/70 hover:text-white cursor-pointer"><X size={16} /></button>
             </div>
             <div className="overflow-y-auto max-h-64 custom-scrollbar space-y-2">
-              {SAMPLE_BET_RECORDS.map((b, i) => (
-                <div key={i} className="p-2.5 rounded-xl bg-black/50 border border-white/5 flex items-center justify-between text-xs">
-                  <div>
-                    <span className="font-black text-white block">{b.game} · {b.round}</span>
-                    <span className="text-[10px] text-white/40">{b.time} · Stake {formatINR(b.bet)} ({b.mult})</span>
-                  </div>
-                  <span className={`font-mono font-black ${b.status === 'Won' ? 'text-emerald-400' : 'text-red-400'}`}>
-                    {b.status === 'Won' ? `+${formatINR(b.payout)}` : `-${formatINR(b.bet)}`}
-                  </span>
+              {SAMPLE_BET_RECORDS.length === 0 ? (
+                <div className="text-center py-8 text-white/50 text-xs">
+                  <span className="text-2xl block mb-2">🎰</span>
+                  <p className="font-bold">No bet records yet</p>
+                  <p className="text-[10px] text-white/40 mt-0.5">Place bets on live games to see history here</p>
                 </div>
-              ))}
+              ) : (
+                SAMPLE_BET_RECORDS.map((b, i) => (
+                  <div key={i} className="p-2.5 rounded-xl bg-black/50 border border-white/5 flex items-center justify-between text-xs">
+                    <div>
+                      <span className="font-black text-white block">{b.game} · {b.round}</span>
+                      <span className="text-[10px] text-white/40">{b.time} · Stake {formatINR(b.bet)} ({b.mult})</span>
+                    </div>
+                    <span className={`font-mono font-black ${b.status === 'Won' ? 'text-emerald-400' : 'text-red-400'}`}>
+                      {b.status === 'Won' ? `+${formatINR(b.payout)}` : `-${formatINR(b.bet)}`}
+                    </span>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>
@@ -371,18 +376,26 @@ const Account = () => {
               <button type="button" onClick={() => setActiveModal(null)} className="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white/70 hover:text-white cursor-pointer"><X size={16} /></button>
             </div>
             <div className="overflow-y-auto max-h-64 custom-scrollbar space-y-2">
-              {SAMPLE_TRANSACTIONS.map((t, i) => (
-                <div key={i} className="p-2.5 rounded-xl bg-black/50 border border-white/5 flex items-center justify-between text-xs">
-                  <div>
-                    <span className="font-black text-white block">{t.type} · {t.method}</span>
-                    <span className="text-[10px] text-white/40">{t.date}</span>
-                  </div>
-                  <div className="text-right">
-                    <span className="font-mono font-black text-white block">{formatINR(t.amount)}</span>
-                    <span className="text-[9px] text-emerald-400 font-bold uppercase">{t.status}</span>
-                  </div>
+              {SAMPLE_TRANSACTIONS.length === 0 ? (
+                <div className="text-center py-8 text-white/50 text-xs">
+                  <span className="text-2xl block mb-2">💳</span>
+                  <p className="font-bold">No {activeModal} records</p>
+                  <p className="text-[10px] text-white/40 mt-0.5">Your payment requests and logs will appear here</p>
                 </div>
-              ))}
+              ) : (
+                SAMPLE_TRANSACTIONS.map((t, i) => (
+                  <div key={i} className="p-2.5 rounded-xl bg-black/50 border border-white/5 flex items-center justify-between text-xs">
+                    <div>
+                      <span className="font-black text-white block">{t.type} · {t.method}</span>
+                      <span className="text-[10px] text-white/40">{t.date}</span>
+                    </div>
+                    <div className="text-right">
+                      <span className="font-mono font-black text-white block">{formatINR(t.amount)}</span>
+                      <span className="text-[9px] text-emerald-400 font-bold uppercase">{t.status}</span>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>

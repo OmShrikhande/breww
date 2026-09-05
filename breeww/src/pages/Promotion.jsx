@@ -21,13 +21,7 @@ import { getReferralUrl } from '../utils/referral';
 import { navigateTo } from '../lib/navigation';
 import QRCodeView from '../components/common/QRCodeView';
 
-const SUBORDINATES = [
-  { phone: '98***120', date: '2026-09-01', turnover: 4500, comm: 31.5, status: 'Active' },
-  { phone: '91***482', date: '2026-08-31', turnover: 12000, comm: 84.0, status: 'Active' },
-  { phone: '97***339', date: '2026-08-31', turnover: 2500, comm: 17.5, status: 'Active' },
-  { phone: '99***810', date: '2026-08-30', turnover: 8400, comm: 58.8, status: 'Active' },
-  { phone: '93***661', date: '2026-08-29', turnover: 15000, comm: 105.0, status: 'Active' },
-];
+const SUBORDINATES = [];
 
 const COMMISSION_TIERS = [
   { tier: 'Tier 1 (Direct)', rate: '0.7%', desc: 'Direct invited members bets', color: 'text-amber-400' },
@@ -51,7 +45,7 @@ const Promotion = () => {
   const [copiedCode, setCopiedCode] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
-  const [commissionBalance, setCommissionBalance] = useState(1240);
+  const [commissionBalance, setCommissionBalance] = useState(0);
   const [showQrModal, setShowQrModal] = useState(false);
 
   const inviteCode = user?.inviteCode || (user?.phone ? `BW${user.phone.slice(-4)}` : 'BW9928');
@@ -122,19 +116,19 @@ const Promotion = () => {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mt-4">
             <div className="bg-black/50 border border-amber-500/20 rounded-2xl p-2.5 text-center shadow-inner">
               <span className="text-[9px] font-bold text-amber-300/60 uppercase block">Total Commission</span>
-              <span className="text-sm sm:text-base font-black text-amber-400 font-mono">₹14,850</span>
+              <span className="text-sm sm:text-base font-black text-amber-400 font-mono">₹0</span>
             </div>
             <div className="bg-black/50 border border-amber-500/20 rounded-2xl p-2.5 text-center shadow-inner">
               <span className="text-[9px] font-bold text-amber-300/60 uppercase block">Yesterday Earnings</span>
-              <span className="text-sm sm:text-base font-black text-emerald-400 font-mono">₹1,240</span>
+              <span className="text-sm sm:text-base font-black text-emerald-400 font-mono">₹0</span>
             </div>
             <div className="bg-black/50 border border-amber-500/20 rounded-2xl p-2.5 text-center shadow-inner">
               <span className="text-[9px] font-bold text-amber-300/60 uppercase block">Direct Team</span>
-              <span className="text-sm sm:text-base font-black text-white font-mono">28</span>
+              <span className="text-sm sm:text-base font-black text-white font-mono">0</span>
             </div>
             <div className="bg-black/50 border border-amber-500/20 rounded-2xl p-2.5 text-center shadow-inner">
               <span className="text-[9px] font-bold text-amber-300/60 uppercase block">Total Network</span>
-              <span className="text-sm sm:text-base font-black text-amber-300 font-mono">114</span>
+              <span className="text-sm sm:text-base font-black text-amber-300 font-mono">0</span>
             </div>
           </div>
         </div>
@@ -221,7 +215,7 @@ const Promotion = () => {
             <MessageCircle size={14} className="fill-current" /> WhatsApp
           </a>
           <a
-            href={`https://t.me/share/url?url=${encodeURIComponent(inviteLink)}&text=Play%20Aviator%20%26%20WinGo%20on%20Breeww!`}
+            href={`https://t.me/share/url?url=${encodeURIComponent(inviteLink)}&text=Play%20Aviator%20%26%20Colour%20Prediction%20on%20Breeww!`}
             target="_blank"
             rel="noreferrer"
             className="py-2.5 px-2 rounded-xl bg-gradient-to-r from-[#0088CC] to-[#006699] hover:brightness-110 text-white font-black text-[11px] uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-md active:scale-95 transition-all"
@@ -268,29 +262,37 @@ const Promotion = () => {
         <div className="rounded-2xl border border-amber-500/30 bg-[#1C0202]/95 overflow-hidden shadow-xl animate-fadeIn">
           <div className="p-3 border-b border-amber-500/20 bg-black/40 flex items-center justify-between">
             <span className="text-xs font-black uppercase text-white tracking-wider">Subordinate Betting Activity</span>
-            <span className="text-[10px] font-mono text-amber-400 font-bold">5 Active Players</span>
+            <span className="text-[10px] font-mono text-amber-400 font-bold">{SUBORDINATES.length} Active Players</span>
           </div>
           <div className="overflow-x-auto custom-scrollbar max-h-56">
-            <table className="w-full text-center text-xs">
-              <thead>
-                <tr className="text-white/40 font-bold bg-black/50 text-[9px] uppercase tracking-wider sticky top-0 backdrop-blur-md">
-                  <th className="py-2 px-2">Member</th>
-                  <th className="py-2 px-2">Date</th>
-                  <th className="py-2 px-2">Turnover</th>
-                  <th className="py-2 px-2">Your Comm</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/5">
-                {SUBORDINATES.map((s, i) => (
-                  <tr key={i} className="hover:bg-white/5 transition-colors">
-                    <td className="py-2 px-2 font-mono text-white/70">{s.phone}</td>
-                    <td className="py-2 px-2 text-[10px] text-white/40">{s.date}</td>
-                    <td className="py-2 px-2 font-mono font-bold text-white">{formatINR(s.turnover)}</td>
-                    <td className="py-2 px-2 font-mono font-black text-emerald-400">+{formatINR(s.comm)}</td>
+            {SUBORDINATES.length === 0 ? (
+              <div className="text-center py-8 text-white/50 text-xs">
+                <span className="text-2xl block mb-2">👥</span>
+                <p className="font-bold">No subordinates yet</p>
+                <p className="text-[10px] text-white/40 mt-0.5">Share your invite link above to grow your team and earn commissions!</p>
+              </div>
+            ) : (
+              <table className="w-full text-center text-xs">
+                <thead>
+                  <tr className="text-white/40 font-bold bg-black/50 text-[9px] uppercase tracking-wider sticky top-0 backdrop-blur-md">
+                    <th className="py-2 px-2">Member</th>
+                    <th className="py-2 px-2">Date</th>
+                    <th className="py-2 px-2">Turnover</th>
+                    <th className="py-2 px-2">Your Comm</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-white/5">
+                  {SUBORDINATES.map((s, i) => (
+                    <tr key={i} className="hover:bg-white/5 transition-colors">
+                      <td className="py-2 px-2 font-mono text-white/70">{s.phone}</td>
+                      <td className="py-2 px-2 text-[10px] text-white/40">{s.date}</td>
+                      <td className="py-2 px-2 font-mono font-bold text-white">{formatINR(s.turnover)}</td>
+                      <td className="py-2 px-2 font-mono font-black text-emerald-400">+{formatINR(s.comm)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
         </div>
       )}

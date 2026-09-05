@@ -5,7 +5,7 @@ import { useAudio } from '../../context/AudioContext';
 const CATEGORIES = [
   { id: 'all', label: 'All Games', icon: LayoutGrid },
   { id: 'crash', label: 'Crash / Aviator', icon: Rocket, color: 'text-red-400' },
-  { id: 'lottery', label: 'WinGo Lottery', icon: Sparkles, color: 'text-emerald-400' },
+  { id: 'lottery', label: 'Color Prediction', icon: Sparkles, color: 'text-emerald-400' },
   { id: 'originals', label: 'Mines & Dice', icon: Gem, color: 'text-amber-400' },
   { id: 'cards', label: 'Live Casino', icon: Crown, color: 'text-purple-400' },
 ];

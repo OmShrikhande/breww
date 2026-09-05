@@ -53,7 +53,7 @@ const updateUserStatus = async (req, res) => {
 const adjustBalance = async (req, res) => {
   try {
     const { action, amount } = req.body;
-    if (!['reset','add','subtract'].includes(action)) {
+    if (!['reset', 'add', 'subtract'].includes(action)) {
       return res.status(400).json({ success: false, message: 'Invalid action. Use: reset, add, subtract' });
     }
     if ((action === 'add' || action === 'subtract') && (!amount || isNaN(amount))) {

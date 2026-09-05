@@ -23,7 +23,7 @@ const Announcement = () => {
         </div>
         <div className="flex-1 overflow-hidden">
           <div className="whitespace-nowrap animate-scroll text-xs text-amber-100 font-medium">
-            🔥 Welcome to Breeww! India's #1 Premier Live Casino & Crash Arena · Instant 24/7 UPI Fast Deposits & Automated Withdrawals · Play Aviator, WinGo, Mines, Dragon Tiger & Win Real Cash!
+            🔥 Welcome to Breeww! India's #1 Premier Live Casino & Crash Arena · Instant 24/7 UPI Fast Deposits & Automated Withdrawals · Play Aviator, Colour Prediction, Mines, Dragon Tiger & Win Real Cash!
           </div>
         </div>
         <button

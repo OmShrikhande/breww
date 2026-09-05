@@ -140,8 +140,8 @@ const ColorPrediction = () => {
 
   return (
     <GameLayout
-      title="WinGo"
-      subtitle="Colour & Number prediction · 30s rounds"
+      title="Color Prediction"
+      subtitle="Colour & Number prediction · 60s rounds"
       accent={ACCENT}
       onPlaceBet={handleBetClick}
       betDisabled={!bettingOpen || !selectedBet || placing}
@@ -160,9 +160,8 @@ const ColorPrediction = () => {
             </div>
 
             <div className="flex items-center gap-2">
-              <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-black text-white shadow-md border border-white/40 ${
-                getColorClass(latestResultInfo.color)
-              }`}>
+              <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-black text-white shadow-md border border-white/40 ${getColorClass(latestResultInfo.color)
+                }`}>
                 {latestResultInfo.number}
               </div>
               <div className="text-right">
@@ -188,9 +187,8 @@ const ColorPrediction = () => {
               {recentDots.map((h, i) => (
                 <div
                   key={i}
-                  className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-black text-white shadow-sm shrink-0 border border-white/20 ${
-                    typeof h.number === 'number' ? getColorClass(h.color) : 'bg-white/10'
-                  }`}
+                  className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-black text-white shadow-sm shrink-0 border border-white/20 ${typeof h.number === 'number' ? getColorClass(h.color) : 'bg-white/10'
+                    }`}
                 >
                   {typeof h.number === 'number' ? h.number : String(h.raw || '?')[0].toUpperCase()}
                 </div>
@@ -206,9 +204,8 @@ const ColorPrediction = () => {
         )}
 
         {/* Unified WinGo Betting Board (Colors + Attached Numbers + Attached Big/Small) */}
-        <div className={`game-glass rounded-2xl p-2.5 border border-white/10 bg-[#0d1424]/90 shadow-2xl flex flex-col gap-2 shrink-0 ${
-          !bettingOpen ? 'opacity-50 pointer-events-none' : ''
-        }`}>
+        <div className={`game-glass rounded-2xl p-2.5 border border-white/10 bg-[#0d1424]/90 shadow-2xl flex flex-col gap-2 shrink-0 ${!bettingOpen ? 'opacity-50 pointer-events-none' : ''
+          }`}>
           {/* Row 1: The Three Main Colors */}
           <div className="grid grid-cols-3 gap-2">
             {COLORS.map(({ value, label, bg, ring, mult }) => {
@@ -221,9 +218,8 @@ const ColorPrediction = () => {
                     playChip();
                     setSelectedBet(selected ? null : { type: 'color', value });
                   }}
-                  className={`py-2 rounded-xl text-xs font-black uppercase tracking-wider text-white bg-gradient-to-br ${bg} border border-white/15 shadow-md transition-all active:scale-95 cursor-pointer text-center ${
-                    selected ? `ring-2 ${ring} ring-offset-1 ring-offset-black scale-[1.02] shadow-glow-gold` : 'opacity-90 hover:opacity-100'
-                  }`}
+                  className={`py-2 rounded-xl text-xs font-black uppercase tracking-wider text-white bg-gradient-to-br ${bg} border border-white/15 shadow-md transition-all active:scale-95 cursor-pointer text-center ${selected ? `ring-2 ${ring} ring-offset-1 ring-offset-black scale-[1.02] shadow-glow-gold` : 'opacity-90 hover:opacity-100'
+                    }`}
                 >
                   <span className="block text-xs font-black">{label}</span>
                   <span className="block text-[8px] opacity-80 mt-0.5">{mult}</span>
@@ -255,9 +251,8 @@ const ColorPrediction = () => {
                     playChip();
                     setSelectedBet(selected ? null : { type: 'number', value: num });
                   }}
-                  className={`h-11 rounded-xl text-white font-black flex flex-col items-center justify-center transition-all active:scale-95 cursor-pointer shadow-md border border-white/10 ${bgStyle} ${
-                    selected ? `ring-2 ring-casino-gold scale-105 shadow-glow-gold border-casino-gold z-10` : 'hover:opacity-90'
-                  }`}
+                  className={`h-11 rounded-xl text-white font-black flex flex-col items-center justify-center transition-all active:scale-95 cursor-pointer shadow-md border border-white/10 ${bgStyle} ${selected ? `ring-2 ring-casino-gold scale-105 shadow-glow-gold border-casino-gold z-10` : 'hover:opacity-90'
+                    }`}
                 >
                   <span className="leading-none text-sm sm:text-base font-black drop-shadow">{num}</span>
                   <span className="text-[7px] font-mono text-white/70 leading-none mt-0.5">9×</span>
@@ -278,9 +273,8 @@ const ColorPrediction = () => {
                     playChip();
                     setSelectedBet(selected ? null : { type: 'size', value });
                   }}
-                  className={`py-2 rounded-xl text-xs font-black uppercase tracking-wider text-white bg-gradient-to-br ${bg} border border-white/15 shadow-md transition-all active:scale-95 cursor-pointer text-center ${
-                    selected ? `ring-2 ${ring} ring-offset-1 ring-offset-black scale-[1.02] shadow-glow-gold` : 'opacity-90 hover:opacity-100'
-                  }`}
+                  className={`py-2 rounded-xl text-xs font-black uppercase tracking-wider text-white bg-gradient-to-br ${bg} border border-white/15 shadow-md transition-all active:scale-95 cursor-pointer text-center ${selected ? `ring-2 ${ring} ring-offset-1 ring-offset-black scale-[1.02] shadow-glow-gold` : 'opacity-90 hover:opacity-100'
+                    }`}
                 >
                   <span className="block text-xs font-black">{label}</span>
                   <span className="block text-[8px] opacity-80 mt-0.5">{mult}</span>
@@ -304,11 +298,10 @@ const ColorPrediction = () => {
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.9 }}
                 transition={{ type: 'spring', stiffness: 350, damping: 25 }}
-                className={`game-glass rounded-3xl p-5 max-w-xs w-full text-center shadow-2xl border ${
-                  roundSummary.anyWin
+                className={`game-glass rounded-3xl p-5 max-w-xs w-full text-center shadow-2xl border ${roundSummary.anyWin
                     ? 'border-casino-gold bg-gradient-to-b from-[#1c1836] via-[#0d1424] to-[#121c38]'
                     : 'border-white/15 bg-[#0d1424]'
-                }`}
+                  }`}
               >
                 {/* Modal Header */}
                 <div className="flex justify-between items-center mb-2">
@@ -327,9 +320,8 @@ const ColorPrediction = () => {
                 {/* Outcome Aura Banner */}
                 <div className="my-2">
                   <div
-                    className={`w-16 h-16 rounded-full mx-auto flex items-center justify-center text-3xl font-black text-white shadow-2xl border-2 border-white/40 ${
-                      getColorClass(roundSummary.parsed.color)
-                    }`}
+                    className={`w-16 h-16 rounded-full mx-auto flex items-center justify-center text-3xl font-black text-white shadow-2xl border-2 border-white/40 ${getColorClass(roundSummary.parsed.color)
+                      }`}
                   >
                     {roundSummary.parsed.number}
                   </div>

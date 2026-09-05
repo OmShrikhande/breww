@@ -4,7 +4,7 @@ import { formatINR } from '../../utils/formatCurrency';
 
 const WINNERS = [
   { id: 1, name: 'Player 98***120', game: 'Aviator', amount: 18450, vip: 'VIP 3', mult: '3.69x', icon: '✈️', color: 'from-red-500 to-rose-600' },
-  { id: 2, name: 'Player 91***482', game: 'WinGo', amount: 4500, vip: 'VIP 2', mult: '9.00x', icon: '🎨', color: 'from-emerald-500 to-teal-600' },
+  { id: 2, name: 'Player 91***482', game: 'Colour Prediction', amount: 4500, vip: 'VIP 2', mult: '9.00x', icon: '🎨', color: 'from-emerald-500 to-teal-600' },
   { id: 3, name: 'Player 97***339', game: 'Mines', amount: 12700, vip: 'VIP 4', mult: '5.20x', icon: '💎', color: 'from-amber-500 to-yellow-600' },
   { id: 4, name: 'Player 99***810', game: 'Dragon Tiger', amount: 8200, vip: 'VIP 2', mult: '1.95x', icon: '🐉', color: 'from-purple-500 to-indigo-600' },
   { id: 5, name: 'Player 93***661', game: 'Dice Roll', amount: 24000, vip: 'VIP 5', mult: '8.00x', icon: '🎲', color: 'from-sky-500 to-blue-600' },
