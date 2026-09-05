@@ -1,9 +1,12 @@
 import React from 'react';
 import { ChevronLeft, Maximize2, Info, Settings } from 'lucide-react';
 import { navigateTo } from '../lib/navigation';
+import { useWallet } from '../hooks/useWallet';
+import { formatINR } from '../utils/formatCurrency';
 
 const GamePage = ({ name = 'Game' }) => {
   const gameName = name;
+  const { balance } = useWallet();
 
   return (
     <div className="fixed inset-0 z-[60] bg-casino-dark flex flex-col">
@@ -12,7 +15,7 @@ const GamePage = ({ name = 'Game' }) => {
         <div className="flex items-center gap-3">
           <button 
             onClick={() => navigateTo('/')} 
-            className="p-1 hover:bg-white/10 rounded-lg transition-colors"
+            className="p-1 hover:bg-white/10 rounded-lg transition-colors cursor-pointer"
           >
             <ChevronLeft size={24} />
           </button>
@@ -20,9 +23,9 @@ const GamePage = ({ name = 'Game' }) => {
         </div>
         <div className="flex items-center gap-4">
           <div className="bg-gray-800 px-4 py-1.5 rounded-full font-mono font-bold text-green-400 text-sm shadow-inner border border-white/5">
-            $12,450.00
+            {formatINR(balance)}
           </div>
-          <button className="text-gray-400 hover:text-white transition-colors">
+          <button className="text-gray-400 hover:text-white transition-colors cursor-pointer">
             <Info size={20} />
           </button>
         </div>

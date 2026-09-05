@@ -33,12 +33,23 @@ router.get('/:gameId/round', async (req, res) => {
   try {
     const gameId = resolvePlatformGameId(req.params.gameId);
     const round = await Round.getCurrent(gameId);
-    if (!round) return ok(res, { status: 'waiting', timerLeft: 0 });
+    const lastDeclared = await Round.getLastDeclared(gameId);
+    if (!round) {
+      return ok(res, {
+        status: 'waiting',
+        timerLeft: 0,
+        result: lastDeclared?.result || null,
+        lastResult: lastDeclared?.result || null,
+        lastRoundId: lastDeclared?.roundId || null,
+      });
+    }
     const playerView = {
       roundId: round.roundId,
       status: round.status,
       timerLeft: round.timerLeft,
-      result: round.status === 'declared' ? round.result : null,
+      result: round.status === 'declared' ? round.result : (lastDeclared?.result || null),
+      lastResult: lastDeclared?.result || null,
+      lastRoundId: lastDeclared?.roundId || null,
       bettingOpen: round.status === 'open' && round.timerLeft > 5,
     };
     return ok(res, playerView);

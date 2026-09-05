@@ -204,6 +204,83 @@ class Round {
     return this.finalizeAviatorRound(roundId, crashPoint, adminSet);
   }
 
+  static async getLastDeclared(gameId) {
+    const { rows } = await pool.query(
+      `SELECT id AS "roundId", result, total_pot AS "totalPot", declared_at AS "declaredAt"
+       FROM game_rounds WHERE game_id = $1 AND status = 'declared' ORDER BY declared_at DESC NULLS LAST LIMIT 1`,
+      [gameId]
+    );
+    return rows[0] || null;
+  }
+
+  static evaluateBetWin(gameId, optionId, result) {
+    const opt = String(optionId || '').toLowerCase().trim();
+    const res = String(result || '').toLowerCase().trim();
+
+    if (opt === res) return { won: true, mult: 2.0 };
+
+    if (gameId === 'colour' || gameId === 'color-prediction') {
+      const num = parseInt(res, 10);
+      if (!Number.isNaN(num)) {
+        // Number bet exact match
+        if (opt === String(num)) return { won: true, mult: 9.0 };
+
+        // Color evaluations
+        const isVioletGreen = num === 5;
+        const isVioletRed = num === 0;
+        const isGreen = num % 2 !== 0;
+        const isRed = num % 2 === 0;
+
+        if (opt === 'violet' && (isVioletGreen || isVioletRed)) return { won: true, mult: 4.5 };
+        if (opt === 'green' && (isGreen || isVioletGreen)) return { won: true, mult: 2.0 };
+        if (opt === 'red' && (isRed || isVioletRed)) return { won: true, mult: 2.0 };
+
+        // Size evaluations
+        if (opt === 'big' && num >= 5) return { won: true, mult: 2.0 };
+        if (opt === 'small' && num <= 4) return { won: true, mult: 2.0 };
+      } else {
+        if (res.includes(opt)) return { won: true, mult: opt === 'violet' ? 4.5 : 2.0 };
+      }
+    }
+
+    if (gameId === 'dragon-tiger' || gameId === 'dragon') {
+      if (res.includes('dragon') && opt === 'dragon') return { won: true, mult: 1.95 };
+      if (res.includes('tiger') && opt === 'tiger') return { won: true, mult: 1.95 };
+      if (res.includes('tie') && opt === 'tie') return { won: true, mult: 8.0 };
+      const parts = res.split(':');
+      if (parts.length >= 2) {
+        const d = parseInt(parts[0], 10) || 10;
+        const t = parseInt(parts[1], 10) || 7;
+        const w = d > t ? 'dragon' : t > d ? 'tiger' : 'tie';
+        if (opt === w) return { won: true, mult: w === 'tie' ? 8.0 : 1.95 };
+      }
+    }
+
+    if (gameId === 'andar-bahar') {
+      if (res.includes('andar') && opt === 'andar') return { won: true, mult: 1.95 };
+      if (res.includes('bahar') && opt === 'bahar') return { won: true, mult: 1.95 };
+    }
+
+    if (gameId === 'dice') {
+      const parts = res.split(',').map((x) => parseInt(x.trim(), 10)).filter((n) => !Number.isNaN(n));
+      if (parts.length >= 3) {
+        const sum = parts.slice(0, 3).reduce((a, b) => a + b, 0);
+        const size = sum >= 11 ? 'big' : 'small';
+        const parity = sum % 2 === 0 ? 'even' : 'odd';
+        const sumMultMap = {
+          3: 207, 4: 69, 5: 34, 6: 20, 7: 14, 8: 10, 9: 8, 10: 8,
+          11: 8, 12: 8, 13: 10, 14: 14, 15: 20, 16: 34, 17: 69, 18: 207,
+        };
+
+        if (opt === String(sum)) return { won: true, mult: sumMultMap[sum] || 8.0 };
+        if (opt === size) return { won: true, mult: 2.0 };
+        if (opt === parity) return { won: true, mult: 2.0 };
+      }
+    }
+
+    return { won: false, mult: 0 };
+  }
+
   static async declare(gameId, result, roundId, adminSet = true) {
     if (gameId === 'aviator') {
       const client = await pool.connect();
@@ -248,18 +325,20 @@ class Round {
         [rId]
       );
 
-      const winBets = bets.rows.filter((b) => b.option_id === result);
       const totalPot = bets.rows.reduce((s, b) => s + parseFloat(b.amount), 0);
-      const totalWinBets = winBets.reduce((s, b) => s + parseFloat(b.amount), 0);
-
       let payoutTotal = 0;
+      let winningBetsCount = 0;
+
       for (const bet of bets.rows) {
-        const won = bet.option_id === result;
+        const evalRes = Round.evaluateBetWin(gameId, bet.option_id, result);
+        const won = evalRes.won;
         let payout = 0;
-        if (won && totalWinBets > 0) {
-          payout = (parseFloat(bet.amount) / totalWinBets) * totalPot * 0.95;
+        if (won) {
+          winningBetsCount += 1;
+          payout = parseFloat(bet.amount) * evalRes.mult;
         }
         payoutTotal += payout;
+
         await client.query(`UPDATE round_bets SET won = $1, payout = $2 WHERE id = $3`, [won, payout, bet.id]);
         if (won && payout > 0) {
           const bal = await client.query('SELECT balance FROM users WHERE id = $1 FOR UPDATE', [bet.user_id]);
@@ -280,7 +359,7 @@ class Round {
         `UPDATE game_rounds SET status='declared', result=$1, admin_set=$2, total_pot=$3, winners_count=$4,
          payout_total=$5, declared_at=NOW(), closed_at=COALESCE(closed_at, NOW())
          WHERE id=$6 AND status IN ('open', 'closed') RETURNING id AS "roundId", result, payout_total AS "payoutTotal", winners_count AS "winnersCount"`,
-        [result, adminSet, totalPot, winBets.length, payoutTotal, rId]
+        [String(result), adminSet, totalPot, winningBetsCount, payoutTotal, rId]
       );
 
       await client.query('COMMIT');

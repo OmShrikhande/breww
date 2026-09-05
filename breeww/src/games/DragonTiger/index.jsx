@@ -22,7 +22,7 @@ const BETS = [
 const CARD_RANKS = { 1: 'A', 11: 'J', 12: 'Q', 13: 'K' };
 
 const DragonTiger = () => {
-  const { timerLeft, bettingOpen, result, history, roundId, refresh } = useGameRound(GAME_ID);
+  const { timerLeft, bettingOpen, result, declaredRoundId, history, roundId, refresh } = useGameRound(GAME_ID);
   const { placeBet, betError, betSuccess, placing } = useRoundBetting(GAME_ID);
   const { playChip, playCard, playDragon, playTiger, playTie, playWin, playLose, playTick } = useAudio();
 
@@ -30,24 +30,18 @@ const DragonTiger = () => {
   const [lastPlacedBet, setLastPlacedBet] = useState(null);
   const [displayResult, setDisplayResult] = useState(null);
   const [isDealing, setIsDealing] = useState(false);
-  const [lastResult, setLastResult] = useState(null);
-  const activeRoundRef = useRef(roundId);
+  const lastHandledKeyRef = useRef(null);
 
   useEffect(() => {
-    if (roundId && roundId !== activeRoundRef.current) {
-      activeRoundRef.current = roundId;
-      setDisplayResult(null);
-      setIsDealing(false);
-    }
-  }, [roundId]);
+    if (!result) return;
+    const declarationKey = `${declaredRoundId || 'curr'}-${result}`;
+    if (lastHandledKeyRef.current === declarationKey) return;
+    lastHandledKeyRef.current = declarationKey;
 
-  useEffect(() => {
-    if (!result || result === lastResult) return;
-    setLastResult(result);
     setIsDealing(true);
     playCard();
 
-    const parsed = parseDragonTigerResult(result, roundId);
+    const parsed = parseDragonTigerResult(result, declaredRoundId || roundId);
 
     setTimeout(() => {
       setDisplayResult(parsed);
@@ -64,9 +58,9 @@ const DragonTiger = () => {
       }
 
       refresh();
-      setTimeout(() => setDisplayResult(null), 5000);
+      setTimeout(() => setDisplayResult(null), 6000);
     }, 1200);
-  }, [result, lastResult, roundId, refresh, playCard, playDragon, playTiger, playTie, playWin, playLose, lastPlacedBet]);
+  }, [result, declaredRoundId, roundId, refresh, playCard, playDragon, playTiger, playTie, playWin, playLose, lastPlacedBet]);
 
   const gameHistory = history.map((h) => parseDragonTigerResult(h.result, h.roundId));
 

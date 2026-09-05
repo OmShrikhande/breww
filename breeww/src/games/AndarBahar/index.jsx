@@ -57,7 +57,7 @@ function generateRoundCards(roundId, winner = 'andar') {
 }
 
 const AndarBahar = () => {
-  const { timerLeft, bettingOpen, result, history, roundId, refresh } = useGameRound(GAME_ID);
+  const { timerLeft, bettingOpen, result, declaredRoundId, history, roundId, refresh } = useGameRound(GAME_ID);
   const { placeBet, betError, betSuccess, placing } = useRoundBetting(GAME_ID);
   const { playChip, playCard, playWin, playLose, playTick } = useAudio();
 
@@ -65,28 +65,20 @@ const AndarBahar = () => {
   const [lastPlacedBet, setLastPlacedBet] = useState(null);
   const [displayResult, setDisplayResult] = useState(null);
   const [isDealing, setIsDealing] = useState(false);
-  const [lastResult, setLastResult] = useState(null);
   const [simCards, setSimCards] = useState(() => generateRoundCards(roundId, 'andar'));
-  
-  const activeRoundRef = useRef(roundId);
+  const lastHandledKeyRef = useRef(null);
 
   useEffect(() => {
-    if (roundId && roundId !== activeRoundRef.current) {
-      activeRoundRef.current = roundId;
-      setSimCards(generateRoundCards(roundId, 'andar'));
-      setDisplayResult(null);
-      setIsDealing(false);
-    }
-  }, [roundId]);
+    if (!result) return;
+    const declarationKey = `${declaredRoundId || 'curr'}-${result}`;
+    if (lastHandledKeyRef.current === declarationKey) return;
+    lastHandledKeyRef.current = declarationKey;
 
-  useEffect(() => {
-    if (!result || result === lastResult) return;
-    setLastResult(result);
     setIsDealing(true);
     playCard();
     
     const outcome = String(result).toLowerCase().includes('bahar') ? 'bahar' : 'andar';
-    const cards = generateRoundCards(roundId, outcome);
+    const cards = generateRoundCards(declaredRoundId || roundId, outcome);
     setSimCards(cards);
 
     setTimeout(() => {
@@ -98,9 +90,9 @@ const AndarBahar = () => {
         playLose();
       }
       refresh();
-      setTimeout(() => setDisplayResult(null), 5000);
+      setTimeout(() => setDisplayResult(null), 6000);
     }, 1600);
-  }, [result, lastResult, roundId, refresh, playCard, playWin, playLose, lastPlacedBet]);
+  }, [result, declaredRoundId, roundId, refresh, playCard, playWin, playLose, lastPlacedBet]);
 
   const handleBetClick = async (amount) => {
     if (!selectedBet) return;

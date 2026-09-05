@@ -38,7 +38,7 @@ const DiceIcon = ({ value, rolling }) => {
 };
 
 const Dice = () => {
-  const { timerLeft, bettingOpen, result, history, roundId, refresh } = useGameRound(GAME_ID);
+  const { timerLeft, bettingOpen, result, declaredRoundId, history, roundId, refresh } = useGameRound(GAME_ID);
   const { placeMultipleBets, betError, betSuccess, placing } = useRoundBetting(GAME_ID);
   const { playChip, playDiceShake, playDiceRoll, playWin, playLose, playTick } = useAudio();
 
@@ -47,20 +47,16 @@ const Dice = () => {
   const [lastPlacedBetsList, setLastPlacedBetsList] = useState([]);
   const [isRolling, setIsRolling] = useState(false);
   const [diceResults, setDiceResults] = useState([4, 5, 3]);
-  const [lastResult, setLastResult] = useState(null);
+  const [displayResultInfo, setDisplayResultInfo] = useState(null);
   const [tab, setTab] = useState('sum');
-  const activeRoundRef = useRef(roundId);
+  const lastHandledKeyRef = useRef(null);
 
   useEffect(() => {
-    if (roundId && roundId !== activeRoundRef.current) {
-      activeRoundRef.current = roundId;
-      setIsRolling(false);
-    }
-  }, [roundId]);
+    if (!result) return;
+    const declarationKey = `${declaredRoundId || 'curr'}-${result}`;
+    if (lastHandledKeyRef.current === declarationKey) return;
+    lastHandledKeyRef.current = declarationKey;
 
-  useEffect(() => {
-    if (!result || result === lastResult) return;
-    setLastResult(result);
     setIsRolling(true);
     playDiceShake();
     setTimeout(() => playDiceRoll(), 400);
@@ -71,26 +67,37 @@ const Dice = () => {
       setDiceResults(parsed.dice);
       setIsRolling(false);
       
-      // Check win for user's bets
+      const sum = parsed.sum;
+      const size = sum >= 11 ? 'big' : 'small';
+      const parity = sum % 2 === 0 ? 'even' : 'odd';
+
+      let userWon = false;
       if (lastPlacedBetsList.length > 0) {
-        const sum = parsed.sum;
-        const size = sum >= 11 ? 'big' : 'small';
-        const parity = sum % 2 === 0 ? 'even' : 'odd';
-        const won = lastPlacedBetsList.some((b) => {
+        userWon = lastPlacedBetsList.some((b) => {
           if (b.type === 'sum' && Number(b.value) === sum) return true;
           if (b.type === 'size' && String(b.value).toLowerCase() === size) return true;
           if (b.type === 'parity' && String(b.value).toLowerCase() === parity) return true;
           return false;
         });
-        if (won) {
+        if (userWon) {
           playWin();
         } else {
           playLose();
         }
       }
+
+      setDisplayResultInfo({
+        sum,
+        size,
+        parity,
+        userWon,
+        hadBet: lastPlacedBetsList.length > 0,
+      });
+
       refresh();
+      setTimeout(() => setDisplayResultInfo(null), 5000);
     }, 1200);
-  }, [result, lastResult, refresh, playDiceShake, playDiceRoll, playWin, playLose, lastPlacedBetsList]);
+  }, [result, declaredRoundId, roundId, refresh, playDiceShake, playDiceRoll, playWin, playLose, lastPlacedBetsList]);
 
   const toggleBet = (type, value, multiplier) => {
     playChip();
@@ -153,6 +160,28 @@ const Dice = () => {
               <span className="text-amber-400 font-black">{totalSum % 2 === 0 ? 'EVEN' : 'ODD'}</span>
             </div>
           )}
+
+          {/* Outcome Overlay Banner */}
+          <AnimatePresence>
+            {displayResultInfo && (
+              <Motion.div
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                className="absolute inset-0 bg-black/85 backdrop-blur-md flex flex-col items-center justify-center z-30 pointer-events-none"
+              >
+                <div
+                  className={`px-5 py-2.5 rounded-2xl font-black text-lg uppercase tracking-wider shadow-2xl text-white border-2 ${
+                    displayResultInfo.hadBet && displayResultInfo.userWon
+                      ? 'bg-gradient-to-r from-emerald-600 to-teal-700 border-emerald-400 shadow-[0_0_30px_rgba(16,185,129,0.6)]'
+                      : 'bg-gradient-to-r from-blue-600 to-indigo-700 border-blue-400 shadow-[0_0_30px_rgba(59,130,246,0.6)]'
+                  }`}
+                >
+                  🎲 SUM {displayResultInfo.sum} · {displayResultInfo.size.toUpperCase()} · {displayResultInfo.parity.toUpperCase()}
+                </div>
+              </Motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         {betError && (

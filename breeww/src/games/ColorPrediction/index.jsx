@@ -35,86 +35,97 @@ const getColorClass = (color) => {
 };
 
 const ColorPrediction = () => {
-  const { round, history, refresh, timerLeft, bettingOpen, result, roundId } = useGameRound('colour', { pollMs: 1500 });
+  const { round, history, refresh, timerLeft, bettingOpen, result, declaredRoundId, roundId } = useGameRound('colour', { pollMs: 1500 });
   const { placeBet, placing, betSuccess, betError } = useRoundBetting('colour');
   const { playChip, playWin, playLose, playTick, playGem } = useAudio();
 
   const [selectedBet, setSelectedBet] = useState(null);
   const [lastPlacedBet, setLastPlacedBet] = useState(null);
-  const [lastResult, setLastResult] = useState(null);
-  const [latestResultInfo, setLatestResultInfo] = useState(null);
+  const [latestResultInfo, setLatestResultInfo] = useState(() => (result ? parseColourResult(result) : null));
   const [showResultModal, setShowResultModal] = useState(false);
   const [roundSummary, setRoundSummary] = useState(null);
   const [myBets, setMyBets] = useState([]);
-  const activeRoundRef = useRef(roundId);
+  const lastHandledKeyRef = useRef(null);
   const modalTimerRef = useRef(null);
 
   useEffect(() => {
-    if (roundId && roundId !== activeRoundRef.current) {
-      activeRoundRef.current = roundId;
+    if (!result) return;
+    const declarationKey = `${declaredRoundId || 'curr'}-${result}`;
+    if (lastHandledKeyRef.current === declarationKey) return;
+    lastHandledKeyRef.current = declarationKey;
+
+    playGem();
+    const parsed = parseColourResult(result);
+    setLatestResultInfo(parsed);
+
+    // Settle pending bets for this round
+    let anyWin = false;
+    let anyBet = false;
+    let totalPayout = 0;
+    let totalBetAmount = 0;
+
+    const winColor = String(parsed.color || '').toLowerCase();
+    const winNumber = String(parsed.number);
+    const winSize = String(parsed.size || '').toLowerCase();
+
+    setMyBets((prev) =>
+      prev.map((b) => {
+        if (b.status !== 'pending') return b;
+        anyBet = true;
+        totalBetAmount += Number(b.amount || 0);
+        const opt = String(b.option || b.value || '').toLowerCase();
+
+        let isWin = false;
+        let mult = 2;
+
+        if (b.type === 'number') {
+          isWin = String(b.value) === winNumber;
+          mult = 9;
+        } else if (b.type === 'color') {
+          isWin = winColor.includes(opt) || opt === winColor;
+          mult = opt === 'violet' ? 4.5 : 2;
+        } else if (b.type === 'size') {
+          isWin = opt === winSize;
+          mult = 2;
+        } else {
+          isWin = opt === winColor || winColor.includes(opt) || opt === winNumber || opt === winSize;
+          mult = opt.includes('violet') ? 4.5 : opt.includes('number') ? 9 : 2;
+        }
+
+        if (isWin) {
+          anyWin = true;
+          const payout = b.amount * mult;
+          totalPayout += payout;
+          return { ...b, status: 'won', payout };
+        }
+        return { ...b, status: 'lost', payout: 0 };
+      })
+    );
+
+    if (anyWin) {
+      playWin();
+    } else if (anyBet) {
+      playLose();
     }
-  }, [roundId]);
 
-  useEffect(() => {
-    if (result && result !== lastResult) {
-      setLastResult(result);
-      playGem();
-      const parsed = parseColourResult(result);
-      setLatestResultInfo(parsed);
+    setRoundSummary({
+      parsed,
+      anyWin,
+      anyBet,
+      totalPayout,
+      totalBetAmount,
+      period: declaredRoundId || roundId || 'Current',
+    });
 
-      // Settle pending bets for this round
-      let anyWin = false;
-      let anyBet = false;
-      let totalPayout = 0;
-      let totalBetAmount = 0;
+    // Show result modal for 8 seconds (can be closed manually or by placing next bet)
+    setShowResultModal(true);
+    clearTimeout(modalTimerRef.current);
+    modalTimerRef.current = setTimeout(() => {
+      setShowResultModal(false);
+    }, 8000);
 
-      setMyBets((prev) =>
-        prev.map((b) => {
-          if (b.status !== 'pending') return b;
-          anyBet = true;
-          totalBetAmount += Number(b.amount || 0);
-          const opt = String(b.option || '').toLowerCase();
-          const winColor = String(parsed.color || '').toLowerCase();
-          const winNumber = String(parsed.number);
-          const winSize = String(parsed.size || '').toLowerCase();
-
-          const isWin = opt.includes(winColor) || opt.includes(winNumber) || opt.includes(winSize);
-          if (isWin) {
-            anyWin = true;
-            const mult = opt.includes('violet') ? 4.5 : opt.includes('number') ? 9 : 2;
-            const payout = b.amount * mult;
-            totalPayout += payout;
-            return { ...b, status: 'won', payout };
-          }
-          return { ...b, status: 'lost', payout: 0 };
-        })
-      );
-
-      if (anyWin) {
-        playWin();
-      } else if (anyBet) {
-        playLose();
-      }
-
-      setRoundSummary({
-        parsed,
-        anyWin,
-        anyBet,
-        totalPayout,
-        totalBetAmount,
-        period: roundId || 'Current',
-      });
-
-      // Show result modal for a generous 8 seconds so the player can clearly see their outcome
-      setShowResultModal(true);
-      clearTimeout(modalTimerRef.current);
-      modalTimerRef.current = setTimeout(() => {
-        setShowResultModal(false);
-      }, 8000);
-
-      refresh();
-    }
-  }, [result, lastResult, roundId, refresh, playGem, playWin, playLose]);
+    refresh();
+  }, [result, declaredRoundId, roundId, refresh, playGem, playWin, playLose]);
 
   const displayHistory = history.map((h) => ({
     period: h.roundId,

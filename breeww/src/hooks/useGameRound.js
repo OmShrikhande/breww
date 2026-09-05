@@ -6,6 +6,7 @@ export function useGameRound(gameId, { pollMs = 1500 } = {}) {
   const [round, setRound] = useState(null);
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [lastDeclared, setLastDeclared] = useState({ roundId: null, result: null, timestamp: 0 });
   const lastResultRef = useRef(null);
   const { subscribeListener, send } = useWebSocket();
 
@@ -25,8 +26,18 @@ export function useGameRound(gameId, { pollMs = 1500 } = {}) {
         };
       });
       setHistory(hist || []);
-      if (state?.result && state.result !== lastResultRef.current) {
-        lastResultRef.current = state.result;
+
+      // Check if state or history has a newly declared outcome
+      const candidateResult = state?.result || state?.lastResult || hist?.[0]?.result;
+      const candidateRoundId = state?.status === 'declared' ? state?.roundId : (state?.lastRoundId || hist?.[0]?.roundId);
+
+      if (candidateResult && candidateResult !== lastResultRef.current) {
+        lastResultRef.current = candidateResult;
+        setLastDeclared({
+          roundId: candidateRoundId || null,
+          result: candidateResult,
+          timestamp: Date.now(),
+        });
       }
     } catch {
       /* keep last state */
@@ -70,6 +81,12 @@ export function useGameRound(gameId, { pollMs = 1500 } = {}) {
           status: 'open',
         }));
       } else if (msg.type === 'ROUND_RESULT') {
+        lastResultRef.current = msg.result;
+        setLastDeclared({
+          roundId: msg.roundId,
+          result: msg.result,
+          timestamp: Date.now(),
+        });
         setRound((prev) => ({
           ...(prev || {}),
           roundId: msg.roundId,
@@ -84,7 +101,6 @@ export function useGameRound(gameId, { pollMs = 1500 } = {}) {
         setRound((prev) => ({
           ...(prev || {}),
           roundId: msg.roundId,
-          result: null,
           status: 'open',
           bettingOpen: true,
           timerLeft: msg.timerLeft,
@@ -108,7 +124,9 @@ export function useGameRound(gameId, { pollMs = 1500 } = {}) {
     refresh,
     timerLeft: round?.timerLeft ?? 0,
     bettingOpen: Boolean(round?.bettingOpen),
-    result: round?.result ?? null,
+    result: lastDeclared.result || round?.result || null,
+    declaredRoundId: lastDeclared.roundId,
+    declaredTimestamp: lastDeclared.timestamp,
     roundId: round?.roundId ?? null,
   };
 }
