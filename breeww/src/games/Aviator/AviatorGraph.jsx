@@ -2,6 +2,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Trophy } from 'lucide-react';
 import { formatINR } from '../../utils/formatCurrency';
+import aviatorPlaneImg from '../../assets/aviator_plane.png';
 
 const AviatorGraph = ({
   multiplier,
@@ -143,51 +144,32 @@ const AviatorGraph = ({
             <motion.g
               initial={{ x: startX, y: startY, rotate: -6, opacity: 0 }}
               animate={{ x: endX, y: endY, rotate: tiltAngle, opacity: 1 }}
-              transition={{ duration: 0.08, ease: 'linear' }}
+              transition={{ duration: 0.04, ease: 'linear' }}
             >
-              {/* High-Definition Spribe Aviator Red Aerobatic Monoplane */}
-              <g transform="translate(-75, -28) scale(2.1)" className="drop-shadow-[0_4px_20px_rgba(229,9,20,0.95)]">
-                {/* Engine Exhaust Thruster Flame & Glow Trail */}
-                <g className="thrust-flame">
-                  <path d="M-6,14 Q-18,14 -28,15 Q-16,16.5 -6,17.5 Z" fill="url(#thrustGlow)" />
-                  <path d="M-4,14.5 Q-12,15.2 -18,15.5 Q-10,16.2 -4,17 Z" fill="#FFFBEB" />
+              {/* Authentic Aviator Red Monoplane Image Sprite */}
+              <g className="drop-shadow-[0_6px_25px_rgba(229,9,20,0.9)]">
+                {/* Engine Exhaust Thruster Flame & Dynamic Glow */}
+                <g className="thrust-flame" transform="translate(-95, 20) scale(1.6)">
+                  <path d="M-6,0 Q-24,-1 -36,0 Q-22,3 -6,4 Z" fill="url(#thrustGlow)" />
+                  <path d="M-4,0.5 Q-16,0.2 -24,0.8 Q-14,2 -4,2.5 Z" fill="#FFFBEB" />
                 </g>
 
-                {/* Under-Wing Shading */}
-                <path d="M18,17 L-6,29 L0,31 L24,19 Z" fill="#700308" opacity="0.6" />
+                {/* High-Resolution User-Provided Aviator Plane Image */}
+                <image
+                  href={aviatorPlaneImg}
+                  x="-125"
+                  y="-75"
+                  width="170"
+                  height="118"
+                  preserveAspectRatio="xMidYMid meet"
+                  className="filter drop-shadow-[0_2px_12px_rgba(255,50,50,0.8)]"
+                />
 
-                {/* Main Fuselage (Streamlined Red Body) */}
-                <path d="M-10,13 C-1,11 16,9 38,10 C46,11 54,13 60,15.5 C54,18 46,20 38,21 C16,22 -1,20 -10,18 Z" fill="url(#fuselageGrad)" />
-
-                {/* Fuselage Racing Stripe Decal */}
-                <path d="M-6,13.5 C4,12 22,10.8 40,11.8 C48,12.8 54,14 58,15 C52,15.5 44,15 34,14.5 C16,14 -1,14.5 -6,15 Z" fill="#FFFFFF" opacity="0.9" />
-
-                {/* Cockpit Canopy Glass & Shine */}
-                <path d="M15,10.5 C21,7.2 30,7.2 38,10.5 C30,11.5 21,11.5 15,10.5 Z" fill="url(#cockpitGrad)" stroke="#CBD5E1" strokeWidth="0.6" />
-                <path d="M19,9 C25,7.8 31,8 35,9.5 C29,8.8 23,8.8 19,9 Z" fill="#FFFFFF" opacity="0.85" />
-
-                {/* Main Top Aerodynamic Wing */}
-                <path d="M14,14.5 L-6,-8 L5,-9 L32,13.5 Z" fill="url(#wingGrad)" />
-                <path d="M-4,-7 L3,-8 L28,13 L22,13.5 Z" fill="#FFFFFF" opacity="0.85" />
-                <path d="M-6,-8 L-8,-10.5 L-4,-9.5 L-2,-7 Z" fill="#DC2626" stroke="#7F1D1D" strokeWidth="0.4" />
-
-                {/* Lower Underbody Winglet */}
-                <path d="M18,16.5 L-2,33 L7,34 L31,17.5 Z" fill="url(#lowerWingGrad)" />
-                <path d="M-1,32 L4,33 L26,18 L22,17.5 Z" fill="#FFFFFF" opacity="0.75" />
-
-                {/* Tail Stabilizers & Vertical Rudder */}
-                <path d="M-8,14 L-21,7.5 L-17,6.5 L-6,13 Z" fill="#B91C1C" />
-                <path d="M-8,17 L-21,23.5 L-17,24.5 L-6,18 Z" fill="#991B1B" />
-                <path d="M-5,13.5 L-19,-2 L-13,-3 L-3,13 Z" fill="url(#tailGrad)" />
-                <path d="M-16,2 L-12,1 L-8,9 L-11,10 Z" fill="#FFFFFF" />
-
-                {/* Front Nose Cowling & Spinner Cone */}
-                <path d="M54,13 C59,14 61,15.5 61,16 C61,16.5 59,18 54,19 Z" fill="#B91C1C" />
-                <path d="M59,14.5 Q64,16 59,17.5 Z" fill="#F59E0B" stroke="#D97706" strokeWidth="0.4" />
-
-                {/* Spinning Propeller Blades & Blur Disc */}
-                <ellipse cx="60" cy="16" rx="2.5" ry="16" fill="url(#propBlurGrad)" opacity="0.75" />
-                <line x1="60" y1="3" x2="60" y2="29" stroke="#FFFFFF" strokeWidth="1.6" opacity="0.9" strokeLinecap="round" />
+                {/* Dynamic Propeller High-Speed Spin Disc Effect */}
+                <g transform="translate(36, -54) rotate(-32)">
+                  <ellipse cx="0" cy="0" rx="3.5" ry="32" fill="url(#propBlurGrad)" opacity="0.85" />
+                  <ellipse cx="0" cy="0" rx="1.8" ry="32" fill="#FFFFFF" opacity="0.9" />
+                </g>
               </g>
             </motion.g>
           )}
