@@ -12,7 +12,7 @@ import WheelControls from './WheelControls';
 
 const SpinWheel = () => {
   const { isAuthenticated } = useAuth();
-  const { balance } = useWallet();
+  const { balance, placeBet, creditInstantWin, refreshBalance } = useWallet();
   const { addBet, clearBets } = useBets();
 
   const [risk, setRisk] = useState('medium');
@@ -52,11 +52,6 @@ const SpinWheel = () => {
    * Structure result fetching so it can be replaced by an API response
    */
   const fetchSpinResult = useCallback(async () => {
-    // This is where you'd call your API: 
-    // const response = await fetch('/api/spin');
-    // const data = await response.json();
-    // return data.segmentIndex;
-
     return Math.floor(Math.random() * segments.length);
   }, [segments.length]);
 
@@ -65,61 +60,61 @@ const SpinWheel = () => {
       navigateTo('/login');
       return;
     }
-    if (amount <= 0 || isSpinning) return;
+    if (amount <= 0 || isSpinning || amount > balance) return;
 
+    await placeBet(amount);
     setIsSpinning(true);
     setLastResult(null);
 
-      // 1. Fetch result (Mocking API call)
-      const segmentIndex = await fetchSpinResult();
-      const segmentAngle = 360 / segments.length;
-      
-      // 2. Calculate new rotation
-      // Add extra rotations for effect
-      const extraRotations = 5; 
-      // Stop on the segment. In SVG/CSS rotation, we rotate the wheel. 
-      // Pointer is at the top (0deg). 
-      // To align segment i with the top: rotation = -i * segmentAngle
-      const targetRotation = 360 * extraRotations + (360 - (segmentIndex * segmentAngle));
-      const finalRotation = rotation + targetRotation;
+    // 1. Fetch result
+    const segmentIndex = await fetchSpinResult();
+    const segmentAngle = 360 / segments.length;
+    
+    // 2. Calculate new rotation
+    const extraRotations = 5; 
+    const targetRotation = 360 * extraRotations + (360 - (segmentIndex * segmentAngle));
+    const finalRotation = rotation + targetRotation;
 
-      setRotation(finalRotation);
+    setRotation(finalRotation);
 
-      // 3. Record the bet
-      addBet({
-        type: 'spin_wheel-preview',
-        amount,
+    // 3. Record the bet
+    addBet({
+      type: 'spin_wheel-preview',
+      amount,
+      risk,
+      source: 'frontend-preview'
+    });
+
+    // 4. Wait for animation
+    setTimeout(() => {
+      setIsSpinning(false);
+      const winMult = segments[segmentIndex].mult;
+      const winAmount = amount * winMult;
+
+      if (winAmount > 0) {
+        setLastResult({ mult: winMult, amount: winAmount });
+        creditInstantWin(winAmount);
+      } else {
+        setLastResult({ mult: winMult, amount: 0 });
+      }
+
+      refreshBalance().catch(() => {});
+
+      // Add to history
+      setGameHistory(prev => [{
+        id: Date.now(),
         risk,
-        source: 'frontend-preview'
-      });
+        multiplier: winMult,
+        outcome: winMult >= 1 ? 'Win' : 'Loss',
+        profit: winAmount - amount
+      }, ...prev].slice(0, 10));
 
-      // 4. Wait for animation
       setTimeout(() => {
-        setIsSpinning(false);
-        const winMult = segments[segmentIndex].mult;
-        const winAmount = amount * winMult;
-
-        if (winAmount > 0) {
-          setLastResult({ mult: winMult, amount: winAmount });
-        } else {
-          setLastResult({ mult: winMult, amount: 0 });
-        }
-
-        // Add to history
-        setGameHistory(prev => [{
-          id: Date.now(),
-          risk,
-          multiplier: winMult,
-          outcome: winMult >= 1 ? 'Win' : 'Loss',
-          profit: winAmount - amount
-        }, ...prev].slice(0, 10));
-
-        setTimeout(() => {
-          clearBets();
-          setLastResult(null);
-        }, 3000);
-      }, 4000); // 4s duration (matching CSS/Framer transition)
-  }, [isSpinning, segments, rotation, fetchSpinResult, addBet, clearBets, risk]);
+        clearBets();
+        setLastResult(null);
+      }, 3000);
+    }, 4000); // 4s duration (matching CSS/Framer transition)
+  }, [isSpinning, balance, segments, rotation, fetchSpinResult, placeBet, creditInstantWin, refreshBalance, addBet, clearBets, risk, isAuthenticated]);
 
   return (
     <GameLayout title="SPIN WHEEL">

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { fetchRoundHistory, fetchRoundState } from '../api/gamesApi';
 import { useWebSocket } from '../context/WebSocketContext';
+import { useWallet } from './useWallet';
 
 export function useGameRound(gameId, { pollMs = 1500 } = {}) {
   const [round, setRound] = useState(null);
@@ -9,6 +10,7 @@ export function useGameRound(gameId, { pollMs = 1500 } = {}) {
   const [lastDeclared, setLastDeclared] = useState({ roundId: null, result: null, timestamp: 0 });
   const lastResultRef = useRef(null);
   const { subscribeListener, send } = useWebSocket();
+  const { refreshBalance } = useWallet();
 
   const refresh = useCallback(async () => {
     try {
@@ -38,13 +40,14 @@ export function useGameRound(gameId, { pollMs = 1500 } = {}) {
           result: candidateResult,
           timestamp: Date.now(),
         });
+        refreshBalance().catch(() => {});
       }
     } catch {
       /* keep last state */
     } finally {
       setLoading(false);
     }
-  }, [gameId]);
+  }, [gameId, refreshBalance]);
 
   // Real-time continuous 1-second local timer clock (eliminates 3s gap)
   useEffect(() => {
@@ -95,8 +98,9 @@ export function useGameRound(gameId, { pollMs = 1500 } = {}) {
           bettingOpen: false,
           timerLeft: 0,
         }));
-        // Refetch latest history instantly
+        // Refetch latest history and refresh wallet balance instantly
         fetchRoundHistory(gameId, 12).then((hist) => setHistory(hist)).catch(() => {});
+        refreshBalance().catch(() => {});
       } else if (msg.type === 'ROUND_START') {
         setRound((prev) => ({
           ...(prev || {}),

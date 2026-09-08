@@ -6,6 +6,7 @@ import GameLayout from '../GameLayout';
 import RoundStatusBar from '../../components/games/RoundStatusBar';
 import { useGameRound, parseDiceResult } from '../../hooks/useGameRound';
 import { useRoundBetting } from '../../hooks/useRoundBetting';
+import { useWallet } from '../../hooks/useWallet';
 import { useAudio } from '../../context/AudioContext';
 import { formatBetLabel } from '../../utils/gameHelpers';
 import { formatINR } from '../../utils/formatCurrency';
@@ -41,6 +42,7 @@ const Dice = () => {
   const { timerLeft, bettingOpen, result, declaredRoundId, history, roundId, refresh } = useGameRound(GAME_ID);
   const { placeMultipleBets, betError, betSuccess, placing } = useRoundBetting(GAME_ID);
   const { playChip, playDiceShake, playDiceRoll, playWin, playLose, playTick } = useAudio();
+  const { creditInstantWin, refreshBalance } = useWallet();
 
   const [selectedBets, setSelectedBets] = useState([]);
   const [lastPlacedInfo, setLastPlacedInfo] = useState(null);
@@ -71,16 +73,31 @@ const Dice = () => {
       const size = sum >= 11 ? 'big' : 'small';
       const parity = sum % 2 === 0 ? 'even' : 'odd';
 
+      let totalPayout = 0;
       let userWon = false;
       if (lastPlacedBetsList.length > 0) {
-        userWon = lastPlacedBetsList.some((b) => {
-          if (b.type === 'sum' && Number(b.value) === sum) return true;
-          if (b.type === 'size' && String(b.value).toLowerCase() === size) return true;
-          if (b.type === 'parity' && String(b.value).toLowerCase() === parity) return true;
-          return false;
+        lastPlacedBetsList.forEach((b) => {
+          let won = false;
+          let mult = 2;
+          if (b.type === 'sum' && Number(b.value) === sum) {
+            won = true;
+            mult = SUM_MULTIPLIERS[sum] || 8;
+          } else if (b.type === 'size' && String(b.value).toLowerCase() === size) {
+            won = true;
+            mult = 2;
+          } else if (b.type === 'parity' && String(b.value).toLowerCase() === parity) {
+            won = true;
+            mult = 2;
+          }
+          if (won) {
+            userWon = true;
+            totalPayout += (Number(b.amount) || 10) * mult;
+          }
         });
-        if (userWon) {
+
+        if (userWon && totalPayout > 0) {
           playWin();
+          creditInstantWin(totalPayout);
         } else {
           playLose();
         }
@@ -95,9 +112,10 @@ const Dice = () => {
       });
 
       refresh();
+      refreshBalance().catch(() => {});
       setTimeout(() => setDisplayResultInfo(null), 5000);
     }, 1200);
-  }, [result, declaredRoundId, roundId, refresh, playDiceShake, playDiceRoll, playWin, playLose, lastPlacedBetsList]);
+  }, [result, declaredRoundId, roundId, refresh, refreshBalance, creditInstantWin, playDiceShake, playDiceRoll, playWin, playLose, lastPlacedBetsList]);
 
   const toggleBet = (type, value, multiplier) => {
     playChip();
@@ -109,8 +127,9 @@ const Dice = () => {
   const handlePlaceBet = async (amount) => {
     if (selectedBets.length === 0) return;
     playChip();
+    const betsWithAmount = selectedBets.map((b) => ({ ...b, amount }));
     setLastPlacedInfo({ count: selectedBets.length, total: amount * selectedBets.length });
-    setLastPlacedBetsList([...selectedBets]);
+    setLastPlacedBetsList(betsWithAmount);
     const ok = await placeMultipleBets(selectedBets, amount, { bettingOpen });
     if (ok) setSelectedBets([]);
   };

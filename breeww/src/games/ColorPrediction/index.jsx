@@ -7,6 +7,7 @@ import RoundStatusBar from '../../components/games/RoundStatusBar';
 import HistoryTable from './HistoryTable';
 import { useGameRound, parseColourResult } from '../../hooks/useGameRound';
 import { useRoundBetting } from '../../hooks/useRoundBetting';
+import { useWallet } from '../../hooks/useWallet';
 import { useAudio } from '../../context/AudioContext';
 import { formatBetLabel } from '../../utils/gameHelpers';
 import { formatINR } from '../../utils/formatCurrency';
@@ -38,6 +39,7 @@ const ColorPrediction = () => {
   const { round, history, refresh, timerLeft, bettingOpen, result, declaredRoundId, roundId } = useGameRound('colour', { pollMs: 1500 });
   const { placeBet, placing, betSuccess, betError } = useRoundBetting('colour');
   const { playChip, playWin, playLose, playTick, playGem } = useAudio();
+  const { creditInstantWin, refreshBalance } = useWallet();
 
   const [selectedBet, setSelectedBet] = useState(null);
   const [lastPlacedBet, setLastPlacedBet] = useState(null);
@@ -102,8 +104,9 @@ const ColorPrediction = () => {
       })
     );
 
-    if (anyWin) {
+    if (anyWin && totalPayout > 0) {
       playWin();
+      creditInstantWin(totalPayout);
     } else if (anyBet) {
       playLose();
     }
@@ -125,7 +128,8 @@ const ColorPrediction = () => {
     }, 8000);
 
     refresh();
-  }, [result, declaredRoundId, roundId, refresh, playGem, playWin, playLose]);
+    refreshBalance().catch(() => {});
+  }, [result, declaredRoundId, roundId, refresh, refreshBalance, creditInstantWin, playGem, playWin, playLose]);
 
   const displayHistory = history.map((h) => ({
     period: h.roundId,

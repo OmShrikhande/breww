@@ -12,7 +12,7 @@ import PlinkoControls from './PlinkoControls';
 
 const Plinko = () => {
   const { isAuthenticated } = useAuth();
-  const { balance } = useWallet();
+  const { balance, placeBet, creditInstantWin, refreshBalance } = useWallet();
   const { addBet, clearBets } = useBets();
   const boardRef = useRef(null);
 
@@ -51,13 +51,14 @@ const Plinko = () => {
     return result;
   }, [rows, risk]);
 
-  const handleDropBall = useCallback((amount) => {
+  const handleDropBall = useCallback(async (amount) => {
     if (!isAuthenticated) {
       navigateTo('/login');
       return;
     }
-    if (amount <= 0) return;
+    if (amount <= 0 || amount > balance) return;
 
+    await placeBet(amount);
     boardRef.current.dropBall();
     addBet({
       type: 'plinko-preview',
@@ -66,14 +67,16 @@ const Plinko = () => {
       rows,
       source: 'frontend-preview'
     });
-  }, [risk, rows, addBet]);
+  }, [risk, rows, balance, addBet, placeBet, isAuthenticated]);
 
   const handleBallLand = useCallback((multiplier) => {
     const winAmount = betAmount * multiplier;
     if (winAmount > 0) {
       setLastWin(winAmount);
+      creditInstantWin(winAmount);
       setTimeout(() => setLastWin(null), 3000);
     }
+    refreshBalance().catch(() => {});
 
     setGameHistory((prev) => [
       {
@@ -89,7 +92,7 @@ const Plinko = () => {
 
     // Cleanup bets after some time
     setTimeout(() => clearBets(), 2000);
-  }, [betAmount, risk, rows, clearBets]);
+  }, [betAmount, risk, rows, creditInstantWin, refreshBalance, clearBets]);
 
   return (
     <GameLayout title="PLINKO" isWide={true}>

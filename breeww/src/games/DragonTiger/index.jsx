@@ -6,6 +6,7 @@ import GameLayout from '../GameLayout';
 import RoundStatusBar from '../../components/games/RoundStatusBar';
 import { useGameRound, parseDragonTigerResult } from '../../hooks/useGameRound';
 import { useRoundBetting } from '../../hooks/useRoundBetting';
+import { useWallet } from '../../hooks/useWallet';
 import { useAudio } from '../../context/AudioContext';
 import { formatBetLabel } from '../../utils/gameHelpers';
 import { formatINR } from '../../utils/formatCurrency';
@@ -25,6 +26,7 @@ const DragonTiger = () => {
   const { timerLeft, bettingOpen, result, declaredRoundId, history, roundId, refresh } = useGameRound(GAME_ID);
   const { placeBet, betError, betSuccess, placing } = useRoundBetting(GAME_ID);
   const { playChip, playCard, playDragon, playTiger, playTie, playWin, playLose, playTick } = useAudio();
+  const { creditInstantWin, refreshBalance } = useWallet();
 
   const [selectedBet, setSelectedBet] = useState(null);
   const [lastPlacedBet, setLastPlacedBet] = useState(null);
@@ -52,15 +54,21 @@ const DragonTiger = () => {
       else if (parsed.winner === 'tie') playTie();
 
       if (lastPlacedBet?.type === parsed.winner) {
-        setTimeout(() => playWin(), 250);
+        const mult = parsed.winner === 'tie' ? 8.0 : 1.95;
+        const payout = (Number(lastPlacedBet.amount) || 10) * mult;
+        setTimeout(() => {
+          playWin();
+          creditInstantWin(payout);
+        }, 250);
       } else if (lastPlacedBet) {
         setTimeout(() => playLose(), 250);
       }
 
       refresh();
+      refreshBalance().catch(() => {});
       setTimeout(() => setDisplayResult(null), 6000);
     }, 1200);
-  }, [result, declaredRoundId, roundId, refresh, playCard, playDragon, playTiger, playTie, playWin, playLose, lastPlacedBet]);
+  }, [result, declaredRoundId, roundId, refresh, refreshBalance, creditInstantWin, playCard, playDragon, playTiger, playTie, playWin, playLose, lastPlacedBet]);
 
   const gameHistory = history.map((h) => parseDragonTigerResult(h.result, h.roundId));
 

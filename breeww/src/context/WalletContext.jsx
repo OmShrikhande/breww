@@ -68,8 +68,14 @@ export const WalletProvider = ({ children }) => {
     }
   };
 
+  const creditInstantWin = useCallback((amount) => {
+    const value = Number(amount) || 0;
+    if (value <= 0) return;
+    setBalance((prev) => Math.round((prev + value) * 100) / 100);
+  }, []);
+
   return (
-    <WalletContext.Provider value={{ balance, loading, placeBet, addWin, deductLoss, refreshBalance, setBalance }}>
+    <WalletContext.Provider value={{ balance, loading, placeBet, addWin, deductLoss, creditInstantWin, refreshBalance, setBalance }}>
       {children}
     </WalletContext.Provider>
   );

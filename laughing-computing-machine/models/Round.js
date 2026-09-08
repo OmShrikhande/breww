@@ -1,4 +1,5 @@
 const pool = require('../config/database');
+const { broadcastBalance } = require('../services/websocketServer');
 
 class Round {
   static async getCurrent(gameId) {
@@ -153,6 +154,11 @@ class Round {
       );
 
       await client.query('COMMIT');
+      try {
+        broadcastBalance(userId, nextBalance);
+      } catch {
+        // Socket broadcast best effort
+      }
       return { roundId, optionId, amount, balance: nextBalance };
     } catch (e) {
       await client.query('ROLLBACK');
@@ -328,6 +334,7 @@ class Round {
       const totalPot = bets.rows.reduce((s, b) => s + parseFloat(b.amount), 0);
       let payoutTotal = 0;
       let winningBetsCount = 0;
+      const userBalancesToNotify = [];
 
       for (const bet of bets.rows) {
         const evalRes = Round.evaluateBetWin(gameId, bet.option_id, result);
@@ -352,6 +359,7 @@ class Round {
              VALUES ($1, 'win', $2, $3, $4, $5)`,
             [bet.user_id, payout, next, String(rId), `${gameId} round win`]
           );
+          userBalancesToNotify.push({ userId: bet.user_id, balance: next });
         }
       }
 
@@ -363,6 +371,16 @@ class Round {
       );
 
       await client.query('COMMIT');
+
+      // Instant 0ms WebSocket push to all winners
+      for (const item of userBalancesToNotify) {
+        try {
+          broadcastBalance(item.userId, item.balance);
+        } catch {
+          // Socket broadcast best effort
+        }
+      }
+
       return rows[0];
     } catch (e) {
       await client.query('ROLLBACK');

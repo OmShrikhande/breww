@@ -6,6 +6,7 @@ import GameLayout from '../GameLayout';
 import RoundStatusBar from '../../components/games/RoundStatusBar';
 import { useGameRound } from '../../hooks/useGameRound';
 import { useRoundBetting } from '../../hooks/useRoundBetting';
+import { useWallet } from '../../hooks/useWallet';
 import { useAudio } from '../../context/AudioContext';
 import { formatBetLabel } from '../../utils/gameHelpers';
 import { formatINR } from '../../utils/formatCurrency';
@@ -60,6 +61,7 @@ const AndarBahar = () => {
   const { timerLeft, bettingOpen, result, declaredRoundId, history, roundId, refresh } = useGameRound(GAME_ID);
   const { placeBet, betError, betSuccess, placing } = useRoundBetting(GAME_ID);
   const { playChip, playCard, playWin, playLose, playTick } = useAudio();
+  const { creditInstantWin, refreshBalance } = useWallet();
 
   const [selectedBet, setSelectedBet] = useState(null);
   const [lastPlacedBet, setLastPlacedBet] = useState(null);
@@ -85,14 +87,17 @@ const AndarBahar = () => {
       setDisplayResult(outcome);
       setIsDealing(false);
       if (lastPlacedBet?.type === outcome) {
+        const payout = (Number(lastPlacedBet.amount) || 10) * 1.95;
         playWin();
+        creditInstantWin(payout);
       } else if (lastPlacedBet) {
         playLose();
       }
       refresh();
+      refreshBalance().catch(() => {});
       setTimeout(() => setDisplayResult(null), 6000);
     }, 1600);
-  }, [result, declaredRoundId, roundId, refresh, playCard, playWin, playLose, lastPlacedBet]);
+  }, [result, declaredRoundId, roundId, refresh, refreshBalance, creditInstantWin, playCard, playWin, playLose, lastPlacedBet]);
 
   const handleBetClick = async (amount) => {
     if (!selectedBet) return;
