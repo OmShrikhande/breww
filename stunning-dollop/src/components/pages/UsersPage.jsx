@@ -20,6 +20,10 @@ const UsersPage = () => {
   const [rechargeUser, setRechargeUser] = useState(null);
   const [rechargeAmount, setRechargeAmount] = useState('500');
   const [rechargeNote, setRechargeNote] = useState('');
+  const [passwordModalUser, setPasswordModalUser] = useState(null);
+  const [newPassword, setNewPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(true);
+  const [copied, setCopied] = useState(false);
   const [actionMenu, setActionMenu] = useState(null);
   const [sortBy, setSortBy] = useState('id');
   const [sortDir, setSortDir] = useState('asc');
@@ -94,6 +98,45 @@ const UsersPage = () => {
       setTimeout(() => setSuccessMsg(''), 5000);
     } catch (err) {
       setError(err.message || 'Recharge failed. Please try again.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const generateRandomPassword = () => {
+    const prefixes = ['Brew', 'Win', 'Star', 'Gold', 'Luck', 'Game', 'Ace', 'Play'];
+    const specials = ['@', '#', '$', '!'];
+    const p = prefixes[Math.floor(Math.random() * prefixes.length)];
+    const s = specials[Math.floor(Math.random() * specials.length)];
+    const n = Math.floor(1000 + Math.random() * 9000);
+    return `${p}${s}${n}`;
+  };
+
+  const handleCopyPassword = (pwd) => {
+    if (!pwd) return;
+    navigator.clipboard.writeText(pwd);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2500);
+  };
+
+  const handlePasswordResetSubmit = async (e) => {
+    if (e) e.preventDefault();
+    if (!passwordModalUser || !newPassword || newPassword.trim().length < 6 || busy) return;
+    setBusy(true);
+    setError('');
+    setSuccessMsg('');
+    const target = passwordModalUser;
+    try {
+      await apiService.patch(API_ENDPOINTS.USER_PASSWORD(target.id), {
+        password: newPassword.trim(),
+      });
+      setSuccessMsg(`🔑 Password for ${target.username || `User #${target.id}`} successfully updated to: ${newPassword.trim()}`);
+      setPasswordModalUser(null);
+      setNewPassword('');
+      await loadUsers();
+      setTimeout(() => setSuccessMsg(''), 8000);
+    } catch (err) {
+      setError(err.message || 'Failed to update user password');
     } finally {
       setBusy(false);
     }
@@ -277,6 +320,7 @@ const UsersPage = () => {
                               <button onClick={() => handleAction(u.id, 'activate')} className="act-btn act-btn--activate">✅ Activate</button>
                               <button onClick={() => handleAction(u.id, 'suspend')} className="act-btn act-btn--suspend">⏸ Suspend</button>
                               <button onClick={() => handleAction(u.id, 'ban')} className="act-btn act-btn--ban">🚫 Ban User</button>
+                              <button onClick={() => { setPasswordModalUser(u); setNewPassword(generateRandomPassword()); setShowPassword(true); setActionMenu(null); }} className="act-btn act-btn--password" style={{ color: '#f59e0b' }}>🔑 Reset Password</button>
                               <div className="act-divider" />
                               <button onClick={() => handleAction(u.id, 'reset-bal')} className="act-btn act-btn--reset">💸 Reset Balance</button>
                             </>
@@ -492,7 +536,271 @@ const UsersPage = () => {
                   <span className="udp-stat-val">{v}</span>
                 </div>
               ))}
+
+              <div className="udp-stat" style={{ position: 'relative' }}>
+                <span className="udp-stat-lbl">Password Status</span>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', marginTop: '3px' }}>
+                  <span className="udp-stat-val" style={{ fontSize: '0.8rem', color: '#10b981', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    🔒 Encrypted (bcrypt)
+                  </span>
+                  {canWrite && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const target = selectedUser;
+                        setSelectedUser(null);
+                        setPasswordModalUser(target);
+                        setNewPassword(generateRandomPassword());
+                        setShowPassword(true);
+                      }}
+                      style={{
+                        padding: '2px 8px',
+                        borderRadius: '6px',
+                        background: 'rgba(245, 158, 11, 0.15)',
+                        border: '1px solid #f59e0b',
+                        color: '#f59e0b',
+                        fontSize: '0.72rem',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      🔑 Set New
+                    </button>
+                  )}
+                </div>
+              </div>
             </div>
+
+            {canWrite && (
+              <div style={{ display: 'flex', gap: '8px', marginTop: '16px', borderTop: '1px solid var(--border)', paddingTop: '14px', flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const target = selectedUser;
+                    setSelectedUser(null);
+                    setRechargeUser(target);
+                    setRechargeAmount('500');
+                    setRechargeNote('');
+                  }}
+                  style={{
+                    flex: 1,
+                    padding: '8px 12px',
+                    borderRadius: '8px',
+                    background: 'linear-gradient(135deg, #10b981, #059669)',
+                    border: 'none',
+                    color: 'white',
+                    fontWeight: 700,
+                    fontSize: '0.8rem',
+                    cursor: 'pointer',
+                  }}
+                >
+                  💳 Recharge
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const target = selectedUser;
+                    setSelectedUser(null);
+                    setPasswordModalUser(target);
+                    setNewPassword(generateRandomPassword());
+                    setShowPassword(true);
+                  }}
+                  style={{
+                    flex: 1,
+                    padding: '8px 12px',
+                    borderRadius: '8px',
+                    background: 'rgba(245, 158, 11, 0.15)',
+                    border: '1px solid #f59e0b',
+                    color: '#f59e0b',
+                    fontWeight: 700,
+                    fontSize: '0.8rem',
+                    cursor: 'pointer',
+                  }}
+                >
+                  🔑 Reset Password
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleAction(selectedUser.id, selectedUser.status === 'banned' ? 'activate' : 'ban');
+                    setSelectedUser(null);
+                  }}
+                  style={{
+                    flex: 1,
+                    padding: '8px 12px',
+                    borderRadius: '8px',
+                    background: 'rgba(255,255,255,0.08)',
+                    border: '1px solid var(--border)',
+                    color: 'white',
+                    fontWeight: 600,
+                    fontSize: '0.8rem',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {selectedUser.status === 'banned' ? '✅ Activate' : '🚫 Ban'}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Reset Password Modal */}
+      {passwordModalUser && (
+        <div className="user-detail-overlay" onClick={() => setPasswordModalUser(null)}>
+          <div className="user-detail-panel" style={{ maxWidth: '440px' }} onClick={(e) => e.stopPropagation()}>
+            <div className="udp-header">
+              <div className="udp-avatar" style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)' }}>🔑</div>
+              <div>
+                <h3 style={{ margin: 0 }}>Reset User Password</h3>
+                <p style={{ margin: '2px 0 0', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                  Set a new secure password for {passwordModalUser.username || `User #${passwordModalUser.id}`}
+                </p>
+              </div>
+              <button className="modal-close" onClick={() => setPasswordModalUser(null)}>✕</button>
+            </div>
+
+            <form onSubmit={handlePasswordResetSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginTop: '14px' }}>
+              {/* User Info Bar */}
+              <div style={{ padding: '10px 12px', background: 'rgba(255, 255, 255, 0.04)', borderRadius: '8px', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: '0.85rem', color: 'white' }}>{passwordModalUser.username}</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                    {passwordModalUser.phone ? `📱 +91 ${passwordModalUser.phone}` : passwordModalUser.email || `ID #${passwordModalUser.id}`}
+                  </div>
+                </div>
+                <span style={{ fontSize: '0.72rem', background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', padding: '2px 8px', borderRadius: '4px', fontWeight: 600 }}>
+                  {passwordModalUser.status}
+                </span>
+              </div>
+
+              {/* Password Input */}
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                  <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 700 }}>
+                    New Password (min 6 chars)
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setNewPassword(generateRandomPassword())}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: '#f59e0b',
+                      fontSize: '0.75rem',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      padding: '0 4px',
+                    }}
+                  >
+                    🎲 Generate Random
+                  </button>
+                </div>
+
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    required
+                    minLength={6}
+                    maxLength={64}
+                    placeholder="Enter new password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '10px 75px 10px 12px',
+                      borderRadius: '8px',
+                      background: 'var(--bg-card-alt)',
+                      border: '1px solid var(--border-strong)',
+                      color: 'white',
+                      fontSize: '0.95rem',
+                      fontWeight: 700,
+                      letterSpacing: showPassword ? '0.5px' : '2px',
+                      outline: 'none',
+                      boxSizing: 'border-box',
+                    }}
+                  />
+                  <div style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', display: 'flex', gap: '4px' }}>
+                    <button
+                      type="button"
+                      title={showPassword ? 'Hide password' : 'Show password'}
+                      onClick={() => setShowPassword(!showPassword)}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: 'var(--text-muted)',
+                        cursor: 'pointer',
+                        fontSize: '0.95rem',
+                        padding: '4px',
+                      }}
+                    >
+                      {showPassword ? '👁' : '🙈'}
+                    </button>
+                    <button
+                      type="button"
+                      title="Copy password to clipboard"
+                      onClick={() => handleCopyPassword(newPassword)}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: copied ? '#10b981' : 'var(--text-muted)',
+                        cursor: 'pointer',
+                        fontSize: '0.85rem',
+                        padding: '4px',
+                        fontWeight: 700,
+                      }}
+                    >
+                      {copied ? '✓' : '📋'}
+                    </button>
+                  </div>
+                </div>
+                {copied && (
+                  <p style={{ margin: '4px 0 0', fontSize: '0.72rem', color: '#10b981', fontWeight: 600 }}>
+                    ✓ Copied password to clipboard!
+                  </p>
+                )}
+              </div>
+
+              <div style={{ background: 'rgba(245, 158, 11, 0.08)', border: '1px solid rgba(245, 158, 11, 0.2)', padding: '8px 10px', borderRadius: '6px', fontSize: '0.73rem', color: '#fcd34d' }}>
+                💡 Updating this password will securely hash it with <strong>bcrypt</strong> and immediately allow the user (or tester) to sign in. Previous active sessions will be invalidated for security.
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px', marginTop: '4px' }}>
+                <button
+                  type="button"
+                  onClick={() => setPasswordModalUser(null)}
+                  style={{
+                    flex: 1,
+                    padding: '10px',
+                    borderRadius: '8px',
+                    background: 'rgba(255,255,255,0.08)',
+                    border: 'none',
+                    color: 'var(--text-secondary)',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={busy || !newPassword || newPassword.trim().length < 6}
+                  style={{
+                    flex: 2,
+                    padding: '10px',
+                    borderRadius: '8px',
+                    background: 'linear-gradient(135deg, #f59e0b, #d97706)',
+                    border: 'none',
+                    color: 'white',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 12px rgba(245, 158, 11, 0.3)',
+                  }}
+                >
+                  {busy ? 'Updating…' : 'Save New Password'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

@@ -68,6 +68,7 @@
 | 5.7 | `/users/:id/transactions` | `GET` | Deposits & withdrawals | `[{ txId, type, amount, status, method, createdAt }]` |
 | 5.8 | `/users/:id/notes` | `POST` | Add admin note on user | `{ text }` → `{ noteId, adminId, text, createdAt }` |
 | 5.9 | `/users/:id/notes` | `GET` | All admin notes on user | `[{ noteId, adminName, text, createdAt }]` |
+| 5.10 | `/users/:id/password` | `PATCH` | Set or reset user password by admin | `{ success: true, message: 'Password updated successfully for ...' }` — body: `{ password: 'newPassword' }` |
 
 ---
 

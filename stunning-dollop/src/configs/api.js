@@ -33,6 +33,7 @@ const API_ENDPOINTS = {
   USER: (id) => `/api/users/${id}`,
   USER_STATUS: (id) => `/api/users/${id}/status`,
   USER_BALANCE: (id) => `/api/users/${id}/balance`,
+  USER_PASSWORD: (id) => `/api/users/${id}/password`,
 
   ANALYTICS_REVENUE: '/api/analytics/revenue',
   ANALYTICS_BETS: '/api/analytics/bets',

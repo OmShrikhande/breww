@@ -123,4 +123,28 @@ const getNotes = async (req, res) => {
   }
 };
 
-module.exports = { getUsers, getUserStats, getUserById, updateUserStatus, adjustBalance, getUserBets, getUserTransactions, addNote, getNotes };
+const updateUserPassword = async (req, res) => {
+  try {
+    const { password } = req.body || {};
+    if (!password || typeof password !== 'string' || password.trim().length < 6) {
+      return res.status(400).json({ success: false, message: 'Password must be at least 6 characters' });
+    }
+    if (password.trim().length > 64) {
+      return res.status(400).json({ success: false, message: 'Password cannot exceed 64 characters' });
+    }
+
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+
+    await User.updatePassword(req.params.id, password.trim());
+    res.json({
+      success: true,
+      message: `Password updated successfully for ${user.username || `User #${req.params.id}`}`,
+    });
+  } catch (error) {
+    console.error('Update user password error:', error);
+    res.status(500).json({ success: false, message: error.message || 'Internal server error' });
+  }
+};
+
+module.exports = { getUsers, getUserStats, getUserById, updateUserStatus, adjustBalance, getUserBets, getUserTransactions, addNote, getNotes, updateUserPassword };

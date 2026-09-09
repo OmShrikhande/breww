@@ -218,6 +218,7 @@
 
 .act-btn:hover { background: var(--gold-dim); color: var(--text-primary); }
 .act-btn--ban:hover     { background: var(--red-dim);  color: var(--red);   }
+.act-btn--password:hover{ background: rgba(245, 158, 11, 0.18); color: #fbbf24; }
 .act-btn--activate:hover{ background: var(--green-dim);color: var(--green); }
 
 .act-divider {

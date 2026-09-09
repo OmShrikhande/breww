@@ -1,3 +1,4 @@
+const bcrypt = require('bcryptjs');
 const pool = require('../config/database');
 
 class User {
@@ -138,6 +139,28 @@ class User {
       [userId]
     );
     return rows;
+  }
+
+  static async updatePassword(id, newPassword) {
+    if (!newPassword || String(newPassword).length < 6) {
+      throw new Error('Password must be at least 6 characters');
+    }
+    if (String(newPassword).length > 64) {
+      throw new Error('Password cannot exceed 64 characters');
+    }
+
+    const hash = await bcrypt.hash(String(newPassword), 10);
+    const { rows } = await pool.query(
+      `UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2 RETURNING id, username, email`,
+      [hash, id]
+    );
+
+    if (rows[0]) {
+      // Invalidate existing sessions for security
+      await pool.query('DELETE FROM player_sessions WHERE user_id = $1', [id]).catch(() => {});
+    }
+
+    return rows[0] || null;
   }
 }
 

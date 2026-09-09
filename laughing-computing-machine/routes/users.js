@@ -1,5 +1,5 @@
 const express = require('express');
-const { getUsers, getUserStats, getUserById, updateUserStatus, adjustBalance, getUserBets, getUserTransactions, addNote, getNotes } = require('../controllers/usersController');
+const { getUsers, getUserStats, getUserById, updateUserStatus, adjustBalance, getUserBets, getUserTransactions, addNote, getNotes, updateUserPassword } = require('../controllers/usersController');
 const { authenticateAdmin } = require('../middleware/auth');
 const { requireAdminOrAbove, validatePagination, validateId } = require('../middleware/validate');
 
@@ -12,6 +12,7 @@ router.get('/stats', getUserStats);
 router.get('/:id', validateId(), getUserById);
 router.patch('/:id/status', validateId(), requireAdminOrAbove, updateUserStatus);
 router.patch('/:id/balance', validateId(), requireAdminOrAbove, adjustBalance);
+router.patch('/:id/password', validateId(), requireAdminOrAbove, updateUserPassword);
 router.get('/:id/bets', validateId(), getUserBets);
 router.get('/:id/transactions', validateId(), getUserTransactions);
 router.post('/:id/notes', validateId(), requireAdminOrAbove, addNote);
